@@ -1,27 +1,27 @@
-import { deviceType, primaryInput } from 'detect-it';
-import { ModeInput } from '../helpers/namingHelpers';
-import { sessionGet, sessionSet } from '../helpers/sessionHelpers';
-import { SESSION_KEYS as SK } from '../helpers/sessionKeys';
-import { wrapAsJsPsychTrial } from '../helpers/jspsychHelpers';
+import { deviceType, primaryInput } from "detect-it";
+import { ModeInput } from "../helpers/namingHelpers";
+import { sessionGet, sessionSet } from "../helpers/sessionHelpers";
+import { SESSION_KEYS as SK } from "../helpers/sessionKeys";
+import { wrapAsJsPsychTrial } from "../helpers/jspsychHelpers";
 
 export const resetModeInputLast = () => {
   sessionSet(SK.MODE_INPUT_LAST, ModeInput.NONE);
 };
 
 export const updateModeInputInfoOnPointerEvent = (pointerType) => {
-  if (pointerType === 'touch' || pointerType === 'pen') {
+  if (pointerType === "touch" || pointerType === "pen") {
     sessionSet(SK.INPUT_TOUCH_DETECTED, true);
     sessionSet(SK.MODE_INPUT_LAST, ModeInput.TOUCH);
-  } else if (pointerType === 'mouse') {
+  } else if (pointerType === "mouse") {
     sessionSet(SK.INPUT_MOUSE_DETECTED, true);
     sessionSet(SK.MODE_INPUT_LAST, ModeInput.MOUSE);
   }
 };
 
 export const updateModeInputInfoOnKeyEvent = (leftright) => {
-  if (leftright === 'left') {
+  if (leftright === "left") {
     sessionSet(SK.INPUT_KEY_LEFT_DETECTED, true);
-  } else if (leftright === 'right') {
+  } else if (leftright === "right") {
     sessionSet(SK.INPUT_KEY_RIGHT_DETECTED, true);
   }
   sessionSet(SK.MODE_INPUT_LAST, ModeInput.KEYBOARD);
@@ -61,13 +61,15 @@ export const initModeInputTarget = () => {
   if (inputTouchDetected) {
     modeInputTarget = ModeInput.TOUCH;
   }
-  const isMobile = deviceType === 'touchOnly' || (deviceType === 'hybrid' && primaryInput === 'touch');
+  const isMobile =
+    deviceType === "touchOnly" ||
+    (deviceType === "hybrid" && primaryInput === "touch");
   if (isMobile) {
     modeInputTarget = ModeInput.TOUCH;
   }
   // check that this is what we want - we want to encourage touch or keyboard
   // if ((modeGame === ModeGame.STANDARD) && (deviceType === "hybrid")) {
-  if (deviceType === 'hybrid') {
+  if (deviceType === "hybrid") {
     modeInputTarget = ModeInput.TOUCH;
   }
 
@@ -97,7 +99,10 @@ export const t_setModeInputTarget = (modeInputTarget) =>
 export const createHelperMouseMoveRecord = () => {
   // current time in ms
   const timeNow = () => {
-    if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    if (
+      typeof performance !== "undefined" &&
+      typeof performance.now === "function"
+    ) {
       return performance.now();
     }
     return Date.now();
@@ -115,7 +120,7 @@ export const createHelperMouseMoveRecord = () => {
       const timeMove = Math.round(timeNow() - timeStart);
       const typeMove = e.pointerType;
 
-      if (typeMove === 'mouse') {
+      if (typeMove === "mouse") {
         if (timePointerMoveFirst < 0) {
           timePointerMoveFirst = timeMove;
         }
@@ -123,12 +128,12 @@ export const createHelperMouseMoveRecord = () => {
         timesPointerMove.push(timeMove);
       }
     };
-    window.addEventListener('pointermove', callbackOnPointerMove);
+    window.addEventListener("pointermove", callbackOnPointerMove);
   };
 
   const stopRecord = () => {
     if (callbackOnPointerMove) {
-      window.removeEventListener('pointermove', callbackOnPointerMove);
+      window.removeEventListener("pointermove", callbackOnPointerMove);
       callbackOnPointerMove = null;
     }
   };

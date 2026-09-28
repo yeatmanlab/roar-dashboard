@@ -1,17 +1,19 @@
-import jsPsychFullScreen from '@jspsych/plugin-fullscreen'; // plugin for going into fullscreen
-import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
-import jsPsychHtmlKeyboardResponse from '@jspsych/plugin-html-keyboard-response';
-import i18next from 'i18next';
-import '../../../i18n/i18n';
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import { jsPsych } from '../helpers/taskSetup';
-import { mediaAssets } from '../helpers/mediaAssets';
-import { sessionGet } from '../helpers/sessionHelpers';
-import { SESSION_KEYS as SK } from '../helpers/sessionKeys';
-import { wrapAsJsPsychTrial } from '../helpers/jspsychHelpers';
-import { AssessmentStage } from '../helpers/namingHelpers';
+import jsPsychFullScreen from "@jspsych/plugin-fullscreen"; // plugin for going into fullscreen
+import jsPsychHtmlButtonResponse from "@jspsych/plugin-html-button-response";
+import jsPsychHtmlKeyboardResponse from "@jspsych/plugin-html-keyboard-response";
+import i18next from "i18next";
+import "../../../i18n/i18n";
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import { jsPsych } from "../helpers/taskSetup";
+import { mediaAssets } from "../helpers/mediaAssets";
+import { sessionGet } from "../helpers/sessionHelpers";
+import { SESSION_KEYS as SK } from "../helpers/sessionKeys";
+import { wrapAsJsPsychTrial } from "../helpers/jspsychHelpers";
+import { AssessmentStage } from "../helpers/namingHelpers";
+import { unlockAudioContext } from "../helpers/audioHelpers";
+import { DURATIONS } from "../helpers/constants";
 
-const sentryFeedback = document.querySelector('#sentry-feedback');
+const sentryFeedback = document.querySelector("#sentry-feedback");
 const DURATION_ENTER_FULL_SCREEN = 250;
 const SCALE_REQUEST_FULLSCREEN = 0.85;
 
@@ -20,7 +22,7 @@ let touchGuardsMeta = null;
 let touchGuardsMetaCreated = false;
 let touchGuardsMetaPrevContent = null;
 
-const gestureEvents = ['gesturestart', 'gesturechange', 'gestureend'];
+const gestureEvents = ["gesturestart", "gesturechange", "gestureend"];
 const blockGesture = (e) => e.preventDefault();
 const blockTouchMove = (e) => {
   if (e.touches.length > 1) e.preventDefault();
@@ -33,21 +35,22 @@ export const installTouchGuards = () => {
   let meta = document.querySelector('meta[name="viewport"]');
   touchGuardsMetaCreated = !meta;
   if (!meta) {
-    meta = document.createElement('meta');
-    meta.name = 'viewport';
+    meta = document.createElement("meta");
+    meta.name = "viewport";
     document.head.appendChild(meta);
   }
 
   touchGuardsMeta = meta;
-  touchGuardsMetaPrevContent = meta.getAttribute('content');
+  touchGuardsMetaPrevContent = meta.getAttribute("content");
 
-  meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+  meta.content =
+    "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover";
 
   gestureEvents.forEach((evt) => {
     document.addEventListener(evt, blockGesture, { passive: false });
   });
 
-  document.addEventListener('touchmove', blockTouchMove, { passive: false });
+  document.addEventListener("touchmove", blockTouchMove, { passive: false });
 };
 
 export const uninstallTouchGuards = () => {
@@ -56,15 +59,15 @@ export const uninstallTouchGuards = () => {
   gestureEvents.forEach((evt) => {
     document.removeEventListener(evt, blockGesture);
   });
-  document.removeEventListener('touchmove', blockTouchMove);
+  document.removeEventListener("touchmove", blockTouchMove);
 
   if (touchGuardsMeta) {
     if (touchGuardsMetaCreated) {
       touchGuardsMeta.remove();
     } else if (touchGuardsMetaPrevContent == null) {
-      touchGuardsMeta.removeAttribute('content');
+      touchGuardsMeta.removeAttribute("content");
     } else {
-      touchGuardsMeta.setAttribute('content', touchGuardsMetaPrevContent);
+      touchGuardsMeta.setAttribute("content", touchGuardsMetaPrevContent);
     }
   }
 
@@ -84,25 +87,42 @@ export const t_uninstallTouchGuards = () =>
     uninstallTouchGuards();
   });
 
-// mirrors jsPsych 7's logic for not going in full screen
-const isFullscreenBlockedByJsPsych = () => typeof Element !== 'undefined' && 'ALLOW_KEYBOARD_INPUT' in Element;
-
-const isFullscreen = () =>
-  Boolean(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
-
-const onFullscreenStart = () => {
-  document.body.style.cursor = 'default';
-  if (sentryFeedback) {
-    sentryFeedback.style.display = 'none';
+export const exitFullscreen = async () => {
+  if (document.fullscreenElement) {
+    await document.exitFullscreen();
+  } else if (document.webkitFullscreenElement) {
+    document.webkitExitFullscreen();
   }
 };
 
-const enterFullscreenCompat = () => {
+// Non-Chromium browsers exit fullscreen on native UI
+export const browserExitsFullscreenOnNativeUI = () => !navigator?.userAgentData;
+
+// mirrors jsPsych 7's logic for not going in full screen
+const isFullscreenBlockedByJsPsych = () =>
+  typeof Element !== "undefined" && "ALLOW_KEYBOARD_INPUT" in Element;
+
+export const isFullscreen = () =>
+  Boolean(
+    document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.msFullscreenElement,
+  );
+
+const onFullscreenStart = () => {
+  document.body.style.cursor = "default";
+  if (sentryFeedback) {
+    sentryFeedback.style.display = "none";
+  }
+};
+
+export const enterFullscreenCompat = () => {
   const element = document.documentElement;
 
   if (element.requestFullscreen) {
     const p = element.requestFullscreen();
-    if (p && typeof p.catch === 'function') p.catch(() => {});
+
+    if (p && typeof p.catch === "function") p.catch(() => {});
     return;
   }
   if (element.webkitRequestFullscreen) {
@@ -114,36 +134,6 @@ const enterFullscreenCompat = () => {
   }
 };
 
-const unlockAudioContext = () => {
-  const ctx = jsPsych.pluginAPI.audioContext();
-  if (ctx) {
-    if (ctx.state !== 'running') {
-      const p = ctx.resume();
-      if (p && typeof p.catch === 'function') p.catch(() => {});
-    }
-    try {
-      const src = ctx.createBufferSource();
-      src.buffer = ctx.createBuffer(1, 1, ctx.sampleRate || 22050);
-      src.connect(ctx.destination);
-      src.start(0);
-    } catch (_) {
-      /* empty */
-    }
-  }
-
-  const a = new Audio(mediaAssets.audio.roavMpNullAudioAll);
-  a.playsInline = true;
-  const playPromise = a.play();
-  if (playPromise && typeof playPromise.then === 'function') {
-    playPromise
-      .then(() => {
-        a.pause();
-        a.currentTime = 0;
-      })
-      .catch(() => {});
-  }
-};
-
 const t_enterFullscreenPlugin = (unlockAudio) => ({
   type: jsPsychFullScreen,
   fullscreen_mode: true,
@@ -151,12 +141,14 @@ const t_enterFullscreenPlugin = (unlockAudio) => ({
     const html = `
           <div class="roav-card-sys">
             <div>
-              <img src="${mediaAssets.images.roavMpTechIconFullscreenAll}" class="roav-card-sys-img">
+              <img src="${
+                mediaAssets.images.roavMpTechIconFullscreenAll
+              }" class="roav-card-sys-img">
             </div>
             <br>
             <br>
             <div>
-              <h1>${i18next.t('enter-full-screen.prompt')}</h1>
+              <h1>${i18next.t("enter-full-screen.prompt")}</h1>
             </div>
             <br>
             <br>
@@ -164,21 +156,17 @@ const t_enterFullscreenPlugin = (unlockAudio) => ({
     return html;
   },
   delay_after: 0,
-  button_label: () => `${i18next.t('enter-full-screen.label-button')}`,
+  button_label: () => `${i18next.t("enter-full-screen.label-button")}`,
   on_start: () => onFullscreenStart(),
   on_load: () => {
-    const btn = document.getElementById('jspsych-fullscreen-btn');
-    btn?.classList.add('roav-button-sys-large');
+    const btn = document.getElementById("jspsych-fullscreen-btn");
+    btn?.classList.add("roav-button-sys-large");
 
     if (unlockAudio) {
       btn?.addEventListener(
-        'click',
+        "click",
         (e) => {
           if (!e.isTrusted) return;
-          document.addEventListener('fullscreenchange', unlockAudioContext, {
-            once: true,
-          });
-          document.addEventListener('webkitfullscreenchange', unlockAudioContext, { once: true });
           unlockAudioContext();
         },
         { capture: true, once: true },
@@ -193,33 +181,30 @@ const t_enterFullscreenCompat = (unlockAudio) => ({
     const html = `
           <div class="roav-card-sys">
             <div>
-              <img src="${mediaAssets.images.roavMpTechIconFullscreenAll}" class="roav-card-sys-img">
+              <img src="${
+                mediaAssets.images.roavMpTechIconFullscreenAll
+              }" class="roav-card-sys-img">
             </div>
             <div>
-              <h2>${i18next.t('enter-full-screen.prompt')}</h2>
+              <h2>${i18next.t("enter-full-screen.prompt")}</h2>
             </div>
           </div>`;
     return html;
   },
-  choices: [i18next.t('enter-full-screen.label-button')],
+  choices: [i18next.t("enter-full-screen.label-button")],
   on_start: () => onFullscreenStart(),
   response_allowed_while_playing: true,
   on_load: () => {
-    const btnWrap = document.getElementById('jspsych-html-button-response-button-0');
-    btnWrap?.classList.add('roav-button-sys-large');
+    const btnWrap = document.getElementById(
+      "jspsych-html-button-response-button-0",
+    );
+    btnWrap?.classList.add("roav-button-sys-large");
 
     btnWrap?.addEventListener(
-      'click',
+      "click",
       (e) => {
         if (unlockAudio) {
           if (!e.isTrusted) return;
-          document.addEventListener('fullscreenchange', unlockAudioContext, {
-            once: true,
-          });
-          document.addEventListener('webkitfullscreenchange', unlockAudioContext, {
-            once: true,
-          });
-
           unlockAudioContext();
         }
         enterFullscreenCompat();
@@ -229,8 +214,49 @@ const t_enterFullscreenCompat = (unlockAudio) => ({
   },
 });
 
+const resizeDetectedConditional = (
+  widthFsIn,
+  heightFsIn,
+  scaleWidthIn,
+  scaleHeightIn,
+) => {
+  const widthFs = widthFsIn ?? sessionGet(SK.WIDTH_WINDOW_FS);
+  const heightFs = heightFsIn ?? sessionGet(SK.HEIGHT_WINDOW_FS);
+  const scaleWidth = scaleWidthIn ?? SCALE_REQUEST_FULLSCREEN;
+  const scaleHeight = scaleHeightIn ?? SCALE_REQUEST_FULLSCREEN;
+
+  const width = Math.max(window.innerWidth, window.innerHeight);
+  const height = Math.min(window.innerWidth, window.innerHeight);
+  return width < scaleWidth * widthFs || height < scaleHeight * heightFs;
+};
+
 export const t_enterFullscreen = (unlockAudio) => ({
   timeline: [
+    // @fix-freeze-audio - begin
+    // Adressing BUG that Safari has on iPad
+    // On resize, iPad Safari intermittently leaves context in incorrect state
+    // reporting fullscreen while the window is minimized
+    // This can create a series of full screen prompts (especially, during trials
+    // with frequent re-checks, such as RVP or RDK)
+    // This new trial exits stale fullscreen before re-entry
+    {
+      type: jsPsychCallFunction,
+      async: true,
+      func: (done) => {
+        if (document.fullscreenElement && resizeDetectedConditional()) {
+          document
+            .exitFullscreen()
+            .then(() => done())
+            // eslint-disable-next-line no-unused-vars
+            .catch((err) => {
+              done();
+            });
+        } else {
+          done();
+        }
+      },
+    },
+    // @fix-freeze-audio - end
     {
       timeline: [t_enterFullscreenPlugin(unlockAudio)],
       conditional_function: () => !isFullscreenBlockedByJsPsych(),
@@ -241,8 +267,8 @@ export const t_enterFullscreen = (unlockAudio) => ({
     },
     {
       type: jsPsychHtmlKeyboardResponse,
-      stimulus: '',
-      choices: 'NO_KEYS',
+      stimulus: "",
+      choices: "NO_KEYS",
       trial_duration: DURATION_ENTER_FULL_SCREEN,
     },
     {
@@ -253,8 +279,8 @@ export const t_enterFullscreen = (unlockAudio) => ({
           save_trial: true,
           assessment_stage: AssessmentStage.DATA,
           correct: isFullscreen(),
-          type_trial: 'enter-full-screen',
-          id_trial: 'enter-full-screen',
+          type_trial: "enter-full-screen",
+          id_trial: "enter-full-screen",
           pid: sessionGet(SK.CONFIG).pid,
           screen_width: window.screen.width,
           screen_height: window.screen.height,
@@ -266,20 +292,21 @@ export const t_enterFullscreen = (unlockAudio) => ({
   ],
 });
 
-const resizeDetectedConditional = (widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn) => {
-  const widthFs = widthFsIn ?? sessionGet(SK.WIDTH_WINDOW_FS);
-  const heightFs = heightFsIn ?? sessionGet(SK.HEIGHT_WINDOW_FS);
-  const scaleWidth = scaleWidthIn ?? SCALE_REQUEST_FULLSCREEN;
-  const scaleHeight = scaleHeightIn ?? SCALE_REQUEST_FULLSCREEN;
-
-  const width = Math.max(window.innerWidth, window.innerHeight);
-  const height = Math.min(window.innerWidth, window.innerHeight);
-  return width < scaleWidth * widthFs || height < scaleHeight * heightFs;
-};
-
-export const t_trialEnterFullscreenConditional = (widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn) => ({
+export const t_trialEnterFullscreenConditional = (
+  widthFsIn,
+  heightFsIn,
+  scaleWidthIn,
+  scaleHeightIn,
+) => ({
   timeline: [t_enterFullscreen(false)],
-  conditional_function: () => resizeDetectedConditional(widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn),
+  conditional_function: () =>
+    !document.hidden &&
+    resizeDetectedConditional(
+      widthFsIn,
+      heightFsIn,
+      scaleWidthIn,
+      scaleHeightIn,
+    ),
 });
 
 export const t_exitFullscreen = () => ({
@@ -290,26 +317,33 @@ export const t_exitFullscreen = () => ({
 
 // LANDSCAPE HELPERS
 export const isOrientationLandscape = () => {
-  const mql = window.matchMedia?.('(orientation: landscape)');
+  const mql = window.matchMedia?.("(orientation: landscape)");
   return mql ? mql.matches : true; // window.innerWidth > window.innerHeight;
 };
 
 export const addEventListenersOrientation = (callbackOnOrientationChange) => {
-  const mql = window.matchMedia?.('(orientation: landscape)') ?? null;
+  const mql = window.matchMedia?.("(orientation: landscape)") ?? null;
   if (mql) {
-    if (mql.addEventListener) mql.addEventListener('change', callbackOnOrientationChange);
+    if (mql.addEventListener)
+      mql.addEventListener("change", callbackOnOrientationChange);
   }
-  window.addEventListener('orientationchange', callbackOnOrientationChange);
+  window.addEventListener("orientationchange", callbackOnOrientationChange);
 
   return mql;
 };
 
-export const removeEventListenersOrientation = (mql, callbackOnOrientationChange) => {
+export const removeEventListenersOrientation = (
+  mql,
+  callbackOnOrientationChange,
+) => {
   if (callbackOnOrientationChange) {
-    window.removeEventListener('orientationchange', callbackOnOrientationChange);
+    window.removeEventListener(
+      "orientationchange",
+      callbackOnOrientationChange,
+    );
     if (mql) {
       if (mql.removeEventListener) {
-        mql.removeEventListener('change', callbackOnOrientationChange);
+        mql.removeEventListener("change", callbackOnOrientationChange);
       }
     }
   }
@@ -332,15 +366,17 @@ export const t_enterLandscape = (params = {}) => {
           const html = `
                   <div class="roav-card-sys">
                     <div>
-                      <img src="${mediaAssets.images.roavMpTechIconLandscapeAll}" class="roav-card-sys-img">
+                      <img src="${
+                        mediaAssets.images.roavMpTechIconLandscapeAll
+                      }" class="roav-card-sys-img">
                     </div>
                     <div>
-                      <h2>${i18next.t('enter-landscape.prompt')}</h2>
+                      <h2>${i18next.t("enter-landscape.prompt")}</h2>
                     </div>
                   </div>`;
           return html;
         },
-        choices: 'NO_KEYS',
+        choices: "NO_KEYS",
         response_ends_trial: false,
         on_load: () => {
           if (isOrientationLandscape()) {
@@ -360,15 +396,18 @@ export const t_enterLandscape = (params = {}) => {
             save_trial: true,
             assessment_stage: AssessmentStage.DATA,
             correct: isOrientationLandscape(),
-            type_trial: 'enter-landscape',
-            id_trial: 'enter-landscape',
+            type_trial: "enter-landscape",
+            id_trial: "enter-landscape",
             pid: sessionGet(SK.CONFIG).pid,
             screen_width: window.screen.width,
             screen_height: window.screen.height,
             window_inner_width: window.innerWidth,
             window_inner_height: window.innerHeight,
           });
-          if (params.on_finish_ext && typeof params.on_finish_ext === 'function') {
+          if (
+            params.on_finish_ext &&
+            typeof params.on_finish_ext === "function"
+          ) {
             params.on_finish_ext();
           }
         },
@@ -398,11 +437,23 @@ export const createHelperOrientation = (onOrientationChange) => {
     if (rotationDetected) {
       return;
     }
+
+    // @fix-freeze-audio - begin
+    // letting context settle after minimize / restore
+    // iPad Safari reports incorrect values while settling
     if (!isOrientationLandscape()) {
-      rotationDetected = true;
-      removeEventListeners();
-      onOrientationChange();
+      setTimeout(() => {
+        if (rotationDetected) {
+          return;
+        }
+        if (!isOrientationLandscape()) {
+          rotationDetected = true;
+          removeEventListeners();
+          onOrientationChange();
+        }
+      }, DURATIONS.DELAY_RECHECK_ROTATION_RESIZE);
     }
+    // @fix-freeze-audio - end
   };
 
   return {
@@ -423,9 +474,9 @@ export const createHelperFullscreenConditional = (
   let callbackOnResize = null;
 
   const removeEventListeners = () => {
-    window.removeEventListener('resize', callbackOnResize);
-    document.removeEventListener('fullscreenchange', callbackOnResize);
-    document.removeEventListener('webkitfullscreenchange', callbackOnResize);
+    window.removeEventListener("resize", callbackOnResize);
+    document.removeEventListener("fullscreenchange", callbackOnResize);
+    document.removeEventListener("webkitfullscreenchange", callbackOnResize);
     callbackOnResize = null;
   };
 
@@ -433,15 +484,39 @@ export const createHelperFullscreenConditional = (
     resizeDetected = false;
     callbackOnResize = () => {
       if (resizeDetected) return;
-      resizeDetected = resizeDetectedConditional(widthFs, heightFs, scaleWidth, scaleHeight);
+      if (document.hidden) return; // @fix-freeze-audio
+      resizeDetected = resizeDetectedConditional(
+        widthFs,
+        heightFs,
+        scaleWidth,
+        scaleHeight,
+      );
+
+      // @fix-freeze-audio - begin
+      // letting context settle after minimize / restore
+      // iPad Safari reports incorrect values while settling
       if (resizeDetected) {
-        removeEventListeners();
-        funcOnResize();
+        setTimeout(() => {
+          if (document.hidden) {
+            return;
+          }
+          resizeDetected = resizeDetectedConditional(
+            widthFs,
+            heightFs,
+            scaleWidth,
+            scaleHeight,
+          );
+          if (resizeDetected) {
+            removeEventListeners();
+            funcOnResize();
+          }
+        }, DURATIONS.DELAY_RECHECK_ROTATION_RESIZE);
       }
+      // @fix-freeze-audio - end
     };
-    window.addEventListener('resize', callbackOnResize);
-    document.addEventListener('fullscreenchange', callbackOnResize);
-    document.addEventListener('webkitfullscreenchange', callbackOnResize);
+    window.addEventListener("resize", callbackOnResize);
+    document.addEventListener("fullscreenchange", callbackOnResize);
+    document.addEventListener("webkitfullscreenchange", callbackOnResize);
   };
 
   return {

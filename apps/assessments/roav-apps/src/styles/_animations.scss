@@ -1,4 +1,4 @@
-@use 'vars' as *;
+@use "vars" as *;
 
 .roav-animation-rotate-with-pause {
   animation: roav-keyframes-rotate-with-pause 4s ease-in-out infinite;

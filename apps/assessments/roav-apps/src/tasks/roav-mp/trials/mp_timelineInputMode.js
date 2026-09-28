@@ -1,11 +1,21 @@
-import { t_instructionInputLR } from '../../shared/trials/instructionInputLR';
-import { t_initModeInputTargetRdk, t_updateModeInputTargetRdk } from './mp_inputModeHelpers';
-import { t_instructionGeneral } from '../../shared/trials/instructionGeneral';
-import { t_enableTrialsOnlyInModeInputTarget, t_setEnableTrials } from '../../shared/trials/flowHelpers';
-import { ModeGame, ModeInput, TypeKey } from '../../shared/helpers/namingHelpers';
-import { sessionGet } from '../../shared/helpers/sessionHelpers';
-import { MP_SESSION_KEYS as SK } from '../helpers/mp_sessionKeys';
-import { DURATIONS } from '../../shared/helpers/constants';
+import { t_instructionInputLR } from "../../shared/trials/instructionInputLR";
+import {
+  t_initModeInputTargetRdk,
+  t_updateModeInputTargetRdk,
+} from "./mp_inputModeHelpers";
+import { t_instructionGeneral } from "../../shared/trials/instructionGeneral";
+import {
+  t_enableTrialsOnlyInModeInputTarget,
+  t_setEnableTrials,
+} from "../../shared/trials/flowHelpers";
+import {
+  ModeGame,
+  ModeInput,
+  TypeKey,
+} from "../../shared/helpers/namingHelpers";
+import { sessionGet } from "../../shared/helpers/sessionHelpers";
+import { MP_SESSION_KEYS as SK } from "../helpers/mp_sessionKeys";
+import { DURATIONS } from "../../shared/helpers/constants";
 
 export const t_timelineInputMode = () => ({
   timeline: [
@@ -14,9 +24,9 @@ export const t_timelineInputMode = () => ({
       {
         modeGameTrial: ModeGame.STANDARD,
         durationTrial: DURATIONS.RESPONSE_INPUT_TYPE,
-        keyImgCharacter: ['', '', 'keyboard'],
-        keyImgBtnLeft: ['', '', 'button-no'],
-        keyImgBtnRight: ['', '', 'button-yes'],
+        keyImgCharacter: ["", "", "keyboard"],
+        keyImgBtnLeft: ["", "", "button-no"],
+        keyImgBtnRight: ["", "", "button-yes"],
         enableBtnLeft: true,
         enableBtnRight: true,
         animateBtnLeft: true,
@@ -27,7 +37,7 @@ export const t_timelineInputMode = () => ({
         modeInputTargetTrial: ModeInput.ALL,
         modeInputTargetAnswerTrial: ModeInput.ALL,
       },
-      'instr-physical-keyboard',
+      "instr-physical-keyboard",
     ),
     t_initModeInputTargetRdk(),
     t_instructionInputLR(
@@ -41,19 +51,19 @@ export const t_timelineInputMode = () => ({
         modeInputTargetTrial: ModeInput.TOUCH,
         endTrialOnKeyPress: false,
       },
-      'instr-input-buttons',
+      "instr-input-buttons",
     ),
     t_enableTrialsOnlyInModeInputTarget({
       modeInputTarget: ModeInput.KEYBOARD,
     }),
     t_instructionGeneral(
       {
-        keyImgBg: '',
-        keyImgCharacter: ['', '', 'input-arrow-keys'],
+        keyImgBg: "",
+        keyImgCharacter: ["", "", "input-arrow-keys"],
         animateBtn: true,
         modeGameTrial: ModeGame.STANDARD,
       },
-      'instr-input-arrows',
+      "instr-input-arrows",
     ),
 
     // right arrow
@@ -65,7 +75,7 @@ export const t_timelineInputMode = () => ({
         modeGameTrial: ModeGame.STANDARD,
         durationTrial: DURATIONS.RESPONSE_INPUT_KEY,
       },
-      'instr-input-keyboard-right',
+      "instr-input-keyboard-right",
     ),
     t_instructionInputLR(
       {
@@ -75,7 +85,7 @@ export const t_timelineInputMode = () => ({
         durationTrial: DURATIONS.RESPONSE_INPUT_KEY,
         dataCorrect: false,
       },
-      'instr-input-keyboard-right-incorrect-1',
+      "instr-input-keyboard-right-incorrect-1",
     ),
     t_instructionInputLR(
       {
@@ -83,7 +93,7 @@ export const t_timelineInputMode = () => ({
         modeGameTrial: ModeGame.STANDARD,
         dataCorrect: false,
       },
-      'instr-input-keyboard-right-incorrect-2',
+      "instr-input-keyboard-right-incorrect-2",
     ),
     t_instructionInputLR(
       {
@@ -91,7 +101,7 @@ export const t_timelineInputMode = () => ({
         modeGameTrial: ModeGame.STANDARD,
         dataCorrect: true,
       },
-      'instr-input-keyboard-right-correct',
+      "instr-input-keyboard-right-correct",
     ),
 
     // left arrow
@@ -102,7 +112,7 @@ export const t_timelineInputMode = () => ({
         modeGameTrial: ModeGame.STANDARD,
         durationTrial: DURATIONS.RESPONSE_INPUT_KEY,
       },
-      'instr-input-keyboard-left',
+      "instr-input-keyboard-left",
     ),
     t_instructionInputLR(
       {
@@ -112,7 +122,7 @@ export const t_timelineInputMode = () => ({
         durationTrial: DURATIONS.RESPONSE_INPUT_KEY,
         dataCorrect: false,
       },
-      'instr-input-keyboard-left-incorrect-1',
+      "instr-input-keyboard-left-incorrect-1",
     ),
     t_instructionInputLR(
       {
@@ -120,7 +130,7 @@ export const t_timelineInputMode = () => ({
         modeGameTrial: ModeGame.STANDARD,
         dataCorrect: true,
       },
-      'instr-input-keyboard-left-correct',
+      "instr-input-keyboard-left-correct",
     ),
 
     // input mode update
@@ -132,11 +142,11 @@ export const t_timelineInputMode = () => ({
     }),
     t_instructionGeneral(
       {
-        keyImgBg: '',
-        keyImgCharacter: ['', '', 'key-spacebar'],
+        keyImgBg: "",
+        keyImgCharacter: ["", "", "key-spacebar"],
         modeGameTrial: ModeGame.STANDARD,
       },
-      'navigation-spacebar',
+      "navigation-spacebar",
     ),
     t_setEnableTrials(true),
 
@@ -152,7 +162,7 @@ export const t_timelineInputMode = () => ({
         modeInputTargetAnswerTrial: ModeInput.KEYBOARD,
         endTrialOnKeyPress: false,
       },
-      'instr-input-buttons-fallback',
+      "instr-input-buttons-fallback",
     ),
   ],
   conditional_function: () => {

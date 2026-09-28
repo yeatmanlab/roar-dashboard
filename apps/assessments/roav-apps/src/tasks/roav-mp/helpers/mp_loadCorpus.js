@@ -1,10 +1,14 @@
-import { loadCorpus, downloadJSON, NAME_CORPUS_DEF } from '../../shared/helpers/loadCorpus';
-import { sessionGet, sessionSet } from '../../shared/helpers/sessionHelpers';
-import { MP_SESSION_KEYS as SK } from './mp_sessionKeys';
+import {
+  loadCorpus,
+  downloadJSON,
+  NAME_CORPUS_DEF,
+} from "../../shared/helpers/loadCorpus";
+import { sessionGet, sessionSet } from "../../shared/helpers/sessionHelpers";
+import { MP_SESSION_KEYS as SK } from "./mp_sessionKeys";
 
-const LOC_CONFIG_DEF = 'shared/corpora/config';
-const NAME_CONFIG_BLOCK_DEF = 'config-block-def';
-const NAME_CONFIG_QUEST_DEF = 'config-quest-def';
+const LOC_CONFIG_DEF = "shared/corpora/config";
+const NAME_CONFIG_BLOCK_DEF = "config-block-def";
+const NAME_CONFIG_QUEST_DEF = "config-quest-def";
 
 export const mp_loadCorpus = async (nameTask, assets, bucketURI) => {
   // bucketURI = https://storage.googleapis.com/roav-mp

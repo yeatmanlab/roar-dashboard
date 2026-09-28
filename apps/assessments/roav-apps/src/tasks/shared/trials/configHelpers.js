@@ -1,8 +1,8 @@
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import { jsPsych } from '../helpers/taskSetup';
-import { AssessmentStage } from '../helpers/namingHelpers';
-import { sessionGet } from '../helpers/sessionHelpers';
-import { SESSION_KEYS as SK } from '../helpers/sessionKeys';
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import { jsPsych } from "../helpers/taskSetup";
+import { AssessmentStage } from "../helpers/namingHelpers";
+import { sessionGet } from "../helpers/sessionHelpers";
+import { SESSION_KEYS as SK } from "../helpers/sessionKeys";
 
 export const t_saveConfig = () => ({
   type: jsPsychCallFunction,
@@ -12,7 +12,7 @@ export const t_saveConfig = () => ({
     const configCopy = { ...config };
     configCopy.firekit = {};
 
-    const tagTrial = 'save-config';
+    const tagTrial = "save-config";
 
     jsPsych.data.addDataToLastTrial({
       save_trial: true,

@@ -1,22 +1,29 @@
 /* eslint-disable no-underscore-dangle */
-import jsPsychAudioKeyboardResponse from '@jspsych/plugin-audio-keyboard-response';
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
-import { summary } from '../../shared/trials/summaryHelpers';
-import { jsPsych } from '../../shared/helpers/taskSetup';
-import { quest } from '../../shared/trials/questHelpers';
-import { mediaAssets } from '../../shared/helpers/mediaAssets';
+import jsPsychAudioKeyboardResponse from "@jspsych/plugin-audio-keyboard-response";
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import jsPsychAudioMultiResponse from "@jspsych-contrib/plugin-audio-multi-response";
+import jsPsychHtmlButtonResponse from "@jspsych/plugin-html-button-response";
+import { summary } from "../../shared/trials/summaryHelpers";
+import { jsPsych } from "../../shared/helpers/taskSetup";
+import { quest } from "../../shared/trials/questHelpers";
+import { mediaAssets } from "../../shared/helpers/mediaAssets";
 import {
   AssessmentStage,
   fillTextKeyValuesDef,
   ModeGame,
   TypeKey,
   TAG_REQ_DEF,
-} from '../../shared/helpers/namingHelpers';
-import { sessionGet, sessionSet, sessionChangeValNum } from '../../shared/helpers/sessionHelpers';
-import { CR_SESSION_KEYS as SK } from '../helpers/cr_sessionKeys';
-import { htmlImgSvgPositioned } from '../../shared/trials/svgHelpers';
-import { UnitSize, degToPxFromWidth } from '../../shared/helpers/unitsHelper';
+  SubtypeTrial,
+  ModeInput,
+} from "../../shared/helpers/namingHelpers";
+import {
+  sessionGet,
+  sessionSet,
+  sessionChangeValNum,
+} from "../../shared/helpers/sessionHelpers";
+import { CR_SESSION_KEYS as SK } from "../helpers/cr_sessionKeys";
+import { htmlImgSvgPositioned } from "../../shared/trials/svgHelpers";
+import { UnitSize, degToPxFromWidth } from "../../shared/helpers/unitsHelper";
 import {
   elemRandom,
   elemRandomExcl,
@@ -24,85 +31,77 @@ import {
   indRandom,
   indRandomExcl,
   indsRandomNoRepeatExcl,
-} from '../../shared/helpers/orderHelpers';
-// import { shouldIgnoreOnError } from "@sentry/browser/types/helpers";
-import { CR } from '../helpers/cr_constants';
-import { DURATIONS, SCREEN } from '../../shared/helpers/constants';
-import { enableTrialByModeGame } from '../../shared/trials/flowHelpers';
+} from "../../shared/helpers/orderHelpers";
+import { CR } from "../helpers/cr_constants";
+import { DURATIONS, SCREEN } from "../../shared/helpers/constants";
+import { enableTrialByModeGame } from "../../shared/trials/flowHelpers";
 import {
   createHelperMouseMoveRecord,
   updateModeInputInfoOnPointerEvent,
   resetModeInputLast,
-} from '../../shared/trials/inputModeHelpers';
+} from "../../shared/trials/inputModeHelpers";
 import {
   createHelperOrientation,
   createHelperFullscreenConditional,
-  // t_trialEnterFullscreenConditional,
   t_enterLandscape,
   t_trialEnterFullscreenConditional,
-} from '../../shared/trials/screenHelpers';
-import { getValidityEvaluator } from '../../shared/trials/validityHelpers';
-import { hasAudio } from '../../shared/helpers/audioHelpers';
-import { et_videoStart, t_et_videoRecordSave, t_et_videoRecordStart } from '../../et/et_videoHelpers';
+} from "../../shared/trials/screenHelpers";
+import { getValidityEvaluator } from "../../shared/trials/validityHelpers";
+import { hasAudio } from "../../shared/helpers/audioHelpers";
+import {
+  t_et_videoRecordSave,
+  t_et_videoRecordStart,
+  t_et_videoRecordStop,
+} from "../../et/et_videoHelpers";
 import {
   et_etCreateLayout,
-  et_etInit,
-  et_etStart,
   et_etStop,
   et_etRemoveLayout,
   et_etCreateDecor,
   et_etRemoveDecor,
-  et_TypeModel,
-  et_def_onResultsFaceMesh,
-} from '../../et/et_etHelpers';
-import {
-  et_paramsSnapsotDef,
-  et_stateResetSnapshots,
-  et_TypeSaveSnapshots,
-  state,
-  t_et_stateSave,
-} from '../../et/et_state';
+  et_etSetupInitStartSimple,
+} from "../../et/et_etHelpers";
+import { et_TypeSaveSnapshots, t_et_stateSave } from "../../et/et_state";
 
-const tagTrial = 'cr';
+const tagTrial = "cr";
 
 export const StageTrial = {
-  FIX: 'fix',
-  STIM_PRE: 'pre-stim',
-  STIM: 'stim',
-  RESP: 'resp',
-  GAP_AND_FEEDBACK: 'gap-and-feedback',
-  PREVIEW: 'preview',
+  FIX: "fix",
+  STIM_PRE: "pre-stim",
+  STIM: "stim",
+  RESP: "resp",
+  GAP_AND_FEEDBACK: "gap-and-feedback",
+  PREVIEW: "preview",
 };
 
-// let timeOut
 export const TypeTask = {
-  SHAPE_IDENT: 'shape-ident',
-  SHAPE_COMPARE_REF: 'shape-compare-ref',
-  SHAPE_COMPARE_LR: 'shape-compare-lr',
+  SHAPE_IDENT: "shape-ident",
+  SHAPE_COMPARE_REF: "shape-compare-ref",
+  SHAPE_COMPARE_LR: "shape-compare-lr",
 
-  ORIENT_COMPARE_REF: 'orient-compare-ref',
-  ORIENT_COMPARE_LR: 'orient-compare-lr',
-  ORIENT_IDENT: 'orient-ident',
+  ORIENT_COMPARE_REF: "orient-compare-ref",
+  ORIENT_COMPARE_LR: "orient-compare-lr",
+  ORIENT_IDENT: "orient-ident",
 };
 
 export const TypeSide = {
-  LEFT: 'left',
-  RIGHT: 'right',
-  BOTH: 'both',
-  RANDOM: 'random',
+  LEFT: "left",
+  RIGHT: "right",
+  BOTH: "both",
+  RANDOM: "random",
 };
 
 export const TypeSame = {
-  SAME: 'same',
-  DIFF: 'diff',
-  RANDOM: 'random',
+  SAME: "same",
+  DIFF: "diff",
+  RANDOM: "random",
 };
 
 export const TypeOrient = {
-  DIR_4: 'dir-4',
-  DIR_2_HOR: 'dir-2-hor',
-  DIR_2_VERT: 'dir-2-vert',
-  DIR_2_ANGLE: 'dir-2-angle',
+  DIR_4: "dir-4",
+  DIR_2_HOR: "dir-2-hor",
+  DIR_2_VERT: "dir-2-vert",
+  DIR_2_ANGLE: "dir-2-angle",
 };
 
 const INDS_STIM = {
@@ -119,16 +118,40 @@ const INDS_LOC = {
   M: 4,
 };
 
-// TODO: temporary
+// array for cr_params - preview
 export const mapTaskToInstrResp = {
-  [TypeTask.SHAPE_IDENT]: '\nbuttons with matching shapes',
-  [TypeTask.ORIENT_IDENT]: 'buttons or keys\n△  ▽  ◁   ▷  matching direction',
-  [TypeTask.ORIENT_COMPARE_REF]: 'buttons or keys\n△  same     ▽  different',
-  [TypeTask.SHAPE_COMPARE_REF]: 'buttons or keys\n△  same     ▽  different',
-  // [TypeTask.ORIENT_COMPARE_LR]: "buttons or keys\n▷  same     ◁  different",
-  // [TypeTask.SHAPE_COMPARE_LR]: "buttons or keys\n▷  same     ◁  different",
-  [TypeTask.ORIENT_COMPARE_LR]: 'buttons or keys\n△  same     ▽  different',
-  [TypeTask.SHAPE_COMPARE_LR]: 'buttons or keys\n△  same     ▽  different',
+  [TypeTask.SHAPE_IDENT]: "\nbuttons with matching shapes",
+  [TypeTask.ORIENT_IDENT]: "buttons or keys\n△  ▽  ◁   ▷  matching direction",
+  [TypeTask.ORIENT_COMPARE_REF]: "buttons or keys\n△  same     ▽  different",
+  [TypeTask.SHAPE_COMPARE_REF]: "buttons or keys\n△  same     ▽  different",
+  [TypeTask.ORIENT_COMPARE_LR]: "buttons or keys\n△  same     ▽  different",
+  [TypeTask.SHAPE_COMPARE_LR]: "buttons or keys\n△  same     ▽  different",
+};
+
+const BTN_RESP_IDENT_SHAPE = {
+  DIST_BOTTOM: 0.2, // % of screen height
+  HEIGHT: 0.1, // % of screen height
+  GAP: 0.2, // % of button size
+  SIZE_IMG: 0.6, // % of button size
+};
+
+const BTN_RESP_IDENT_ORIENT = {
+  DIST_TOP: 0.6, // % of screen height (top of top button)
+  HEIGHT: 0.1, // % of screen height
+  OFFSET_CENTER: 1.5, // % of button size (offet from center of the group)
+  GAP: 0.12, // % of button size
+  SIZE_IMG: 0.6, // % of button size
+};
+
+const BTN_RESP_COMPARE_HOR = {
+  HEIGHT: 0.125, // % of screen height
+  DIST_TOP: 0.65, // % of screen height (top of top button)
+  GAP: 0.03, // % of screen height
+};
+
+const BTN_RESP_COMPARE_VERT = {
+  WIDTH: 0.1, // % of screen width
+  MARGIN: 0.03, // % of screen width
 };
 
 export const metaparamsCrDef = {
@@ -139,40 +162,39 @@ export const metaparamsCrDef = {
   _same: TypeSame.RANDOM,
   same: undefined,
 
-  // typeOrient: TypeOrient.DIR,
-
-  // TODO: all of numbers should come from CONFIG!
-  // TODO: also - in defaults for CR as a fallback
-  durationFix: 1000, // 600 in RVP
-  durationGapStimRef: 250, // only for REF
-  durationTargPre: 0, //  - (2 * 1000 / 30),     // TODO: in config, SOA, negative for flankers appearing before
-  durationStim: 150, // 350 in RVP
-  durationGap: 2000, // 1200 in RVP
+  durationFix: CR.DURATION_FIX,
+  durationGapStimRef: CR.DURATION_GAP_STIM_REF, // only for REF
+  durationTargPre: CR.DURATION_TARG_PRE, // SOA negative for flankers appearing before target
+  durationStim: CR.DURATION_STIM,
+  durationGap: CR.DURATION_GAP,
   durationResp: CR.DURATION_RESP_TEST_MAX,
   durationRespWarnTimeout: CR.DURATION_RESP_WARN_TIMEOUT,
 
-  ratio: 0.3, // TODO: should be coordinated with QUEST
+  ratio: CR.RATIO, // IMPORTANT: coordinated with QUEST
+  subtypeTrial: SubtypeTrial.QUEST,
 
-  // TODO: copied from RVP
-  _sizeMarkFix: 0.5, // TODO: potentially put into config
+  _yShiftOrigin: 10,
+  _unitYShiftOrigin: UnitSize.PERCENT_HEIGHT,
+  yShiftOrigin: undefined,
+
+  _sizeMarkFix: CR.SIZE_MARK_FIX,
   _widthStrokeMarkFix: 0.05,
   _unitSizeMarkFix: UnitSize.DEG, // applies to all distance measurements for fixation
   sizeMarkFix: undefined,
   widthStrokeMarkFix: undefined,
 
-  // TODO: should be in config
   sizeStim: undefined,
-  _sizeStim: 0.75,
+  _sizeStim: CR.SIZE_STIM,
   _unitSizeStim: UnitSize.DEG,
 
   eccentTarg: undefined,
-  _eccentTarg: 6,
+  _eccentTarg: CR.ECCENT_TARG_DEG_DEF,
   _unitEccentTarg: UnitSize.DEG,
 
   showFlankHor: true,
   showFlankVert: true,
 
-  nameMarkFix: 'cross',
+  nameMarkFix: "cross",
   srcMarkFix: null,
 
   namesStim: null,
@@ -188,29 +210,29 @@ export const metaparamsCrDef = {
   indTargRef: undefined,
   indTargL: undefined,
   indTargR: undefined,
-  indsFlankL: undefined, // unlikely to be specified
-  indsFlankR: undefined, // unlikely to be specified
+  indsFlankL: undefined,
+  indsFlankR: undefined,
 
   // ORIENT
   anglesTarg: undefined,
   anglesFlank: undefined,
   indFlank: undefined,
   rotTarg: undefined,
-  rotsFlank: undefined, // unlikely to be specified
+  rotsFlank: undefined,
   rotTargRef: undefined,
   rotTargL: undefined,
   rotTargR: undefined,
-  rotsFlankL: undefined, // unlikely to be specified
-  rotsFlankR: undefined, // unlikely to be specified
+  rotsFlankL: undefined,
+  rotsFlankR: undefined,
 
   // DIST TARG FLANK
   ratioMax: undefined,
   ratioMin: undefined,
   distFlankMin: undefined, // in % of stimuli size
 
-  vdCm: 50, // TODO: set to predefined constant if not specified
-  widthScreenCm: null, // TODO: should be 30,  ALSO: should be a common constant for ROAV      // 30 cm is ~ 13.6 in; chromebooks are 11.6 or 13.3 in (?)
-  widthScreenPx: null, // important: keep undefined, important for correct composing // 1920
+  vdCm: CR.VD_CM,
+  widthScreenCm: null, // important: keep as null // 30 cm is ~ 13.6 in; chromebooks are 11.6 or 13.3 in (?)
+  widthScreenPx: null, // important: keep as null
 
   indC: undefined,
   rotC: undefined,
@@ -225,14 +247,14 @@ export const metaparamsCrDef = {
 export const infoCrDef = (tagReq) => ({
   tagReq: tagReq,
   stageAssessment: AssessmentStage.NONE,
-  nameCorpus: sessionGet(SK.NAME_CORPUS) ?? 'none',
-  nameBlock: 'none',
+  nameCorpus: sessionGet(SK.NAME_CORPUS) ?? "none",
+  nameBlock: "none",
   idTrial: undefined,
 
   evaluateValidity: true,
 
   showImgBg: false,
-  keyImgBg: ['', '', 'bg'],
+  keyImgBg: ["", "", "bg"],
 
   includeTrialResp: true,
 
@@ -243,13 +265,13 @@ export const infoCrDef = (tagReq) => ({
   animateBtnResp: false,
   disableBtnsRespNonTarg: false,
 
-  keyImgBtnSameVert: ['', '', 'button-same-vert'],
-  keyImgBtnDiffVert: ['', '', 'button-diff-vert'],
-  keyImgBtnSameHor: ['', '', 'button-same-hor-arrows'], // button-same-hor-2
-  keyImgBtnDiffHor: ['', '', 'button-diff-hor-arrows'], // button-diff-hor-2
+  keyImgBtnSameVert: ["", "", "button-same-vert"],
+  keyImgBtnDiffVert: ["", "", "button-diff-vert"],
+  keyImgBtnSameHor: ["", "", "button-same-hor-arrows"], // button-same-hor-2
+  keyImgBtnDiffHor: ["", "", "button-diff-hor-arrows"], // button-diff-hor-2
 
-  keyFeedbackToneCorrect: ['feedback-tone', '', 'correct', ModeGame.ALL],
-  keyFeedbackToneIncorrect: ['feedback-tone', '', 'incorrect', ModeGame.ALL],
+  keyFeedbackToneCorrect: ["feedback-tone", "", "correct", ModeGame.ALL],
+  keyFeedbackToneIncorrect: ["feedback-tone", "", "incorrect", ModeGame.ALL],
   playFeedbackTone: true,
 
   keyAudioFix: [tagTrial, tagReq, StageTrial.FIX],
@@ -266,12 +288,14 @@ export const infoCrDef = (tagReq) => ({
   modeGameTrial: ModeGame.ALL,
 
   // EYE-TRACKING related
-  showGaze: true, // TODO: should be false in production
+  showGaze: sessionGet(SK.SHOW_GAZE),
   showEyes: false,
   paramsDecor: null, // will be merged with defaults by ET layout
 
   saveSnapshotsResp: false,
   recordVideoResp: true,
+
+  debugEachTrial: false,
 });
 
 export const metaparamsToParams = (metaparams) => {
@@ -294,7 +318,10 @@ export const metaparamsToParams = (metaparams) => {
     params.same = params._same;
   }
 
-  if (params.typeTask === TypeTask.ORIENT_COMPARE_LR || params.typeTask === TypeTask.SHAPE_COMPARE_LR) {
+  if (
+    params.typeTask === TypeTask.ORIENT_COMPARE_LR ||
+    params.typeTask === TypeTask.SHAPE_COMPARE_LR
+  ) {
     params._sideTarg = TypeSide.BOTH;
     params.sideTarg = TypeSide.BOTH;
   } else {
@@ -306,12 +333,29 @@ export const metaparamsToParams = (metaparams) => {
     }
   }
 
+  const heightScreenPx = sessionGet(SK.HEIGHT_WINDOW_FS) ?? window.innerHeight;
+  switch (params._unitYShiftOrigin) {
+    case UnitSize.PX:
+      params.yShiftOrigin = -params._yShiftOrigin;
+      break;
+    case UnitSize.PERCENT_HEIGHT:
+      params.yShiftOrigin = -(params._yShiftOrigin / 100) * heightScreenPx;
+      break;
+    default:
+      params.yShiftOrigin = 0;
+  }
+
   switch (params._unitEccentTarg) {
     case UnitSize.PX:
       params.eccentTarg = params._eccentTarg;
       break;
     case UnitSize.DEG:
-      params.eccentTarg = degToPxFromWidth(params._eccentTarg, params.vdCm, params.widthScreenCm, params.widthScreenPx);
+      params.eccentTarg = degToPxFromWidth(
+        params._eccentTarg,
+        params.vdCm,
+        params.widthScreenCm,
+        params.widthScreenPx,
+      );
       break;
     default:
       params.sizeStim = undefined;
@@ -322,7 +366,12 @@ export const metaparamsToParams = (metaparams) => {
       params.sizeStim = params._sizeStim;
       break;
     case UnitSize.DEG:
-      params.sizeStim = degToPxFromWidth(params._sizeStim, params.vdCm, params.widthScreenCm, params.widthScreenPx);
+      params.sizeStim = degToPxFromWidth(
+        params._sizeStim,
+        params.vdCm,
+        params.widthScreenCm,
+        params.widthScreenPx,
+      );
       break;
     default:
       params.sizeStim = undefined;
@@ -437,8 +486,20 @@ const prepareStimInds = (params) => {
   params.indC = INDS_STIM.NONE;
   params.rotsL = [0, 0, 0, 0, 0];
   params.rotsR = [0, 0, 0, 0, 0];
-  params.indsL = [INDS_STIM.NONE, INDS_STIM.NONE, INDS_STIM.NONE, INDS_STIM.NONE, INDS_STIM.NONE];
-  params.indsR = [INDS_STIM.NONE, INDS_STIM.NONE, INDS_STIM.NONE, INDS_STIM.NONE, INDS_STIM.NONE];
+  params.indsL = [
+    INDS_STIM.NONE,
+    INDS_STIM.NONE,
+    INDS_STIM.NONE,
+    INDS_STIM.NONE,
+    INDS_STIM.NONE,
+  ];
+  params.indsR = [
+    INDS_STIM.NONE,
+    INDS_STIM.NONE,
+    INDS_STIM.NONE,
+    INDS_STIM.NONE,
+    INDS_STIM.NONE,
+  ];
 
   const numStim = params.namesStim.length;
 
@@ -451,7 +512,11 @@ const prepareStimInds = (params) => {
     } else {
       params.indsFlank ??= indsRandomNoRepeatExcl(4, numStim, [params.indTarg]);
     }
-    indsFlankFilter(params.indsFlank, params.showFlankHor, params.showFlankVert);
+    indsFlankFilter(
+      params.indsFlank,
+      params.showFlankHor,
+      params.showFlankVert,
+    );
     if (params.sideTarg === TypeSide.LEFT) {
       indsCombine(params.indTarg, params.indsFlank, params.indsL);
     } else if (params.sideTarg === TypeSide.RIGHT) {
@@ -470,9 +535,16 @@ const prepareStimInds = (params) => {
     if (params._sameFlank === true) {
       params.indsFlank ??= Array(4).fill(INDS_STIM.FLANK);
     } else {
-      params.indsFlank ??= indsRandomNoRepeatExcl(4, numStim, [params.indTarg, params.indRef]);
+      params.indsFlank ??= indsRandomNoRepeatExcl(4, numStim, [
+        params.indTarg,
+        params.indRef,
+      ]);
     }
-    indsFlankFilter(params.indsFlank, params.showFlankHor, params.showFlankVert);
+    indsFlankFilter(
+      params.indsFlank,
+      params.showFlankHor,
+      params.showFlankVert,
+    );
     if (params.sideTarg === TypeSide.LEFT) {
       indsCombine(params.indTarg, params.indsFlank, params.indsL);
     } else if (params.sideTarg === TypeSide.RIGHT) {
@@ -491,20 +563,45 @@ const prepareStimInds = (params) => {
     if (params._sameFlank === true) {
       params.indsFlankL ??= Array(4).fill(INDS_STIM.FLANK);
       params.indsFlankR ??= Array(4).fill(INDS_STIM.FLANK);
-      indsFlankFilter(params.indsFlankL, params.showFlankHor, params.showFlankVert);
-      indsFlankFilter(params.indsFlankR, params.showFlankHor, params.showFlankVert);
+      indsFlankFilter(
+        params.indsFlankL,
+        params.showFlankHor,
+        params.showFlankVert,
+      );
+      indsFlankFilter(
+        params.indsFlankR,
+        params.showFlankHor,
+        params.showFlankVert,
+      );
     } else {
       // eslint-disable-next-line no-lonely-if
       if (!params.indsFlankL || !params.indsFlankR) {
         if (params.showFlankHor && params.showFlankVert) {
-          params.indsFlankL = indsRandomNoRepeatExcl(4, numStim, [params.indTargL, params.indTargR]);
-          params.indsFlankR = indsRandomNoRepeatExcl(4, numStim, [params.indTargL, params.indTargR]);
-          indsFlankFilter(params.indsFlankL, params.showFlankHor, params.showFlankVert);
-          indsFlankFilter(params.indsFlankR, params.showFlankHor, params.showFlankVert);
+          params.indsFlankL = indsRandomNoRepeatExcl(4, numStim, [
+            params.indTargL,
+            params.indTargR,
+          ]);
+          params.indsFlankR = indsRandomNoRepeatExcl(4, numStim, [
+            params.indTargL,
+            params.indTargR,
+          ]);
+          indsFlankFilter(
+            params.indsFlankL,
+            params.showFlankHor,
+            params.showFlankVert,
+          );
+          indsFlankFilter(
+            params.indsFlankR,
+            params.showFlankHor,
+            params.showFlankVert,
+          );
         } else {
           params.indsFlankL = Array(4).fill(INDS_STIM.NONE);
           params.indsFlankR = Array(4).fill(INDS_STIM.NONE);
-          const indsFlank = indsRandomNoRepeatExcl(4, numStim, [params.indTargL, params.indTargR]);
+          const indsFlank = indsRandomNoRepeatExcl(4, numStim, [
+            params.indTargL,
+            params.indTargR,
+          ]);
           /* eslint-disable prefer-destructuring */
           if (params.showFlankHor) {
             params.indsFlankL[INDS_LOC.L] = indsFlank[0];
@@ -532,7 +629,13 @@ const prepareStimInds = (params) => {
     params.anglesFlank ??= [0, 90, 180, 270];
     params.indTarg ??= 0;
     params.indFlank ??= 1;
-    const indsLR = [params.indFlank, params.indFlank, params.indFlank, params.indFlank, params.indTarg];
+    const indsLR = [
+      params.indFlank,
+      params.indFlank,
+      params.indFlank,
+      params.indFlank,
+      params.indTarg,
+    ];
     indsFlankFilter(indsLR, params.showFlankHor, params.showFlankVert);
 
     if (params.typeTask === TypeTask.ORIENT_IDENT) {
@@ -574,7 +677,9 @@ const prepareStimInds = (params) => {
         if (params.same === TypeSame.SAME) {
           params.rotTargR = params.rotTargL;
         } else {
-          params.rotTargR = elemRandomExcl(params.anglesTarg, [params.rotTargL]);
+          params.rotTargR = elemRandomExcl(params.anglesTarg, [
+            params.rotTargL,
+          ]);
         }
       }
       params.rotsFlankL ??= elemsRandom(4, params.anglesFlank);
@@ -587,20 +692,22 @@ const prepareStimInds = (params) => {
     }
   }
 };
-/* eslint-enable no-param-reassign */
 
 /* eslint-disable no-param-reassign */
-// TODO: think about it!
 const prepareRatioMinMax = (params) => {
   params.distFlankMin ??= CR.DIST_FLANK_MIN;
-  params.ratioMin ??= (params.distFlankMin * params.sizeStim) / params.eccentTarg;
+  params.ratioMin ??=
+    (params.distFlankMin * params.sizeStim) / params.eccentTarg;
 
   if (!params.ratioMax) {
     if (!params.showFlankHor) {
       params.ratioMax = CR.RATIO_MAX_100;
       return;
     }
-    if (params.typeTask === TypeTask.SHAPE_COMPARE_REF || params.typeTask === TypeTask.ORIENT_COMPARE_REF) {
+    if (
+      params.typeTask === TypeTask.SHAPE_COMPARE_REF ||
+      params.typeTask === TypeTask.ORIENT_COMPARE_REF
+    ) {
       params.ratioMax = CR.RATIO_MAX_050;
       return;
     }
@@ -617,41 +724,21 @@ export const prepareParams = (metaparams) => {
   return params;
 };
 
-// TODO: temporary, for playground only
-/*
-const htmlInstrResp = (params, info, stageTrial) => {
-  if (stageTrial !== StageTrial.RESP) {
-    return "";
-  } 
-  const textInstrResp = `Response: ${mapTaskToInstrResp[params.typeTask]}`;
-  return `
-    <div style=" 
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 10vh;
-      white-space: pre;
-      border-bottom: 1px solid #ccc; 
-      padding-bottom: 10px; 
-      font-weight: bold;
-      background-color:white;
-      z-index: 10">
-      ${textInstrResp}
-    </div>`;
-}
-*/
-
 export const htmlStimFix = (params, info, stageTrial) => {
   const showStim =
-    stageTrial === StageTrial.STIM || stageTrial === StageTrial.STIM_PRE || stageTrial === StageTrial.PREVIEW;
+    stageTrial === StageTrial.STIM ||
+    stageTrial === StageTrial.STIM_PRE ||
+    stageTrial === StageTrial.PREVIEW;
   const showMarkFix = true;
 
-  const classMarkFix = info.animateMarkFix && stageTrial === StageTrial.FIX ? 'roav-cr-animation-mark-fix' : '';
+  const classMarkFix =
+    info.animateMarkFix && stageTrial === StageTrial.FIX
+      ? "roav-cr-animation-mark-fix"
+      : "";
 
-  const classStim = '';
-  let classStimTarg = '';
-  let classStimRef = '';
+  const classStim = "";
+  let classStimTarg = "";
+  let classStimRef = "";
 
   const tasksCompare = [
     TypeTask.SHAPE_COMPARE_LR,
@@ -660,28 +747,21 @@ export const htmlStimFix = (params, info, stageTrial) => {
     TypeTask.ORIENT_COMPARE_REF,
   ];
 
-  // TODO: decide whether we want an outline here
   if (showStim) {
     const isTaskCompare = tasksCompare.includes(params.typeTask);
     const classAnim = isTaskCompare
       ? `roav-cr-animation-stim-targ-outline-${params.same}`
       : `roav-cr-animation-stim-targ-outline`;
-    classStimTarg = info.animateStimTarg ? classAnim : '';
-    classStimRef = info.animateStimRef ? classAnim : '';
+    classStimTarg = info.animateStimTarg ? classAnim : "";
+    classStimRef = info.animateStimRef ? classAnim : "";
   }
 
-  // TODO: make magic number into constant - maybe dependent on typeTrial
-  // TODO: deal with preview!!! yOrigin = 0 for preview
-  const heightScreen = sessionGet(SK.HEIGHT_WINDOW_FS);
   let yShiftOrigin = 0;
-  if (
-    stageTrial !== StageTrial.PREVIEW
-    /* && params.typeTask !== TypeTask.SHAPE_IDENT */
-  ) {
-    yShiftOrigin = -0.1 * heightScreen;
+  if (stageTrial !== StageTrial.PREVIEW) {
+    yShiftOrigin = params.yShiftOrigin;
   }
 
-  let html = '';
+  let html = "";
   if (showStim && params.indC >= 0) {
     html += htmlImgSvgPositioned(
       showMarkFix,
@@ -713,7 +793,8 @@ export const htmlStimFix = (params, info, stageTrial) => {
   const disableStimPreLoc = (iLoc) => {
     return (
       stageTrial === StageTrial.STIM_PRE &&
-      ((params.durationTargPre < 0 && iLoc === INDS_LOC.M) || (params.durationTargPre > 0 && iLoc !== INDS_LOC.M))
+      ((params.durationTargPre < 0 && iLoc === INDS_LOC.M) ||
+        (params.durationTargPre > 0 && iLoc !== INDS_LOC.M))
     );
   };
 
@@ -721,8 +802,12 @@ export const htmlStimFix = (params, info, stageTrial) => {
     const indStim = params.indsR[iLoc];
 
     const disableStimPre = disableStimPreLoc(iLoc);
-    const showStimLoc = showStim && !disableStimPre && (indStim >= 0 || indStim === INDS_STIM.FLANK);
-    const srcStimLoc = indStim === INDS_STIM.FLANK ? params._srcFlank : params.srcsStim[indStim];
+    const showStimLoc =
+      showStim &&
+      !disableStimPre &&
+      (indStim >= 0 || indStim === INDS_STIM.FLANK);
+    const srcStimLoc =
+      indStim === INDS_STIM.FLANK ? params._srcFlank : params.srcsStim[indStim];
 
     html += htmlImgSvgPositioned(
       showStimLoc,
@@ -738,8 +823,12 @@ export const htmlStimFix = (params, info, stageTrial) => {
   for (let iLoc = 0; iLoc < 5; iLoc += 1) {
     const indStim = params.indsL[iLoc];
     const disableStimPre = disableStimPreLoc(iLoc);
-    const showStimLoc = showStim && !disableStimPre && (indStim >= 0 || indStim === INDS_STIM.FLANK);
-    const srcStimLoc = indStim === INDS_STIM.FLANK ? params._srcFlank : params.srcsStim[indStim];
+    const showStimLoc =
+      showStim &&
+      !disableStimPre &&
+      (indStim >= 0 || indStim === INDS_STIM.FLANK);
+    const srcStimLoc =
+      indStim === INDS_STIM.FLANK ? params._srcFlank : params.srcsStim[indStim];
 
     html += htmlImgSvgPositioned(
       showStimLoc,
@@ -759,31 +848,28 @@ export const htmlStimFix = (params, info, stageTrial) => {
     </div>  `;
 };
 
-const BTN_RESP_DIST_BOTTOM = 0.2; // in % of screen height
-const BTN_RESP_HEIGHT = 0.1; // in % of screen height
-const BTN_RESP_WIDTH_GAP = 0.2; // in % HEIGHT_BTN_RESP
-const SIZE_IMG_BTN = 0.6; // in % of the button size
-
 const htmlBtnsRespIdentShape = (params, info, stageTrial) => {
   if (params.typeTask !== TypeTask.SHAPE_IDENT) {
-    return '';
+    return "";
   }
   const numStim = params.namesStim.length;
 
   const widthScreen = sessionGet(SK.WIDTH_WINDOW_FS);
   const heightScreen = sessionGet(SK.HEIGHT_WINDOW_FS);
 
-  const sizeBtn = BTN_RESP_HEIGHT * heightScreen;
-  const gap = BTN_RESP_WIDTH_GAP * sizeBtn;
+  const sizeBtn = BTN_RESP_IDENT_SHAPE.HEIGHT * heightScreen;
+  const gap = BTN_RESP_IDENT_SHAPE.GAP * sizeBtn;
 
   const widthRespTotal = sizeBtn * numStim + gap * (numStim - 1);
 
   const showResp = stageTrial === StageTrial.RESP;
-  const classBtnNotTarg = '';
+  const classBtnNotTarg = "";
 
-  const classBtnTarg = info.animateBtnResp ? 'roav-cr-animation-button-resp' : '';
-  const classImgNotTarg = '';
-  const classImgTarg = '';
+  const classBtnTarg = info.animateBtnResp
+    ? "roav-cr-animation-button-resp"
+    : "";
+  const classImgNotTarg = "";
+  const classImgTarg = "";
 
   let html = ``;
   for (let iStim = 0; iStim < numStim; iStim += 1) {
@@ -797,15 +883,15 @@ const htmlBtnsRespIdentShape = (params, info, stageTrial) => {
         class="roav-cr-btn-resp ${classBtn}"
         id="resp-${iStim}"
         style="
-          visibility: ${showResp ? 'visible' : 'hidden'};
+          visibility: ${showResp ? "visible" : "hidden"};
           width: ${sizeBtn}px;
           height: ${sizeBtn}px;
         ">
         <img
           src="${params.srcsStim[iStim]}"
           class="roav-cr-img-btn-resp ${classImg}"
-          width=${sizeBtn * SIZE_IMG_BTN}
-          height=${sizeBtn * SIZE_IMG_BTN}
+          width=${sizeBtn * BTN_RESP_IDENT_SHAPE.SIZE_IMG}
+          height=${sizeBtn * BTN_RESP_IDENT_SHAPE.SIZE_IMG}
         />
       </button>
     `;
@@ -815,7 +901,7 @@ const htmlBtnsRespIdentShape = (params, info, stageTrial) => {
       class = "roav-cr-btns-resp-wrap"
       style="
         left: ${(widthScreen - widthRespTotal) / 2}px;
-        bottom: ${heightScreen * BTN_RESP_DIST_BOTTOM}px;
+        bottom: ${heightScreen * BTN_RESP_IDENT_SHAPE.DIST_BOTTOM}px;
         width: ${widthRespTotal}px;
         gap: ${gap}px;
       ">
@@ -826,21 +912,23 @@ const htmlBtnsRespIdentShape = (params, info, stageTrial) => {
 
 const htmlBtnsRespIdentOrient = (params, info, stageTrial) => {
   if (params.typeTask !== TypeTask.ORIENT_IDENT) {
-    return '';
+    return "";
   }
   const widthScreen = sessionGet(SK.WIDTH_WINDOW_FS);
   const heightScreen = sessionGet(SK.HEIGHT_WINDOW_FS);
 
-  const sizeBtn = BTN_RESP_HEIGHT * heightScreen;
-  // TODO: 0.55 is a magic number
-  const gap = 0.6 * BTN_RESP_WIDTH_GAP * sizeBtn;
+  const sizeBtn = BTN_RESP_IDENT_ORIENT.HEIGHT * heightScreen;
+
+  const gap = BTN_RESP_IDENT_ORIENT.GAP * sizeBtn;
 
   const showResp = stageTrial === StageTrial.RESP;
-  const classBtnNotTarg = '';
+  const classBtnNotTarg = "";
 
-  const classBtnTarg = info.animateBtnResp ? 'roav-cr-animation-button-resp' : '';
-  const classImgNotTarg = '';
-  const classImgTarg = '';
+  const classBtnTarg = info.animateBtnResp
+    ? "roav-cr-animation-button-resp"
+    : "";
+  const classImgNotTarg = "";
+  const classImgTarg = "";
 
   let html = ``;
 
@@ -848,13 +936,17 @@ const htmlBtnsRespIdentOrient = (params, info, stageTrial) => {
   const rots = mapIndLocToRot();
 
   const xMid = widthScreen / 2;
-  // TODO: 0.65 is a magic number - meaning that the top of the top button is at 0.65
-  const yMid = heightScreen * 0.6 + 1.5 * sizeBtn + gap;
+  const yMid =
+    BTN_RESP_IDENT_ORIENT.DIST_TOP * heightScreen +
+    BTN_RESP_IDENT_ORIENT.OFFSET_CENTER * sizeBtn +
+    gap;
   const step = sizeBtn + gap;
 
   for (let iLoc = 0; iLoc < 4; iLoc += 1) {
-    const classBtn = rots[iLoc] === params.rotTarg ? classBtnTarg : classBtnNotTarg;
-    const classImg = rots[iLoc] === params.rotTarg ? classImgTarg : classImgNotTarg;
+    const classBtn =
+      rots[iLoc] === params.rotTarg ? classBtnTarg : classBtnNotTarg;
+    const classImg =
+      rots[iLoc] === params.rotTarg ? classImgTarg : classImgNotTarg;
 
     html += `
       <button
@@ -864,7 +956,7 @@ const htmlBtnsRespIdentOrient = (params, info, stageTrial) => {
         id="resp-${rots[iLoc]}"
         style="
           position: absolute;
-          visibility: ${showResp ? 'visible' : 'hidden'};
+          visibility: ${showResp ? "visible" : "hidden"};
           left: ${xMid + offsets[iLoc][0] * step - sizeBtn / 2}px;
           top: ${yMid + offsets[iLoc][1] * step - sizeBtn / 2}px;
           width: ${sizeBtn}px;
@@ -873,8 +965,8 @@ const htmlBtnsRespIdentOrient = (params, info, stageTrial) => {
         <img
           src="${params.srcsStim[params.indTarg]}"
           class="roav-cr-img-btn-resp ${classImg}"
-          width=${sizeBtn * SIZE_IMG_BTN}
-          height=${sizeBtn * SIZE_IMG_BTN}
+          width=${sizeBtn * BTN_RESP_IDENT_ORIENT.SIZE_IMG}
+          height=${sizeBtn * BTN_RESP_IDENT_ORIENT.SIZE_IMG}
           style="transform: rotate(${rots[iLoc]}deg);"          
         />
       </button>
@@ -883,24 +975,21 @@ const htmlBtnsRespIdentOrient = (params, info, stageTrial) => {
   return `<div style="position: absolute; inset: 0;">${html}</div>`;
 };
 
-// TODO: if REF is selected, add gap between fixation and reference trial, so that reference is not obscured
 const htmlBtnsRespCompareHor = (params, info, stageTrial) => {
   const showResp = stageTrial === StageTrial.RESP;
-  // const widthScreen = sessionGet(SK.WIDTH_WINDOW_FS);
   const heightScreen = sessionGet(SK.HEIGHT_WINDOW_FS);
 
-  // TODO: make magic numbers into constants
-  const heightBtn = 0.125 * heightScreen;
-  const topBtnSame = 0.65 * heightScreen;
-  const gap = 0.03 * heightScreen;
+  const heightBtn = BTN_RESP_COMPARE_HOR.HEIGHT * heightScreen;
+  const topBtnSame = BTN_RESP_COMPARE_HOR.DIST_TOP * heightScreen;
+  const gap = BTN_RESP_COMPARE_HOR.GAP * heightScreen;
   const topBtnDiff = topBtnSame + heightBtn + gap;
 
   const srcSame = mediaAssets.images[info.keyImgBtnSameHor];
   const srcDiff = mediaAssets.images[info.keyImgBtnDiffHor];
-  const htmlVis = `visibility: ${showResp ? 'visible' : 'hidden'};`;
+  const htmlVis = `visibility: ${showResp ? "visible" : "hidden"};`;
 
   const htmlBtnRespCompareRef = (typeSame) => {
-    let htmlPos = '';
+    let htmlPos = "";
     let src = null;
     if (typeSame === TypeSame.SAME) {
       htmlPos = `top: ${topBtnSame}px`;
@@ -911,7 +1000,9 @@ const htmlBtnsRespCompareHor = (params, info, stageTrial) => {
     }
 
     const classBtnResp =
-      info.animateBtnResp && showResp && typeSame === params.same ? `roav-cr-animation-button-resp-${params.same}` : '';
+      info.animateBtnResp && showResp && typeSame === params.same
+        ? `roav-cr-animation-button-resp-${params.same}`
+        : "";
 
     return `
       <button type="button" class="roav-cr-btn-resp-compare-tb ${classBtnResp}" 
@@ -927,7 +1018,7 @@ const htmlBtnsRespCompareHor = (params, info, stageTrial) => {
     </button>`;
   };
 
-  let html = '';
+  let html = "";
   html += htmlBtnRespCompareRef(TypeSame.SAME);
   html += htmlBtnRespCompareRef(TypeSame.DIFF);
   return html;
@@ -937,18 +1028,16 @@ const htmlBtnsRespCompareHor = (params, info, stageTrial) => {
 const htmlBtnsRespCompareVert = (params, info, stageTrial) => {
   const showResp = stageTrial === StageTrial.RESP;
   const widthScreen = sessionGet(SK.WIDTH_WINDOW_FS);
-  // const heightScreen = sessionGet(SK.HEIGHT_WINDOW_FS);
 
-  // TODO: make magic numbers into constants
-  const widthBtn = 0.1 * widthScreen;
-  const widthMarginHor = 0.03 * widthScreen;
+  const widthBtn = BTN_RESP_COMPARE_VERT.WIDTH * widthScreen;
+  const widthMarginHor = BTN_RESP_COMPARE_VERT.MARGIN * widthScreen;
 
   const srcSame = mediaAssets.images[info.keyImgBtnSameVert];
   const srcDiff = mediaAssets.images[info.keyImgBtnDiffVert];
-  const htmlVis = `visibility: ${showResp ? 'visible' : 'hidden'};`;
+  const htmlVis = `visibility: ${showResp ? "visible" : "hidden"};`;
 
   const htmlBtnRespCompareLR = (typeSame) => {
-    let htmlPos = '';
+    let htmlPos = "";
     let src = null;
     if (typeSame === TypeSame.DIFF) {
       htmlPos = `left: ${widthMarginHor}px`;
@@ -972,7 +1061,7 @@ const htmlBtnsRespCompareVert = (params, info, stageTrial) => {
     </button>`;
   };
 
-  let html = '';
+  let html = "";
   html += htmlBtnRespCompareLR(TypeSame.SAME);
   html += htmlBtnRespCompareLR(TypeSame.DIFF);
   return html;
@@ -988,21 +1077,6 @@ const htmlBtnsResp = (params, info, stageTrial) => {
   return params.btnsRespCompareHor
     ? htmlBtnsRespCompareHor(params, info, stageTrial)
     : htmlBtnsRespCompareVert(params, info, stageTrial);
-  /*
-  if (
-    params.typeTask === TypeTask.SHAPE_COMPARE_LR ||
-    params.typeTask === TypeTask.ORIENT_COMPARE_LR
-  ) {
-    return htmlBtnsRespCompareHor(params, info, stageTrial);
-  }
-  if (
-    params.typeTask === TypeTask.SHAPE_COMPARE_REF ||
-    params.typeTask === TypeTask.ORIENT_COMPARE_REF
-  ) {
-    return htmlBtnsRespCompareHor(params, info, stageTrial);
-  }
-  return "";
-  */
 };
 
 const calcIndTrialTestAbs = (params, info) => {
@@ -1026,15 +1100,16 @@ const calcNumTrialTestTotal = () => {
 
 const htmlProgressBar = (params, info) => {
   if (!info.showProgressBar) {
-    return '';
+    return "";
   }
   if (info.stageAssessment !== AssessmentStage.TEST) {
-    return '';
+    return "";
   }
 
   const indTrialTestAbs = calcIndTrialTestAbs(params, info);
   const numTrialTestTotal = calcNumTrialTestTotal();
-  const percentComplete = (100 * Math.max(indTrialTestAbs, 0)) / numTrialTestTotal;
+  const percentComplete =
+    (100 * Math.max(indTrialTestAbs, 0)) / numTrialTestTotal;
 
   return `
     <div class="roav-progress-bar-wrap">
@@ -1047,7 +1122,7 @@ const htmlProgressBar = (params, info) => {
 
 const htmlLog = (showLog) => {
   if (!showLog) {
-    return '';
+    return "";
   }
   return `
     <div id="id-log" style="
@@ -1071,8 +1146,7 @@ const htmlLayout = (params, info, stageTrial) => {
   const widthFS = sessionGet(SK.WIDTH_WINDOW_FS);
   const heightFS = sessionGet(SK.HEIGHT_WINDOW_FS);
 
-  // TODO: temporary
-  const htmlInstrRespCur = ''; // htmlInstrResp(params, info, stageTrial);
+  const htmlInstrRespCur = ""; // for dev
 
   const html = `
       ${htmlInstrRespCur}
@@ -1108,8 +1182,14 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
 
   let valResp = null;
 
+  let timeFixStart = -1;
+  let timeFixEnd = -1;
+  let timeStimStart = -1;
+  let timeStimEnd = -1;
+
   let timeRespStart = -1;
   let timeRespEnd = -1;
+  let modeInput = ModeInput.NONE;
 
   let helperOrient = null;
   let helperFullscreenConditional = null;
@@ -1117,34 +1197,27 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
 
   let timeoutWarnTimeout = null;
 
+  // for dev
+  let correctDebug = null;
+  let resizeDetectedDebug = false;
+  let rotationDetectedDebug = false;
+
   const trialEtStart = () => ({
     type: jsPsychCallFunction,
     func: () => {
-      et_stateResetSnapshots();
-      const configEt = sessionGet(SK.CONFIG_ET);
-      state.collectSnapshots = configEt.collectSnapshotsCr;
-      state.paramsSnapshot = {
-        ...et_paramsSnapsotDef,
-        ...configEt.paramsSnapshotCr,
-      };
-
-      et_videoStart();
       et_etCreateLayout({
         showGaze: info.showGaze,
         showEyes: info.showEyes,
         paramsDecor: info.paramsDecor,
       });
 
-      const typeModel = configEt.typeModelCr;
-      if (typeModel === et_TypeModel.NONE) {
-        et_etInit(et_def_onResultsFaceMesh, null);
-      } else if (typeModel === et_TypeModel.AT_CROPS_BBS) {
-        et_etInit();
-      } else {
-        // eslint-disable-next-line no-console
-        console.log(`Undefined eye-tracking model: ${typeModel}`);
-      }
-      et_etStart();
+      const configEt = sessionGet(SK.CONFIG_ET);
+      const collectSnapshots =
+        configEt.saveSnapshotsCrDb || configEt.saveSnapshotsCrUpload;
+      const paramsSnapshots = configEt.paramsSnapshotCr;
+      const paramsEt = configEt.paramsEtCr;
+
+      et_etSetupInitStartSimple(paramsEt, collectSnapshots, paramsSnapshots);
     },
   });
 
@@ -1156,29 +1229,15 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
     },
   });
 
-  /*
-  const trialEtStop = () => ({
-  type: jsPsychCallFunction,
-  async: true,
-  func: async (done) => {
-    et_etStop();
-    et_etRemoveLayout();
-    await et_videoRecordStop();
-    if (sessionGet(SK.VIDEO_RECORD)) {
-      await et_videoRecordSave(`cr-${info.idTrial}_${state.timeStartVideoRecord}.webm`);
-    }
-    done();
-  },
-  });
-*/
-
   const questPreTrial = () => {
-    if (Object.keys(quest).length === 0) {
+    if (
+      Object.keys(quest).length === 0 ||
+      params.subtypeTrial !== SubtypeTrial.QUEST
+    ) {
       return;
     }
 
     if (info.stageAssessment === AssessmentStage.TEST) {
-      // TODO: do we want to save alerts? Like in MP
       quest.clearAlerts();
       if (!quest.isQuestTrialFirst) {
         const intensityNew = quest.quantile(0.5);
@@ -1198,7 +1257,10 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
   };
 
   const questPostTrial = (correct) => {
-    if (Object.keys(quest).length === 0) {
+    if (
+      Object.keys(quest).length === 0 ||
+      params.subtypeTrial !== SubtypeTrial.QUEST
+    ) {
       return;
     }
     if (helperOrient?.rotationDetected()) {
@@ -1211,17 +1273,25 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
     }
   };
 
-  const screenSetupOnLoadDef = (keyTrialEnd, trackResize = false) => {
+  const createScreenHelpers = (keyTrialEnd) => {
     const onScreenChange = () => {
+      et_etRemoveDecor();
       jsPsych.pluginAPI.pressKey(keyTrialEnd);
     };
+
     helperOrient = createHelperOrientation(onScreenChange);
     helperOrient.startEventListeners();
 
-    if (trackResize) {
-      helperFullscreenConditional = createHelperFullscreenConditional(onScreenChange);
-      helperFullscreenConditional.startEventListeners();
-    }
+    helperFullscreenConditional =
+      createHelperFullscreenConditional(onScreenChange);
+    helperFullscreenConditional.startEventListeners();
+  };
+
+  const removeScreenHelpers = () => {
+    helperOrient?.removeEventListeners();
+    helperFullscreenConditional?.removeEventListeners();
+    helperOrient = null;
+    helperFullscreenConditional = null;
   };
 
   const trialPrepareAll = () => ({
@@ -1236,8 +1306,8 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
   });
 
   const writeLog = () => {
-    const log = 'LOG';
-    const elLog = document.getElementById('id-log');
+    const log = "LOG";
+    const elLog = document.getElementById("id-log");
     if (elLog) {
       elLog.innerText = log;
     }
@@ -1249,11 +1319,12 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
       timeoutWarnTimeout = null;
     }
     if (info.showWarnTimeout && !info.showImgBg) {
-      const elStimRespWrap = document.getElementById('id-stim-resp-wrap');
-      const timeStartWarnTimeout = params.durationResp - params.durationRespWarnTimeout;
+      const elStimRespWrap = document.getElementById("id-stim-resp-wrap");
+      const timeStartWarnTimeout =
+        params.durationResp - params.durationRespWarnTimeout;
       if (elStimRespWrap && timeStartWarnTimeout > 0) {
         timeoutWarnTimeout = window.setTimeout(() => {
-          elStimRespWrap.classList.add('roav-cr-warn-timeout');
+          elStimRespWrap.classList.add("roav-cr-warn-timeout");
         }, timeStartWarnTimeout);
       }
     }
@@ -1264,25 +1335,29 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
       window.clearTimeout(timeoutWarnTimeout);
       timeoutWarnTimeout = null;
     }
-    const elStimRespWrap = document.getElementById('id-stim-resp-wrap');
+    const elStimRespWrap = document.getElementById("id-stim-resp-wrap");
     if (elStimRespWrap) {
-      elStimRespWrap.classList.remove('roav-cr-warn-timeout');
+      elStimRespWrap.classList.remove("roav-cr-warn-timeout");
     }
   };
 
   const saveSummaryPostTrial = (correctCur, valRespCur, rtCur) => {
-    if (Object.keys(quest).length !== 0 && summary && typeof summary.addInfo === 'function') {
+    if (
+      Object.keys(quest).length !== 0 &&
+      summary &&
+      typeof summary.addInfo === "function"
+    ) {
       const quest_updated = true;
       const quest_int_sd = quest ? quest.sd() : 0;
       const quest_int_quantile = quest ? quest.quantile() : 0;
       const quest_int_mean = quest ? quest.mean() : 0;
 
       const infoSummary = {
-        type_trial: 'cr-trial',
+        type_trial: "cr-trial",
         correct: correctCur,
         response: valRespCur,
         rt: rtCur,
-        subtype_trial: 'quest',
+        subtype_trial: params.subtypeTrial,
         quest: {
           int_quantile: quest_int_quantile,
           int_mean: quest_int_mean,
@@ -1292,59 +1367,65 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
           val_quantile: 10 ** quest_int_quantile / 100.0,
           val_low: 10 ** (quest_int_mean - quest_int_sd) / 100.0,
           val_high: 10 ** (quest_int_mean + quest_int_sd) / 100.0,
-          updated: quest_updated, // TODO: what is meaning / use of updated
+          updated: quest_updated,
         },
       };
       summary.addInfo(infoSummary);
     }
   };
 
-  // TODO: check for rotation?????????????
   // eslint-disable-next-line arrow-body-style
   const trialFix = () => {
     return {
       type: jsPsychAudioMultiResponse,
-      trial_duration: () => (hasAudio(info.keyAudioFix) ? DURATIONS.WAIT_FOR_RESPONSE : params.durationFix),
-      stimulus: () => mediaAssets.audio[info.keyAudioFix] ?? mediaAssets.audio.roavMpNullAudioAll,
+      trial_duration: () =>
+        hasAudio(info.keyAudioFix)
+          ? DURATIONS.WAIT_FOR_RESPONSE
+          : params.durationFix,
+      stimulus: () =>
+        mediaAssets.audio[info.keyAudioFix] ??
+        mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.FIX),
       response_ends_trial: true,
       trial_ends_after_audio: () => hasAudio(info.keyAudioFix),
       keyboard_choices: () => [TypeKey.DUMMY],
-      button_choices: () => [''],
-      button_html: () => '',
+      button_choices: () => [""],
+      button_html: () => "",
       on_load: () => {
-        screenSetupOnLoadDef(TypeKey.DUMMY);
         if (info.showLog) {
           writeLog();
         }
+        timeFixStart = Date.now();
       },
       on_finish: () => {
-        helperOrient.removeEventListeners();
+        timeFixEnd = Date.now();
+        // helperOrient.removeEventListeners();                   // @new
+        // helperFullscreenConditional?.removeEventListeners();   // @new
       },
     };
   };
 
-  // TODO: check for rotation?????????????
   // eslint-disable-next-line arrow-body-style
   const trialGapStimRef = () => {
     return {
       type: jsPsychAudioMultiResponse,
       trial_duration: () => params.durationGapStimRef,
       stimulus: () => mediaAssets.audio.roavMpNullAudioAll,
-      prompt: () => '',
+      prompt: () => "",
       response_ends_trial: true,
       trial_ends_after_audio: () => false,
       keyboard_choices: () => [TypeKey.DUMMY],
-      button_choices: () => [''],
-      button_html: () => '',
+      button_choices: () => [""],
+      button_html: () => "",
       on_load: () => {
-        screenSetupOnLoadDef(TypeKey.DUMMY);
+        // screenSetupOnLoadDef(TypeKey.DUMMY, true);  // @new
         if (info.showLog) {
           writeLog();
         }
       },
       on_finish: () => {
-        helperOrient.removeEventListeners();
+        // helperOrient.removeEventListeners();                   // @new
+        // helperFullscreenConditional?.removeEventListeners();   // @new
       },
     };
   };
@@ -1359,16 +1440,17 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
       response_ends_trial: true,
       trial_ends_after_audio: () => false,
       keyboard_choices: () => [TypeKey.DUMMY],
-      button_choices: () => [''],
-      button_html: () => '',
+      button_choices: () => [""],
+      button_html: () => "",
       on_load: () => {
-        screenSetupOnLoadDef(TypeKey.DUMMY);
+        // screenSetupOnLoadDef(TypeKey.DUMMY, true);  // @new
         if (info.showLog) {
           writeLog();
         }
       },
       on_finish: () => {
-        helperOrient.removeEventListeners();
+        // helperOrient.removeEventListeners();                   // @new
+        // helperFullscreenConditional?.removeEventListeners();   // @new
       },
     };
   };
@@ -1377,53 +1459,75 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
   const trialStim = () => {
     return {
       type: jsPsychAudioMultiResponse,
-      trial_duration: () => (hasAudio(info.keyAudioStim) ? DURATIONS.WAIT_FOR_RESPONSE : params.durationStim),
-      stimulus: () => mediaAssets.audio[info.keyAudioStim] ?? mediaAssets.audio.roavMpNullAudioAll,
+      trial_duration: () =>
+        hasAudio(info.keyAudioStim)
+          ? DURATIONS.WAIT_FOR_RESPONSE
+          : params.durationStim,
+      stimulus: () =>
+        mediaAssets.audio[info.keyAudioStim] ??
+        mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.STIM),
       response_ends_trial: true,
       trial_ends_after_audio: () => hasAudio(info.keyAudioStim),
       keyboard_choices: () => [TypeKey.DUMMY],
-      button_choices: () => [''],
-      button_html: () => '',
+      button_choices: () => [""],
+      button_html: () => "",
       on_load: () => {
-        screenSetupOnLoadDef(TypeKey.DUMMY);
+        // screenSetupOnLoadDef(TypeKey.DUMMY, true);  // @new
         if (info.showLog) {
           writeLog();
         }
+        timeStimStart = Date.now();
       },
       on_finish: () => {
-        helperOrient.removeEventListeners();
+        timeStimEnd = Date.now();
+        // helperOrient.removeEventListeners();                   // @new
+        // helperFullscreenConditional?.removeEventListeners();   // @new
       },
     };
   };
 
   // eslint-disable-next-line arrow-body-style
   const trialResp = () => {
+    const keybordChoices = () => {
+      if (params.typeTask === TypeTask.SHAPE_IDENT) {
+        return [TypeKey.DUMMY];
+      }
+      if (params.typeTask === TypeTask.ORIENT_IDENT) {
+        return [
+          TypeKey.ARROW_LEFT,
+          TypeKey.ARROW_RIGHT,
+          TypeKey.ARROW_UP,
+          TypeKey.ARROW_DOWN,
+          TypeKey.DUMMY,
+        ];
+      }
+      const keySame = params.btnsRespCompareHor
+        ? TypeKey.ARROW_UP
+        : TypeKey.ARROW_RIGHT;
+      const keyDiff = params.btnsRespCompareHor
+        ? TypeKey.ARROW_DOWN
+        : TypeKey.ARROW_LEFT;
+      if (!info.disableBtnsRespNonTarg) {
+        return [keySame, keyDiff, TypeKey.DUMMY];
+      }
+      return params.same === TypeSame.SAME
+        ? [keySame, TypeKey.DUMMY]
+        : [keyDiff, TypeKey.DUMMY];
+    };
+
     return {
       type: jsPsychAudioMultiResponse,
-      // TODO: check why trial_duration is different than others
       trial_duration: () => params.durationResp,
-      stimulus: () => mediaAssets.audio[info.keyAudioResp] ?? mediaAssets.audio.roavMpNullAudioAll,
+      stimulus: () =>
+        mediaAssets.audio[info.keyAudioResp] ??
+        mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.RESP),
       response_ends_trial: true,
       trial_ends_after_audio: () => false,
-      keyboard_choices: () => {
-        if (params.typeTask === TypeTask.SHAPE_IDENT) {
-          return [TypeKey.DUMMY];
-        }
-        if (params.typeTask === TypeTask.ORIENT_IDENT) {
-          return ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-        }
-        // if (
-        //   params.typeTask === TypeTask.SHAPE_COMPARE_LR ||
-        //   params.typeTask === TypeTask.ORIENT_COMPARE_LR
-        // ) {
-        //   return ["ArrowLeft", "ArrowRight"];
-        // }
-        return ['ArrowUp', 'ArrowDown'];
-      },
-      button_choices: () => [''],
-      button_html: () => '',
+      keyboard_choices: () => keybordChoices(),
+      button_choices: () => [""],
+      button_html: () => "",
       on_load: () => {
         if (
           !info.includeTrialResp ||
@@ -1436,19 +1540,19 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
         }
         timeRespStart = performance.now();
 
-        // TODO: move to a separate function
         if (params.typeTask === TypeTask.SHAPE_IDENT) {
           const numStim = params.namesStim.length;
           for (let iStim = 0; iStim < numStim; iStim += 1) {
             if (!info.disableBtnsRespNonTarg || iStim === params.indTarg) {
               const btn = document.getElementById(`resp-${iStim}`);
-              btn.addEventListener('pointerdown', (e) => {
+              // eslint-disable-next-line no-loop-func
+              btn.addEventListener("pointerdown", (e) => {
                 updateModeInputInfoOnPointerEvent(e.pointerType);
+                modeInput = sessionGet(SK.MODE_INPUT_LAST);
               });
               // eslint-disable-next-line no-loop-func
-              btn.addEventListener('click', () => {
+              btn.addEventListener("click", () => {
                 if (valResp !== null) {
-                  // TODOD: see how valResp is initialized
                   return;
                 }
                 timeRespEnd = performance.now();
@@ -1462,30 +1566,35 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
           const keys = mapIndLocToKey();
           for (let iLoc = 0; iLoc < 4; iLoc += 1) {
             const btn = document.getElementById(`resp-${rots[iLoc]}`);
-            btn.addEventListener('pointerdown', (e) => {
+            // eslint-disable-next-line no-loop-func
+            btn.addEventListener("pointerdown", (e) => {
               updateModeInputInfoOnPointerEvent(e.pointerType);
+              modeInput = sessionGet(SK.MODE_INPUT_LAST);
             });
-            btn.addEventListener('click', () => {
+            // eslint-disable-next-line no-loop-func
+            btn.addEventListener("click", () => {
               jsPsych.pluginAPI.pressKey(keys[iLoc]);
             });
           }
         } else {
           const setCallbacksBtnsSameDiff = (keySame, keyDiff) => {
             const btnSame = document.getElementById(`resp-${TypeSame.SAME}`);
-            btnSame.addEventListener('pointerdown', (e) => {
+            btnSame.addEventListener("pointerdown", (e) => {
               updateModeInputInfoOnPointerEvent(e.pointerType);
+              modeInput = sessionGet(SK.MODE_INPUT_LAST);
             });
             if (!info.disableBtnsRespNonTarg || params.same === TypeSame.SAME) {
-              btnSame.addEventListener('click', () => {
+              btnSame.addEventListener("click", () => {
                 jsPsych.pluginAPI.pressKey(keySame);
               });
             }
             const btnDiff = document.getElementById(`resp-${TypeSame.DIFF}`);
-            btnDiff.addEventListener('pointerdown', (e) => {
+            btnDiff.addEventListener("pointerdown", (e) => {
               updateModeInputInfoOnPointerEvent(e.pointerType);
+              modeInput = sessionGet(SK.MODE_INPUT_LAST);
             });
             if (!info.disableBtnsRespNonTarg || params.same === TypeSame.DIFF) {
-              btnDiff.addEventListener('click', () => {
+              btnDiff.addEventListener("click", () => {
                 jsPsych.pluginAPI.pressKey(keyDiff);
               });
             }
@@ -1497,7 +1606,21 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
           }
         }
 
-        screenSetupOnLoadDef(TypeKey.DUMMY, true);
+        const keysValid = keybordChoices();
+        const onKeyDown = (e) => {
+          if (keysValid.includes(e.key)) {
+            if (timeRespEnd < 0) {
+              timeRespEnd = performance.now();
+            }
+            if (modeInput === ModeInput.NONE) {
+              modeInput = ModeInput.KEYBOARD;
+            }
+            document.removeEventListener("keydown", onKeyDown, true);
+          }
+        };
+        document.addEventListener("keydown", onKeyDown, true);
+
+        // screenSetupOnLoadDef(TypeKey.DUMMY, true);
         resetModeInputLast();
         helperMouseMoveRecord.startRecord();
 
@@ -1510,26 +1633,29 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
         clearWarnTimeout();
         const rotationDetected = helperOrient?.rotationDetected();
         const resizeDetected = helperFullscreenConditional?.resizeDetected();
-        helperOrient?.removeEventListeners();
-        helperFullscreenConditional?.removeEventListeners();
-
-        // alert(JSON.stringify(data));
-
-        if (params.typeTask !== TypeTask.SHAPE_IDENT && data.keyboard_response) {
+        // helperOrient?.removeEventListeners();                  // @new
+        // helperFullscreenConditional?.removeEventListeners();   // @new
+        if (
+          params.typeTask !== TypeTask.SHAPE_IDENT &&
+          data.keyboard_response
+        ) {
           valResp = data.keyboard_response;
         }
 
-        const timeOut = valResp === null && !rotationDetected && !resizeDetected;
+        const timeOut =
+          valResp === null && !rotationDetected && !resizeDetected;
         let rt;
         if (rotationDetected || resizeDetected) {
           rt = -1;
-        } else if (params.typeTask === TypeTask.SHAPE_IDENT) {
-          rt = timeRespStart > 0 && timeRespEnd > 0 ? timeRespEnd - timeRespStart : -1;
         } else {
-          rt = data.rt;
+          rt =
+            timeRespStart > 0 && timeRespEnd > 0
+              ? timeRespEnd - timeRespStart
+              : -1;
         }
 
         let correct = !timeOut && !rotationDetected && !resizeDetected;
+
         if (correct) {
           if (params.typeTask === TypeTask.SHAPE_IDENT) {
             correct = valResp === params.indTarg;
@@ -1538,13 +1664,24 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
             const keys = mapIndLocToKey();
             const keyResp = valResp;
             const iLocCorr = rots.indexOf(params.rotTarg);
-            correct = iLocCorr >= 0 && keyResp.toLowerCase() === keys[iLocCorr].toLowerCase();
-          } else {
             correct =
-              (params.same === TypeSame.SAME && valResp.toLowerCase() === TypeKey.ARROW_UP.toLowerCase()) ||
-              (params.same === TypeSame.DIFF && valResp.toLowerCase() === TypeKey.ARROW_DOWN.toLowerCase());
+              iLocCorr >= 0 &&
+              keyResp.toLowerCase() === keys[iLocCorr].toLowerCase();
+          } else {
+            // correct handling of vertical response buttons
+            const keySame = params.btnsRespCompareHor
+              ? TypeKey.ARROW_UP
+              : TypeKey.ARROW_RIGHT;
+            const keyDiff = params.btnsRespCompareHor
+              ? TypeKey.ARROW_DOWN
+              : TypeKey.ARROW_LEFT;
+            correct =
+              (params.same === TypeSame.SAME &&
+                valResp.toLowerCase() === keySame.toLowerCase()) ||
+              (params.same === TypeSame.DIFF &&
+                valResp.toLowerCase() === keyDiff.toLowerCase());
           }
-
+          // DO NOT DELETE - currently not supported variants of the task
           // else if (
           //   params.typeTask === TypeTask.SHAPE_COMPARE_LR ||
           //   params.typeTask === TypeTask.ORIENT_COMPARE_LR
@@ -1573,6 +1710,12 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
         data.response = valResp;
         data.rt = rt;
         /* eslint-enable no-param-reassign */
+
+        // for dev
+        correctDebug = correct;
+        resizeDetectedDebug = resizeDetected;
+        rotationDetectedDebug = rotationDetected;
+
         helperMouseMoveRecord.stopRecord();
 
         sessionSet(SK.DATA_CORRECT, data.correct);
@@ -1583,29 +1726,33 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
           }
         }
 
+        sessionSet(SK.MODE_INPUT_LAST, modeInput);
+
         const validityEvaluator = getValidityEvaluator();
         if (validityEvaluator && info.evaluateValidity) {
           const rtEvaluator = data.rt;
           if (data.rt > 0) {
-            validityEvaluator.addResponseData(rtEvaluator, data.response ?? '', correct ? 1 : 0);
+            validityEvaluator.addResponseData(
+              rtEvaluator,
+              data.response ?? "",
+              correct ? 1 : 0,
+            );
           }
         }
 
-        // TODO: what is quest_updated?????
-        // It is as in t_rdk, but it is NOT updated if not TEST for example...
-        // not sure what it is
         const questInitialized = Object.keys(quest).length !== 0;
         const quest_updated = true;
         const quest_int_sd = questInitialized ? quest.sd() : 0;
         const quest_int_quantile = questInitialized ? quest.quantile() : 0;
         const quest_int_mean = questInitialized ? quest.mean() : 0;
 
-        // TODO: saveSummary... is TEMPORARY AND duplicates quest calculations
-        saveSummaryPostTrial(correct, valResp, data.rt);
+        if (sessionGet(SK.DEBUG)) {
+          saveSummaryPostTrial(correct, valResp, data.rt);
+        }
         questPostTrial(correct);
 
-        const paramsSave = { ...params }; // save space in db; params are saved as config
-        paramsSave.srcMarkFix = '';
+        const paramsSave = { ...params };
+        paramsSave.srcMarkFix = "";
         paramsSave.srcsStim = [];
 
         jsPsych.data.addDataToLastTrial({
@@ -1615,6 +1762,7 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
           mode_game: sessionGet(SK.MODE_GAME),
           assessment_stage: `${info.stageAssessment}_response`,
           type_trial: tagTrial,
+          subtype_trial: params.subtypeTrial,
           id_trial: info.idTrial,
           ind_trial_block: sessionGet(SK.IND_TRIAL),
           ind_trial_global: sessionGet(SK.IND_TRIAL_GLOBAL),
@@ -1630,17 +1778,22 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
           cnt_corr_block: sessionGet(SK.CNT_CORR),
           cnt_corr_global: sessionGet(SK.CNT_CORR_GLOBAL),
           num_stim: params.namesStim.length,
-          mode_input: sessionGet(SK.MODE_INPUT_LAST),
+          mode_input: modeInput,
           times_pointer_move: helperMouseMoveRecord?.timesPointerMove(),
-          time_pointer_move_first: helperMouseMoveRecord?.timePointerMoveFirst(),
+          time_pointer_move_first:
+            helperMouseMoveRecord?.timePointerMoveFirst(),
           time_pointer_move_last: helperMouseMoveRecord?.timePointerMoveLast(),
+          time_fix_start: timeFixStart,
+          time_fix_end: timeFixEnd,
+          time_stim_start: timeStimStart,
+          time_stim_end: timeStimEnd,
           info_trial: info,
           params_trial: paramsSave,
           quest_updated: quest_updated,
           quest_int_quantile: quest_int_quantile,
           quest_int_mean: quest_int_mean,
           quest_int_sd: quest_int_sd,
-          quest_alerts: questInitialized ? quest.getAlerts() : '',
+          quest_alerts: questInitialized ? quest.getAlerts() : "",
           quest_val_sample: params.ratio,
           quest_val_mean: 10 ** quest_int_mean / 100.0,
           quest_val_quantile: 10 ** quest_int_quantile / 100.0,
@@ -1673,20 +1826,16 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
     prompt: () => htmlLayout(params, info, StageTrial.GAP_AND_FEEDBACK),
     keyboard_choices: () => [TypeKey.DUMMY],
     trial_duration: () =>
-      info.playFeedbackTone ? Math.max(DURATIONS.FEEDBACK_MAX, params.durationGap) : params.durationGap,
+      info.playFeedbackTone
+        ? Math.max(DURATIONS.FEEDBACK_MAX, params.durationGap)
+        : params.durationGap,
     response_allowed_while_playing: false,
     trial_ends_after_audio: false,
-    on_start: (/* trial */) => {},
-    on_load: () => {
-      screenSetupOnLoadDef(TypeKey.DUMMY);
-    },
-    on_finish: () => {
-      helperOrient.removeEventListeners();
-    },
+    on_start: () => {},
+    on_load: () => {},
+    on_finish: () => {},
   });
 
-  // TODO: uncomment t_trialEnterFullscreenConditional
-  // TODO: if REF - see whether trialGapRef checks orientation / resize (and whether it is needed at all)
   return {
     timeline: [
       t_trialEnterFullscreenConditional(),
@@ -1698,53 +1847,96 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
       },
       {
         timeline: [trialEtStart()],
-        conditional_function: () => sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.ET_ENABLE),
+        conditional_function: () =>
+          sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.ET_ENABLE),
       },
       t_et_videoRecordStart(),
       {
         timeline: [trialFix()],
-        conditional_function: () => params.durationFix > 0 && !helperOrient?.rotationDetected(),
+        conditional_function: () =>
+          params.durationFix > 0 &&
+          !helperOrient?.rotationDetected() &&
+          !helperFullscreenConditional?.resizeDetected(),
       },
       {
         timeline: [trialGapStimRef()],
         conditional_function: () =>
           params.durationGapStimRef > 0 &&
           !helperOrient?.rotationDetected() &&
-          (params.typeTask === TypeTask.SHAPE_COMPARE_REF || params.typeTask === TypeTask.ORIENT_COMPARE_REF),
+          !helperFullscreenConditional?.resizeDetected() &&
+          (params.typeTask === TypeTask.SHAPE_COMPARE_REF ||
+            params.typeTask === TypeTask.ORIENT_COMPARE_REF),
       },
       {
         timeline: [trialStimPre()],
-        conditional_function: () => params.durationTargPre !== 0 && !helperOrient?.rotationDetected(),
+        conditional_function: () =>
+          params.durationTargPre !== 0 &&
+          !helperOrient?.rotationDetected() &&
+          !helperFullscreenConditional?.resizeDetected(),
       },
       {
         timeline: [trialStim()],
-        conditional_function: () => params.durationStim > 0 && !helperOrient?.rotationDetected(),
+        conditional_function: () =>
+          params.durationStim > 0 &&
+          !helperOrient?.rotationDetected() &&
+          !helperFullscreenConditional?.resizeDetected(),
       },
       {
         timeline: [trialEtStop()],
         conditional_function: () => sessionGet(SK.VIDEO_ENABLED),
       },
-      {
-        timeline: [trialGapStimRef()],
-        conditional_function: () =>
-          params.durationGapStimRef > 0 &&
-          !helperOrient?.rotationDetected() &&
-          (params.typeTask === TypeTask.SHAPE_COMPARE_REF || params.typeTask === TypeTask.ORIENT_COMPARE_REF),
-      },
-      t_trialEnterFullscreenConditional(),
-      t_enterLandscape(),
+      t_et_videoRecordStop(),
       {
         timeline: [trialResp()],
         conditional_function: () => params.durationResp > 0, // = 0 for instructions only
       },
-      t_et_stateSave({
-        idTrialSaveOrFn: () => info.idTrial,
-        saveCal: false,
-        typeSaveSnapshots: et_TypeSaveSnapshots.MIN,
-        requestUpload: false,
-      }),
-      t_et_videoRecordSave(() => info.idTrial),
-      // TODO: put back full screen!
+      {
+        timeline: [
+          {
+            type: jsPsychHtmlButtonResponse,
+            stimulus: () =>
+              `<div style="background:yellow; padding:30px; font-size:22px; text-align:left;">
+              correct: ${correctDebug}<br>
+              resize: ${resizeDetectedDebug}<br>
+              rotation: ${rotationDetectedDebug}
+            </div>`,
+            choices: ["OK"],
+          },
+        ],
+        conditional_function: () => info.debugEachTrial,
+      },
+      {
+        timeline: [t_et_videoRecordSave(() => info.idTrial)],
+        conditional_function: () => info.stageAssessment === AssessmentStage.TEST,
+      },
+      {
+        timeline: [
+          t_et_stateSave({
+            idTrialSaveOrFn: () => info.idTrial,
+            saveCal: false,
+            typeSaveSnapshots: et_TypeSaveSnapshots.MIN,
+            requestUpload: false,
+          }),
+        ],
+        conditional_function: () =>
+          sessionGet(SK.VIDEO_ENABLED) &&
+          sessionGet(SK.CONFIG_ET)?.saveSnapshotsCrDb &&
+          info.stageAssessment === AssessmentStage.TEST,
+      },
+      {
+        timeline: [
+          t_et_stateSave({
+            idTrialSaveOrFn: () => info.idTrial,
+            saveCal: false,
+            typeSaveSnapshots: et_TypeSaveSnapshots.MIN,
+            requestUpload: true,
+          }),
+        ],
+        conditional_function: () =>
+          sessionGet(SK.VIDEO_ENABLED) &&
+          sessionGet(SK.CONFIG_ET)?.saveSnapshotsCrUpload &&
+          info.stageAssessment === AssessmentStage.TEST,
+      },
       t_trialEnterFullscreenConditional(),
       t_enterLandscape(),
       {
@@ -1780,8 +1972,11 @@ export const t_cr = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
       };
 
       info.idTrial ??= `${info.nameBlock}-trial-${indTrial}`;
+      createScreenHelpers(TypeKey.DUMMY);
     },
-    on_timeline_end: () => {},
+    on_timeline_end: () => {
+      removeScreenHelpers();
+    },
     conditional_function: () => {
       const modeGameTrial = paramsTrialIn?.info?.modeGameTrial ?? ModeGame.ALL;
       return enableTrialByModeGame(modeGameTrial);

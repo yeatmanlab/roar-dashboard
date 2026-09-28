@@ -1,10 +1,10 @@
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import { t_feedbackAudioVisual } from '../../shared/trials/feedbackAudioVisual';
-import { t_rdk } from './mp_rdk';
-import { sessionGet, sessionSet } from '../../shared/helpers/sessionHelpers';
-import { SubtypeTrial, ModeSeq } from '../../shared/helpers/namingHelpers';
-import { COHERENCE } from '../helpers/mp_constants';
-import { MP_SESSION_KEYS as SK } from '../helpers/mp_sessionKeys';
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import { t_feedbackAudioVisual } from "../../shared/trials/feedbackAudioVisual";
+import { t_rdk } from "./mp_rdk";
+import { sessionGet, sessionSet } from "../../shared/helpers/sessionHelpers";
+import { SubtypeTrial, ModeSeq } from "../../shared/helpers/namingHelpers";
+import { COHERENCE } from "../helpers/mp_constants";
+import { MP_SESSION_KEYS as SK } from "../helpers/mp_sessionKeys";
 
 // parameters for t_setParamsBlockRdk are expected in following format
 // {
@@ -83,7 +83,9 @@ export const t_createBlockRdk = (paramsIn) => {
       const modeSeqIn = paramsIn.modeSeq ?? paramsDefCreateBlockRdk.modeSeq;
       const modeSeq = sessionGet(SK.MODE_SEQ);
       const enableTrials = sessionGet(SK.ENABLE_TRIALS);
-      return enableTrials && (modeSeqIn === modeSeq || modeSeqIn === ModeSeq.ALL);
+      return (
+        enableTrials && (modeSeqIn === modeSeq || modeSeqIn === ModeSeq.ALL)
+      );
     },
   };
 };

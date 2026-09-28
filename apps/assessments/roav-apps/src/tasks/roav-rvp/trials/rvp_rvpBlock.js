@@ -1,15 +1,26 @@
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import { merge } from 'lodash';
-import { t_feedbackAudioVisual } from '../../shared/trials/feedbackAudioVisual';
-import { SubtypeTrialRvp, t_rvp } from './rvp_rvpTrial';
-import { sessionGet, sessionSet } from '../../shared/helpers/sessionHelpers';
-import { RVP_SESSION_KEYS as SK } from '../helpers/rvp_sessionKeys';
-import { AssessmentStage, ModeAdaptBlock, ModeGame, TAG_REQ_DEF } from '../../shared/helpers/namingHelpers';
-import { createArrIndsRepeat, shuffleArr } from '../../shared/helpers/orderHelpers';
-import { wrapAsJsPsychTrial } from '../../shared/helpers/jspsychHelpers';
-import { calcThetaFromProbDifficultyMean, calcThetaRaw } from './rvp_catHelpers';
-import { t_instructionGeneral } from '../../shared/trials/instructionGeneral';
-import { t_setEnableTrials } from '../../shared/trials/flowHelpers';
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import { merge } from "lodash";
+import { t_feedbackAudioVisual } from "../../shared/trials/feedbackAudioVisual";
+import { SubtypeTrialRvp, t_rvp } from "./rvp_rvpTrial";
+import { sessionGet, sessionSet } from "../../shared/helpers/sessionHelpers";
+import { RVP_SESSION_KEYS as SK } from "../helpers/rvp_sessionKeys";
+import {
+  AssessmentStage,
+  ModeAdaptBlock,
+  ModeGame,
+  TAG_REQ_DEF,
+} from "../../shared/helpers/namingHelpers";
+import {
+  createArrIndsRepeat,
+  shuffleArr,
+} from "../../shared/helpers/orderHelpers";
+import { wrapAsJsPsychTrial } from "../../shared/helpers/jspsychHelpers";
+import {
+  calcThetaFromProbDifficultyMean,
+  calcThetaRaw,
+} from "./rvp_catHelpers";
+import { t_instructionGeneral } from "../../shared/trials/instructionGeneral";
+import { t_setEnableTrials } from "../../shared/trials/flowHelpers";
 
 const calcIndBlockAdapt = (indBlockReq) => {
   if (indBlockReq === 0) {
@@ -50,8 +61,13 @@ const calcIndBlockAdapt = (indBlockReq) => {
     requestRepeat = acc < perfAdaptBlock;
   } else if (modeAdaptBlock === ModeAdaptBlock.ADAPT_IRT) {
     const thetaRawCur = calcThetaRaw(typeStimReq);
-    const numStimAdaptNext = configBlock.arrMetaparams[indBlockAdapt + 1].numStim;
-    const thetaAdvanceMin = calcThetaFromProbDifficultyMean(perfAdaptBlock, typeStimReq, numStimAdaptNext);
+    const numStimAdaptNext =
+      configBlock.arrMetaparams[indBlockAdapt + 1].numStim;
+    const thetaAdvanceMin = calcThetaFromProbDifficultyMean(
+      perfAdaptBlock,
+      typeStimReq,
+      numStimAdaptNext,
+    );
     requestRepeat = thetaRawCur < thetaAdvanceMin;
   }
 
@@ -171,7 +187,9 @@ export const t_createBlockRvp = (paramsIn) => {
       ),
     );
     if (params.playFeedbackAv) {
-      arrTrials.push(t_feedbackAudioVisual(params.paramsFeedbackAv, params.tagReqFeedbackAv));
+      arrTrials.push(
+        t_feedbackAudioVisual(params.paramsFeedbackAv, params.tagReqFeedbackAv),
+      );
     }
   }
 
@@ -191,7 +209,10 @@ export const t_setIndBlockRvpAdapt = (indBlockReq) => ({
   },
 });
 
-export const t_setEnableTrialsByExistBlockRvpAdapt = ({ flagBlock, flagEnable }) => ({
+export const t_setEnableTrialsByExistBlockRvpAdapt = ({
+  flagBlock,
+  flagEnable,
+}) => ({
   type: jsPsychCallFunction,
   func: () => {
     const indBlockAdapt = sessionGet(SK.IND_BLOCK_ADAPT);
@@ -298,7 +319,10 @@ export const t_setcreateBlockRvpAdaptTest = () => {
         metaparams: metaparamsBlock,
         info: infoBlock,
       });
-      const arrPos = calcArrPos(configBlock.numTrialBlock, metaparamsBlock.numStim);
+      const arrPos = calcArrPos(
+        configBlock.numTrialBlock,
+        metaparamsBlock.numStim,
+      );
       const arrMetaparamsTrialAdapt = [];
       for (let iTrial = 0; iTrial < numTrial; iTrial += 1) {
         arrMetaparamsTrialAdapt.push({
@@ -327,12 +351,12 @@ const paramsSetcreateBlockRvpAdaptDef = {
   paramsInstrBefore: {
     modeGameSkipResponse: ModeGame.ALL,
   },
-  tagReqInstrBefore: 'test-keep-going',
+  tagReqInstrBefore: "test-keep-going",
   paramsInstrExtra: {
-    keyImgCharacter: ['', '', 'warn-fast'],
+    keyImgCharacter: ["", "", "warn-fast"],
     modeGameSkipResponse: ModeGame.ALL,
   },
-  tagReqInstrExtra: 'test-warn-fast-short',
+  tagReqInstrExtra: "test-warn-fast-short",
 };
 
 export const t_setcreateBlockRvpAdapt = (paramsIn) => {
@@ -349,11 +373,15 @@ export const t_setcreateBlockRvpAdapt = (paramsIn) => {
     }),
   );
   if (params.tagReqInstrBefore) {
-    arrTrials.push(t_instructionGeneral(params.paramsInstrBefore, params.tagReqInstrBefore));
+    arrTrials.push(
+      t_instructionGeneral(params.paramsInstrBefore, params.tagReqInstrBefore),
+    );
   }
   arrTrials.push(t_setcreateBlockRvpAdaptExtra());
   if (params.tagReqInstrExtra) {
-    arrTrials.push(t_instructionGeneral(params.paramsInstrExtra, params.tagReqInstrExtra));
+    arrTrials.push(
+      t_instructionGeneral(params.paramsInstrExtra, params.tagReqInstrExtra),
+    );
   }
   arrTrials.push(t_setcreateBlockRvpAdaptTest());
   arrTrials.push(t_setEnableTrials());

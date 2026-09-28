@@ -1,9 +1,9 @@
 /* eslint-disable no-underscore-dangle */
-import jsPsychAudioKeyboardResponse from '@jspsych/plugin-audio-keyboard-response';
-import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import { jsPsych } from '../../shared/helpers/taskSetup';
-import { mediaAssets } from '../../shared/helpers/mediaAssets';
+import jsPsychAudioKeyboardResponse from "@jspsych/plugin-audio-keyboard-response";
+import jsPsychAudioMultiResponse from "@jspsych-contrib/plugin-audio-multi-response";
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import { jsPsych } from "../../shared/helpers/taskSetup";
+import { mediaAssets } from "../../shared/helpers/mediaAssets";
 import {
   AssessmentStage,
   fillTextKeyValuesDef,
@@ -11,27 +11,36 @@ import {
   TypeKey,
   TAG_REQ_DEF,
   ModeAdaptStim,
-} from '../../shared/helpers/namingHelpers';
-import { getValidityEvaluator } from '../../shared/trials/validityHelpers';
+} from "../../shared/helpers/namingHelpers";
+import { getValidityEvaluator } from "../../shared/trials/validityHelpers";
 import {
   updateModeInputInfoOnPointerEvent,
   createHelperMouseMoveRecord,
   resetModeInputLast,
-} from '../../shared/trials/inputModeHelpers';
+} from "../../shared/trials/inputModeHelpers";
 import {
   t_enterLandscape,
   createHelperOrientation,
   t_trialEnterFullscreenConditional,
   createHelperFullscreenConditional,
-} from '../../shared/trials/screenHelpers';
-import { sessionChangeValNum, sessionGet, sessionSet } from '../../shared/helpers/sessionHelpers';
-import { RVP_SESSION_KEYS as SK } from '../helpers/rvp_sessionKeys';
-import { createSvgCross, createSvgLineHor, htmlImgSvgPositioned, svgStrToSrc } from '../../shared/trials/svgHelpers';
-import { hasAudio } from '../../shared/helpers/audioHelpers';
-import { enableTrialByModeGame } from '../../shared/trials/flowHelpers';
-import { DURATIONS } from '../../shared/helpers/constants';
-import { UnitSize, degToPxFromWidth } from '../../shared/helpers/unitsHelper';
-import { indsRandomNoRepeat } from '../../shared/helpers/orderHelpers';
+} from "../../shared/trials/screenHelpers";
+import {
+  sessionChangeValNum,
+  sessionGet,
+  sessionSet,
+} from "../../shared/helpers/sessionHelpers";
+import { RVP_SESSION_KEYS as SK } from "../helpers/rvp_sessionKeys";
+import {
+  createSvgCross,
+  createSvgLineHor,
+  htmlImgSvgPositioned,
+  svgStrToSrc,
+} from "../../shared/trials/svgHelpers";
+import { hasAudio } from "../../shared/helpers/audioHelpers";
+import { enableTrialByModeGame } from "../../shared/trials/flowHelpers";
+import { DURATIONS } from "../../shared/helpers/constants";
+import { UnitSize, degToPxFromWidth } from "../../shared/helpers/unitsHelper";
+import { indsRandomNoRepeat } from "../../shared/helpers/orderHelpers";
 import {
   calcDataCat,
   getTransf,
@@ -39,33 +48,33 @@ import {
   TYPE_CAT_COMB,
   updateAbilityEstimate,
   updateAbilityEstimateComb,
-} from './rvp_catHelpers';
-import { RVP } from '../helpers/rvp_constants';
+} from "./rvp_catHelpers";
+import { RVP } from "../helpers/rvp_constants";
 
 export const SubtypeTrialRvp = {
-  REG: 'reg',
-  EXTRA: 'extra',
+  REG: "reg",
+  EXTRA: "extra",
 };
 
-const tagTrial = 'rvp';
+const tagTrial = "rvp";
 
 export const TypeStimRvp = {
-  OPTO: 'opto',
-  PSEUDO: 'pseudo',
+  OPTO: "opto",
+  PSEUDO: "pseudo",
 };
 
 export const ModeSelStim = {
-  RANDOM: 'random',
-  FIXED: 'fixed',
-  NAME: 'name',
+  RANDOM: "random",
+  FIXED: "fixed",
+  NAME: "name",
 };
 
 const StageTrial = {
-  MARK_FIX: 'mark-fix',
-  STIM: 'stim',
-  MARK_TARG: 'mark-targ',
-  RESP: 'resp',
-  GAP_AND_FEEDBACK: 'gapAndFeedback',
+  MARK_FIX: "mark-fix",
+  STIM: "stim",
+  MARK_TARG: "mark-targ",
+  RESP: "resp",
+  GAP_AND_FEEDBACK: "gapAndFeedback",
 };
 
 // in % of width
@@ -93,13 +102,14 @@ const metaparamsRvpDef = {
   srcMarkTarg: null, // filled in from params
   posTarg: 0, // within array of indsStim / namesStim / srcsStim
 
-  clrBg: '#ffffff',
+  clrBg: "#ffffff",
   durationMarkFix: 600,
   durationStim: 350, // 480, // 240, // 120000,    // 240,
   durationMarkTarg: 200, // this is delay after showing target when response is disabled
   durationGap: 1200,
   durationResp: RVP.DURATION_RESP_TEST_MAX,
   durationWarnTimeout: 3000,
+  durationAudioEndFallback: DURATIONS.AUDIO_END_FALLBACK_MEDIUM, // @fix-freeze-audio
 
   vdCm: 100, // 50
   widthScreenCm: 30, // 30 cm is ~ 13.6 in; chromebooks are 11.6 or 13.3 in (?)
@@ -123,7 +133,7 @@ const metaparamsRvpDef = {
   _widthStrokeMarkTarg: 0.07,
   _distMarkTargStim: 0.2,
   _unitSizeMarkTarg: UnitSize.DEG,
-  clrMarkTarg: 'rgba(30, 49, 255, 0.66)',
+  clrMarkTarg: "rgba(30, 49, 255, 0.66)",
   lengthMarkTarg: undefined,
   widthStrokeMarkTarg: undefined,
   distMarkTargStim: undefined,
@@ -140,7 +150,9 @@ const prepareStim = (params) => {
     params.indsStim = indsRandomNoRepeat(params.numStim, mapStim.length);
   }
   if (params.modeSelStim === ModeSelStim.NAME) {
-    params.indsStim = params.namesStim.map((name) => namesStimAll.indexOf(name));
+    params.indsStim = params.namesStim.map((name) =>
+      namesStimAll.indexOf(name),
+    );
   }
 
   if (params.indsStim) {
@@ -158,7 +170,12 @@ const metaparamsToParams = (metaparams) => {
       params.distStim = params._distStim;
       break;
     case UnitSize.DEG:
-      params.distStim = degToPxFromWidth(params._distStim, params.vdCm, params.widthScreenCm, params.widthScreenPx);
+      params.distStim = degToPxFromWidth(
+        params._distStim,
+        params.vdCm,
+        params.widthScreenCm,
+        params.widthScreenPx,
+      );
       break;
     default:
       params.distStim = undefined;
@@ -169,7 +186,12 @@ const metaparamsToParams = (metaparams) => {
       params.sizeStim = params._sizeStim;
       break;
     case UnitSize.DEG:
-      params.sizeStim = degToPxFromWidth(params._sizeStim, params.vdCm, params.widthScreenCm, params.widthScreenPx);
+      params.sizeStim = degToPxFromWidth(
+        params._sizeStim,
+        params.vdCm,
+        params.widthScreenCm,
+        params.widthScreenPx,
+      );
       break;
     default:
       params.sizeStim = undefined;
@@ -236,33 +258,40 @@ const metaparamsToParams = (metaparams) => {
 
 const indStimToEcc = (indStim, numStim, distStim) => {
   const cntHalf = numStim / 2;
-  return indStim < cntHalf ? (indStim - cntHalf) * distStim : (indStim - cntHalf + 1) * distStim;
+  return indStim < cntHalf
+    ? (indStim - cntHalf) * distStim
+    : (indStim - cntHalf + 1) * distStim;
 };
 
 const htmlStimsMarks = (params, info, stageTrial) => {
   const showStim = info.flagShowStim || stageTrial === StageTrial.STIM;
-  const showMarkTarg = info.flagShowMarkTarg || stageTrial === StageTrial.MARK_TARG || stageTrial === StageTrial.RESP;
+  const showMarkTarg =
+    info.flagShowMarkTarg ||
+    stageTrial === StageTrial.MARK_TARG ||
+    stageTrial === StageTrial.RESP;
   const showMarkFix = info.flagShowMarkFix !== false; // (info.flagShowMarkFix === false) ? false : (stageTrial !== StageTrial.GAP_AND_FEEDBACK);
 
   const classMarkFix =
-    info.animateMarkFix && (stageTrial === StageTrial.MARK_FIX || info.flagShowMarkFix)
-      ? 'roav-rvp-animation-mark-fix'
-      : '';
+    info.animateMarkFix &&
+    (stageTrial === StageTrial.MARK_FIX || info.flagShowMarkFix)
+      ? "roav-rvp-animation-mark-fix"
+      : "";
 
-  let classStimNotTarg = '';
-  let classStimTarg = '';
+  let classStimNotTarg = "";
+  let classStimTarg = "";
   if (showStim) {
-    classStimTarg = info.animateStimTarg ? 'roav-rvp-animation-stim-targ' : '';
+    classStimTarg = info.animateStimTarg ? "roav-rvp-animation-stim-targ" : "";
     if (info.muteStim) {
-      classStimTarg += ' roav-muted-20';
-      classStimNotTarg += ' roav-muted-20';
+      classStimTarg += " roav-muted-20";
+      classStimNotTarg += " roav-muted-20";
     }
   }
 
   const classMarkTarg =
-    info.animateMarkTarg && (stageTrial === StageTrial.MARK_TARG || info.flagShowMarkTarg)
-      ? 'roav-rvp-animation-mark-targ'
-      : '';
+    info.animateMarkTarg &&
+    (stageTrial === StageTrial.MARK_TARG || info.flagShowMarkTarg)
+      ? "roav-rvp-animation-mark-targ"
+      : "";
 
   let cntStim = 0;
   let html = ``;
@@ -279,7 +308,8 @@ const htmlStimsMarks = (params, info, stageTrial) => {
   );
 
   for (let iStim = 0; iStim < params.numStim; iStim += 1) {
-    const classStim = cntStim === params.posTarg ? classStimTarg : classStimNotTarg;
+    const classStim =
+      cntStim === params.posTarg ? classStimTarg : classStimNotTarg;
     html += htmlImgSvgPositioned(
       showStim,
       params.srcsStim[iStim],
@@ -312,7 +342,9 @@ const htmlStimsMarks = (params, info, stageTrial) => {
 
 const htmlBtnsResp = (params, info, stageTrial) => {
   const mapsStim = sessionGet(SK.MAPS_STIM);
-  const numStimMax = Math.max(...Object.values(mapsStim).map((arr) => arr.length));
+  const numStimMax = Math.max(
+    ...Object.values(mapsStim).map((arr) => arr.length),
+  );
 
   const widthScreen = sessionGet(SK.WIDTH_WINDOW_FS);
   const heightScreen = sessionGet(SK.HEIGHT_WINDOW_FS);
@@ -327,10 +359,12 @@ const htmlBtnsResp = (params, info, stageTrial) => {
   const widthRespTotal = sizeBtn * numStim + gap * (numStim - 1);
 
   const showResp = info.flagShowResp || stageTrial === StageTrial.RESP;
-  const classBtnNotTarg = '';
-  const classBtnTarg = info.animateBtnResp ? 'roav-rvp-animation-button-resp' : '';
-  const classImgNotTarg = '';
-  const classImgTarg = '';
+  const classBtnNotTarg = "";
+  const classBtnTarg = info.animateBtnResp
+    ? "roav-rvp-animation-button-resp"
+    : "";
+  const classImgNotTarg = "";
+  const classImgTarg = "";
 
   let html = ``;
   for (let iStim = 0; iStim < numStim; iStim += 1) {
@@ -344,7 +378,7 @@ const htmlBtnsResp = (params, info, stageTrial) => {
         class="roav-rvp-btn-resp ${classBtn}"
         id="resp-${iStim}"
         style="
-          visibility: ${showResp ? 'visible' : 'hidden'};
+          visibility: ${showResp ? "visible" : "hidden"};
           width: ${sizeBtn}px;
           height: ${sizeBtn}px;
         ">
@@ -377,7 +411,8 @@ const htmlCardStimResp = () => {
   const widthScreen = sessionGet(SK.WIDTH_WINDOW_FS);
   const heightScreen = sessionGet(SK.HEIGHT_WINDOW_FS);
   const widthBox = (WIDTH_RESP_TOTAL_MAX + 2 * paddingHor) * widthScreen;
-  const heightBox = (1 - 2 * HEIGHT_BTN_RESP_BOTTOM + 2 * paddingVert) * heightScreen;
+  const heightBox =
+    (1 - 2 * HEIGHT_BTN_RESP_BOTTOM + 2 * paddingVert) * heightScreen;
   const leftBox = (widthScreen - widthBox) / 2;
   const topBox = (heightScreen - heightBox) / 2;
 
@@ -393,7 +428,7 @@ const htmlCardStimResp = () => {
 
 const htmlLog = (showLog) => {
   if (!showLog) {
-    return '';
+    return "";
   }
   return `
     <div id="id-log" style="
@@ -410,7 +445,9 @@ const htmlLog = (showLog) => {
 };
 
 const isValidTestTrial = (params, info) => {
-  const isValid = info.stageAssessment === AssessmentStage.TEST && params.subtypeTrial !== SubtypeTrialRvp.EXTRA;
+  const isValid =
+    info.stageAssessment === AssessmentStage.TEST &&
+    params.subtypeTrial !== SubtypeTrialRvp.EXTRA;
   return isValid;
 };
 
@@ -426,28 +463,33 @@ const calcIndTrialTestAbs = (params, info, includeExtra = true) => {
   const configBlock = sessionGet(SK.CONFIG_BLOCK);
   const numTrialExtra = includeExtra ? configBlock.numTrialExtra : 0;
   const indTrialAbs =
-    indBlock * (configBlock.numTrialBlock + numTrialExtra) + indTrial + (!isExtra ? numTrialExtra : 0);
+    indBlock * (configBlock.numTrialBlock + numTrialExtra) +
+    indTrial +
+    (!isExtra ? numTrialExtra : 0);
   return indTrialAbs;
 };
 
 const calcNumTrialTestTotal = (includeExtra = true) => {
   const configBlock = sessionGet(SK.CONFIG_BLOCK);
   const numTrialExtra = includeExtra ? configBlock.numTrialExtra : 0;
-  const numTrialTotalAbs = (configBlock.numTrialBlock + numTrialExtra) * configBlock.arrMetaparams.length;
+  const numTrialTotalAbs =
+    (configBlock.numTrialBlock + numTrialExtra) *
+    configBlock.arrMetaparams.length;
   return numTrialTotalAbs;
 };
 
 const htmlProgressBar = (params, info) => {
   if (!info.showProgressBar) {
-    return '';
+    return "";
   }
   if (info.stageAssessment !== AssessmentStage.TEST) {
-    return '';
+    return "";
   }
 
   const indTrialTestAbs = calcIndTrialTestAbs(params, info);
   const numTrialTestTotal = calcNumTrialTestTotal(params, info);
-  const percentComplete = (100 * Math.max(indTrialTestAbs, 0)) / numTrialTestTotal;
+  const percentComplete =
+    (100 * Math.max(indTrialTestAbs, 0)) / numTrialTestTotal;
 
   return `
     <div class="roav-progress-bar-wrap">
@@ -465,8 +507,8 @@ const htmlLayout = (params, info, stageTrial) => {
   const widthFS = sessionGet(SK.WIDTH_WINDOW_FS);
   const heightFS = sessionGet(SK.HEIGHT_WINDOW_FS);
 
-  let htmlImgBg = '';
-  let htmlCard = '';
+  let htmlImgBg = "";
+  let htmlCard = "";
   if (info.showImgBg) {
     htmlImgBg = `
         <img src="${mediaAssets.images[info.keyImgBg]}"
@@ -503,14 +545,14 @@ const htmlLayout = (params, info, stageTrial) => {
 export const infoRvpDef = (tagReq) => ({
   tagReq: tagReq,
   stageAssessment: AssessmentStage.NONE,
-  nameCorpus: sessionGet(SK.NAME_CORPUS) ?? 'none',
-  nameBlock: 'none',
+  nameCorpus: sessionGet(SK.NAME_CORPUS) ?? "none",
+  nameBlock: "none",
   idTrial: undefined,
 
   evaluateValidity: true,
 
   showImgBg: false,
-  keyImgBg: ['', '', 'bg'],
+  keyImgBg: ["", "", "bg"],
 
   // overrides default flow for instructions
   flagShowStim: undefined,
@@ -527,8 +569,8 @@ export const infoRvpDef = (tagReq) => ({
   muteStim: false,
   disableBtnsRespNonTarg: false,
 
-  keyFeedbackToneCorrect: ['feedback-tone', '', 'correct', ModeGame.ALL],
-  keyFeedbackToneIncorrect: ['feedback-tone', '', 'incorrect', ModeGame.ALL],
+  keyFeedbackToneCorrect: ["feedback-tone", "", "correct", ModeGame.ALL],
+  keyFeedbackToneIncorrect: ["feedback-tone", "", "incorrect", ModeGame.ALL],
   playFeedbackTone: true,
 
   keyAudioMarkFix: [tagTrial, tagReq, StageTrial.MARK_FIX],
@@ -537,10 +579,10 @@ export const infoRvpDef = (tagReq) => ({
   keyAudioResp: [tagTrial, tagReq, StageTrial.RESP],
 
   // right now the text is not displayed, potentially for STAND mode
-  textMarkFix: [tagTrial, `${tagReq}.${StageTrial.MARK_FIX}`, 'text'],
-  textStim: [tagTrial, `${tagReq}.${StageTrial.STIM}`, 'text'],
-  textMarkTarg: [tagTrial, `${tagReq}.${StageTrial.MARK_TARG}`, 'text'],
-  textResp: [tagTrial, `${tagReq}.${StageTrial.RESP}`, 'text'],
+  textMarkFix: [tagTrial, `${tagReq}.${StageTrial.MARK_FIX}`, "text"],
+  textStim: [tagTrial, `${tagReq}.${StageTrial.STIM}`, "text"],
+  textMarkTarg: [tagTrial, `${tagReq}.${StageTrial.MARK_TARG}`, "text"],
+  textResp: [tagTrial, `${tagReq}.${StageTrial.RESP}`, "text"],
 
   playAudio: false,
 
@@ -574,7 +616,8 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
     if (params) {
       return;
     }
-    metaparams.widthScreenPx = sessionGet(SK.WIDTH_WINDOW_FS) ?? window.innerWidth;
+    metaparams.widthScreenPx =
+      sessionGet(SK.WIDTH_WINDOW_FS) ?? window.innerWidth;
     params = metaparamsToParams(metaparams);
     prepareStim(params);
     if (!params.srcMarkFix) {
@@ -607,7 +650,8 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
     helperOrient.startEventListeners();
 
     if (trackResize) {
-      helperFullscreenConditional = createHelperFullscreenConditional(onScreenChange);
+      helperFullscreenConditional =
+        createHelperFullscreenConditional(onScreenChange);
       helperFullscreenConditional.startEventListeners();
     }
   };
@@ -624,11 +668,25 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
 
   const catPostTrial = (correct) => {
     if (isValidTestTrial(params, info)) {
-      updateAbilityEstimate(params.typeStim, params.numStim, params.posTarg, correct);
-      updateAbilityEstimateComb(params.typeStim, params.numStim, params.posTarg, correct);
+      updateAbilityEstimate(
+        params.typeStim,
+        params.numStim,
+        params.posTarg,
+        correct,
+      );
+      updateAbilityEstimateComb(
+        params.typeStim,
+        params.numStim,
+        params.posTarg,
+        correct,
+      );
 
       const dataCat = {
-        params_item_cur: getParamsItem(params.typeStim, params.numStim, params.posTarg),
+        params_item_cur: getParamsItem(
+          params.typeStim,
+          params.numStim,
+          params.posTarg,
+        ),
         transf_cur: getTransf(params.typeStim),
         data_cat_cur: calcDataCat(params.typeStim),
         data_cat_comb: calcDataCat(TYPE_CAT_COMB),
@@ -647,7 +705,7 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
     const catDataPseudo = calcDataCat(TypeStimRvp.PSEUDO);
     const catDataComb = calcDataCat(TYPE_CAT_COMB);
 
-    let log = '';
+    let log = "";
     if (info.tagReq !== TAG_REQ_DEF) {
       log = `\n
         ${tagReq}\n
@@ -692,7 +750,7 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
       ${JSON.stringify(catDataComb, null, 2)}
       `;
 
-    const elLog = document.getElementById('id-log');
+    const elLog = document.getElementById("id-log");
     if (elLog) {
       elLog.innerText = log;
     }
@@ -704,11 +762,12 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
       timeoutWarnTimeout = null;
     }
     if (info.showWarnTimeout && !info.showImgBg) {
-      const elStimRespWrap = document.getElementById('id-stim-resp-wrap');
-      const timeStartWarnTimeout = params.durationResp - params.durationWarnTimeout;
+      const elStimRespWrap = document.getElementById("id-stim-resp-wrap");
+      const timeStartWarnTimeout =
+        params.durationResp - params.durationWarnTimeout;
       if (elStimRespWrap && timeStartWarnTimeout > 0) {
         timeoutWarnTimeout = window.setTimeout(() => {
-          elStimRespWrap.classList.add('roav-rvp-warn-timeout');
+          elStimRespWrap.classList.add("roav-rvp-warn-timeout");
         }, timeStartWarnTimeout);
       }
     }
@@ -719,9 +778,9 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
       window.clearTimeout(timeoutWarnTimeout);
       timeoutWarnTimeout = null;
     }
-    const elStimRespWrap = document.getElementById('id-stim-resp-wrap');
+    const elStimRespWrap = document.getElementById("id-stim-resp-wrap");
     if (elStimRespWrap) {
-      elStimRespWrap.classList.remove('roav-rvp-warn-timeout');
+      elStimRespWrap.classList.remove("roav-rvp-warn-timeout");
     }
   };
 
@@ -729,14 +788,19 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
   const trialMarkFix = () => {
     return {
       type: jsPsychAudioMultiResponse,
-      trial_duration: () => (hasAudio(info.keyAudioMarkFix) ? DURATIONS.WAIT_FOR_RESPONSE : params.durationMarkFix),
-      stimulus: () => mediaAssets.audio[info.keyAudioMarkFix] ?? mediaAssets.audio.roavMpNullAudioAll,
+      trial_duration: () =>
+        hasAudio(info.keyAudioMarkFix)
+          ? params.durationAudioEndFallback // @fix-freeze-audio
+          : params.durationMarkFix,
+      stimulus: () =>
+        mediaAssets.audio[info.keyAudioMarkFix] ??
+        mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.MARK_FIX),
       response_ends_trial: true,
       trial_ends_after_audio: () => hasAudio(info.keyAudioMarkFix),
       keyboard_choices: () => [TypeKey.DUMMY],
-      button_choices: () => [''],
-      button_html: () => '',
+      button_choices: () => [""],
+      button_html: () => "",
       on_load: () => {
         screenSetupOnLoadDef(TypeKey.DUMMY);
         if (info.showLog) {
@@ -753,14 +817,19 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
   const trialStim = () => {
     return {
       type: jsPsychAudioMultiResponse,
-      trial_duration: () => (hasAudio(info.keyAudioStim) ? DURATIONS.WAIT_FOR_RESPONSE : params.durationStim),
-      stimulus: () => mediaAssets.audio[info.keyAudioStim] ?? mediaAssets.audio.roavMpNullAudioAll,
+      trial_duration: () =>
+        hasAudio(info.keyAudioStim)
+          ? params.durationAudioEndFallback // @fix-freeze-audio
+          : params.durationStim,
+      stimulus: () =>
+        mediaAssets.audio[info.keyAudioStim] ??
+        mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.STIM),
       response_ends_trial: true,
       trial_ends_after_audio: () => hasAudio(info.keyAudioStim),
       keyboard_choices: () => [TypeKey.DUMMY],
-      button_choices: () => [''],
-      button_html: () => '',
+      button_choices: () => [""],
+      button_html: () => "",
       on_load: () => {
         screenSetupOnLoadDef(TypeKey.DUMMY);
         if (info.showLog) {
@@ -777,14 +846,19 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
   const trialMarkTarg = () => {
     return {
       type: jsPsychAudioMultiResponse,
-      trial_duration: () => (hasAudio(info.keyAudioMarkTarg) ? DURATIONS.WAIT_FOR_RESPONSE : params.durationMarkTarg),
-      stimulus: () => mediaAssets.audio[info.keyAudioMarkTarg] ?? mediaAssets.audio.roavMpNullAudioAll,
+      trial_duration: () =>
+        hasAudio(info.keyAudioMarkTarg)
+          ? params.durationAudioEndFallback // @fix-freeze-audio
+          : params.durationMarkTarg,
+      stimulus: () =>
+        mediaAssets.audio[info.keyAudioMarkTarg] ??
+        mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.MARK_TARG),
       response_ends_trial: true,
       trial_ends_after_audio: () => hasAudio(info.keyAudioMarkTarg),
       keyboard_choices: () => [TypeKey.DUMMY],
-      button_choices: () => [''],
-      button_html: () => '',
+      button_choices: () => [""],
+      button_html: () => "",
       on_load: () => {
         screenSetupOnLoadDef(TypeKey.DUMMY);
         if (info.showLog) {
@@ -807,13 +881,15 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
           ? DURATIONS.WAIT_FOR_RESPONSE
           : params.durationResp,
       */
-      stimulus: () => mediaAssets.audio[info.keyAudioResp] ?? mediaAssets.audio.roavMpNullAudioAll,
+      stimulus: () =>
+        mediaAssets.audio[info.keyAudioResp] ??
+        mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.RESP),
       response_ends_trial: true,
       trial_ends_after_audio: () => false,
       keyboard_choices: () => [TypeKey.DUMMY],
-      button_choices: () => [''],
-      button_html: () => '',
+      button_choices: () => [""],
+      button_html: () => "",
       on_load: () => {
         if (
           !info.includeTrialResp ||
@@ -831,11 +907,11 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
         for (let iStim = 0; iStim < numStim; iStim += 1) {
           if (!info.disableBtnsRespNonTarg || iStim === indStimTarg) {
             const btn = document.getElementById(`resp-${iStim}`);
-            btn.addEventListener('pointerdown', (e) => {
+            btn.addEventListener("pointerdown", (e) => {
               updateModeInputInfoOnPointerEvent(e.pointerType);
             });
             // eslint-disable-next-line no-loop-func
-            btn.addEventListener('click', () => {
+            btn.addEventListener("click", () => {
               if (indStimResp >= 0) {
                 return;
               }
@@ -862,12 +938,19 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
         helperOrient?.removeEventListeners();
         helperFullscreenConditional?.removeEventListeners();
         const timeOut = indStimResp < 0 && !rotationDetected && !resizeDetected;
-        let rt = timeRespStart > 0 && timeRespEnd > 0 ? timeRespEnd - timeRespStart : -1;
+        let rt =
+          timeRespStart > 0 && timeRespEnd > 0
+            ? timeRespEnd - timeRespStart
+            : -1;
         if (rotationDetected || resizeDetected) {
           rt = -1;
         }
 
-        const correct = indStimResp === indStimTarg && !timeOut && !rotationDetected && !resizeDetected;
+        const correct =
+          indStimResp === indStimTarg &&
+          !timeOut &&
+          !rotationDetected &&
+          !resizeDetected;
         /* eslint-disable no-param-reassign */
         data.correct = correct;
         data.response = indStimResp;
@@ -887,14 +970,18 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
         if (validityEvaluator && info.evaluateValidity) {
           const rtEvaluator = data.rt;
           if (data.rt > 0) {
-            validityEvaluator.addResponseData(rtEvaluator, data.response ?? '', correct ? 1 : 0);
+            validityEvaluator.addResponseData(
+              rtEvaluator,
+              data.response ?? "",
+              correct ? 1 : 0,
+            );
           }
         }
         const dataCat = catPostTrial(correct);
 
         const paramsSave = { ...params }; // save space in db; params are saved as config
-        paramsSave.srcMarkFix = '';
-        paramsSave.srcMarkTarg = '';
+        paramsSave.srcMarkFix = "";
+        paramsSave.srcMarkTarg = "";
         paramsSave.srcsStim = [];
 
         // note:
@@ -932,7 +1019,8 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
           mode_input: sessionGet(SK.MODE_INPUT_LAST),
           ...dataCat,
           times_pointer_move: helperMouseMoveRecord?.timesPointerMove(),
-          time_pointer_move_first: helperMouseMoveRecord?.timePointerMoveFirst(),
+          time_pointer_move_first:
+            helperMouseMoveRecord?.timePointerMoveFirst(),
           time_pointer_move_last: helperMouseMoveRecord?.timePointerMoveLast(),
           cnt_trial_block: sessionGet(SK.CNT_TRIAL),
           cnt_trial_global: sessionGet(SK.CNT_TRIAL_GLOBAL),
@@ -965,12 +1053,14 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
     prompt: () => htmlLayout(params, info, StageTrial.GAP_AND_FEEDBACK),
     keyboard_choices: () => [TypeKey.DUMMY],
     trial_duration: () =>
-      info.playFeedbackTone ? Math.max(DURATIONS.FEEDBACK_MAX, params.durationGap) : params.durationGap,
+      info.playFeedbackTone
+        ? Math.max(DURATIONS.FEEDBACK_MAX, params.durationGap)
+        : params.durationGap,
     response_allowed_while_playing: false,
     trial_ends_after_audio: false,
     on_start: (/* trial */) => {
       const container = jsPsych.getDisplayElement();
-      container.classList.add('roav-mp-rvp-container-trial-gap');
+      container.classList.add("roav-mp-rvp-container-trial-gap");
     },
     on_load: () => {
       screenSetupOnLoadDef(TypeKey.DUMMY);
@@ -978,7 +1068,7 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
     on_finish: () => {
       helperOrient.removeEventListeners();
       const container = jsPsych.getDisplayElement();
-      container.classList.remove('roav-mp-rvp-container-trial-gap');
+      container.classList.remove("roav-mp-rvp-container-trial-gap");
     },
   });
 
@@ -989,17 +1079,20 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
       trialPrepareAll(),
       {
         timeline: [trialMarkFix()],
-        conditional_function: () => params.durationMarkFix > 0 && !helperOrient?.rotationDetected(),
+        conditional_function: () =>
+          params.durationMarkFix > 0 && !helperOrient?.rotationDetected(),
       },
       {
         timeline: [trialStim()],
-        conditional_function: () => params.durationStim > 0 && !helperOrient?.rotationDetected(),
+        conditional_function: () =>
+          params.durationStim > 0 && !helperOrient?.rotationDetected(),
       },
       t_trialEnterFullscreenConditional(),
       t_enterLandscape(),
       {
         timeline: [trialMarkTarg()],
-        conditional_function: () => params.durationMarkTarg > 0 && !helperOrient?.rotationDetected(),
+        conditional_function: () =>
+          params.durationMarkTarg > 0 && !helperOrient?.rotationDetected(),
       },
       t_trialEnterFullscreenConditional(),
       t_enterLandscape(),

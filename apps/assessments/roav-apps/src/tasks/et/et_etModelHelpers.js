@@ -1,22 +1,13 @@
-import ndarray from 'ndarray';
-import ops from 'ndarray-ops';
-import { fm_xMinFromCoords, fm_xMaxFromCoords, fm_yMinFromCoords, fm_yMaxFromCoords } from './et_fmHelpers';
-import { ET } from './et_constants';
-import { state } from './et_state';
-
-// /**
-//  * Collects specified coordinates from FaceMesh landmarks.
-//  *
-//  * @param {Array<Object>} landmarks - The FaceMesh landmarks.
-//  * @param {Array<number>} indices - The indices of landmarks to extract.
-//  * @param {Array<Array<number>>} coordinates - The array to store extracted coordinates.
-//  */
-// export function collectCoordinates(landmarks, indices, coordinates) {
-//   indices.forEach((index) => {
-//     const point = landmarks[index];
-//     coordinates.push([point.x, point.y]);
-//   });
-// }
+import ndarray from "ndarray";
+import ops from "ndarray-ops";
+import {
+  fm_xMinFromCoords,
+  fm_xMaxFromCoords,
+  fm_yMinFromCoords,
+  fm_yMaxFromCoords,
+} from "./et_fmHelpers";
+import { ET } from "./et_constants";
+import { state } from "./et_state";
 
 /**
  * Preprocesses image data for model input.
@@ -28,14 +19,28 @@ import { state } from './et_state';
  */
 export function model_preprocessImageData(data, width, height) {
   const dataFromImage = ndarray(new Float32Array(data), [width, height, 4]);
-  const dataProcessed = ndarray(new Float32Array(width * height * 3), [1, 3, height, width]);
+  const dataProcessed = ndarray(new Float32Array(width * height * 3), [
+    1,
+    3,
+    height,
+    width,
+  ]);
 
   // Normalize 0-255 to 0 - 1
   ops.divseq(dataFromImage, 255.0);
   // Realign imageData from [224*224*4] to the correct dimension [1*3*224*224].
-  ops.assign(dataProcessed.pick(0, 0, null, null), dataFromImage.pick(null, null, 2));
-  ops.assign(dataProcessed.pick(0, 1, null, null), dataFromImage.pick(null, null, 1));
-  ops.assign(dataProcessed.pick(0, 2, null, null), dataFromImage.pick(null, null, 0));
+  ops.assign(
+    dataProcessed.pick(0, 0, null, null),
+    dataFromImage.pick(null, null, 2),
+  );
+  ops.assign(
+    dataProcessed.pick(0, 1, null, null),
+    dataFromImage.pick(null, null, 1),
+  );
+  ops.assign(
+    dataProcessed.pick(0, 2, null, null),
+    dataFromImage.pick(null, null, 0),
+  );
   return new Float32Array(dataProcessed.data);
 }
 
@@ -49,7 +54,10 @@ export function model_preprocessImageData(data, width, height) {
  */
 export function model_preprocessKps(data) {
   const dataFromImage = ndarray(new Float32Array(data), [data.length]);
-  const dataProcessed = ndarray(new Float32Array(data.length), [1, data.length]);
+  const dataProcessed = ndarray(new Float32Array(data.length), [
+    1,
+    data.length,
+  ]);
   ops.assign(dataProcessed.pick(0, null), dataFromImage);
 
   return new Float32Array(dataProcessed.data);
@@ -65,16 +73,29 @@ export function model_prepareInput() {
   const xMaxR = fm_xMaxFromCoords(state.coordsEyeR);
   const yMaxR = fm_yMaxFromCoords(state.coordsEyeR);
 
-  const kps = [xMinL, yMinL, xMaxL - xMinL, yMaxL - yMinL, xMinR, yMinR, xMaxR - xMinR, yMaxR - yMinR];
+  const kps = [
+    xMinL,
+    yMinL,
+    xMaxL - xMinL,
+    yMaxL - yMinL,
+    xMinR,
+    yMinR,
+    xMaxR - xMinR,
+    yMaxR - yMinR,
+  ];
 
   const sizeImg = ET.ET.SIZE_IMG_EYE_MODEL;
-  const imageDataL = state.canvasScaledEyeL.getContext('2d').getImageData(0, 0, sizeImg, sizeImg);
+  const imageDataL = state.canvasScaledEyeL
+    .getContext("2d")
+    .getImageData(0, 0, sizeImg, sizeImg);
   const inputL = {
     data: model_preprocessImageData(imageDataL.data, sizeImg, sizeImg),
     dims: [1, 3, sizeImg, sizeImg],
   };
 
-  const imageDataR = state.canvasScaledEyeR.getContext('2d').getImageData(0, 0, sizeImg, sizeImg);
+  const imageDataR = state.canvasScaledEyeR
+    .getContext("2d")
+    .getImageData(0, 0, sizeImg, sizeImg);
   const inputR = {
     data: model_preprocessImageData(imageDataR.data, sizeImg, sizeImg),
     dims: [1, 3, sizeImg, sizeImg],
@@ -112,7 +133,7 @@ export const model_xyPred = (resModel, cal = null) => {
   return xyPred;
 };
 
-// TODO: this is VERY important - do we scale by window or by screen???
+// @THINK: important - do we want to scale using window or by screen size
 export const model_xyPredToPredPx = (xyPred) => {
   const xyPredPx = {
     x: (xyPred.x * window.innerWidth) / 100.0,

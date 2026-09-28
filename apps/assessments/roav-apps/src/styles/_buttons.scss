@@ -1,4 +1,4 @@
-@use 'vars' as *;
+@use "vars" as *;
 
 // ============================================
 // JSPSYCH DEFAULT BUTTON
@@ -197,12 +197,18 @@ img.roav-button-attention-strong:not(:disabled) {
 
 .roav-button-lr-large-fixed-game img {
   max-height: calc(0.8 * var(--height-fs));
-  max-width: calc((var(--width-fs) - var(--roav-mp-rdk-aperture)) / 2 - 0.06 * var(--height-fs));
+  max-width: calc(
+    (var(--width-fs) - var(--roav-mp-rdk-aperture)) / 2 - 0.06 *
+      var(--height-fs)
+  );
 }
 
 .roav-button-lr-large-fixed-stand img {
   max-height: calc(0.4 * var(--height-fs));
-  max-width: calc((var(--width-fs) - var(--roav-mp-rdk-aperture)) / 2 - 0.06 * var(--height-fs));
+  max-width: calc(
+    (var(--width-fs) - var(--roav-mp-rdk-aperture)) / 2 - 0.06 *
+      var(--height-fs)
+  );
 }
 
 // ============================================

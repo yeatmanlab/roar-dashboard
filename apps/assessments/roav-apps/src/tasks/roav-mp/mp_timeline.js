@@ -1,17 +1,17 @@
-import { jsPsych } from '../shared/helpers/taskSetup';
-import 'regenerator-runtime/runtime';
-import { initValidationFlagsHandler } from '../shared/trials/validityHelpers';
-import { mp_clearStoreOnTimelineStart } from './helpers/mp_initStore';
-import { sessionGet, sessionSet } from '../shared/helpers/sessionHelpers';
-import { MP_SESSION_KEYS as SK } from './helpers/mp_sessionKeys';
+import { jsPsych } from "../shared/helpers/taskSetup";
+import "regenerator-runtime/runtime";
+import { initValidationFlagsHandler } from "../shared/trials/validityHelpers";
+import { mp_clearStoreOnTimelineStart } from "./helpers/mp_initStore";
+import { sessionGet, sessionSet } from "../shared/helpers/sessionHelpers";
+import { MP_SESSION_KEYS as SK } from "./helpers/mp_sessionKeys";
 
-import { mapTrials } from '../shared/trials/mapTrials';
-import { mp_mapTrials } from './trials/mp_mapTrials';
-import { t_timelineScript } from '../shared/helpers/timelineHelpers';
-import { t_timelineDef } from './trials/mp_timelineDef';
+import { mapTrials } from "../shared/trials/mapTrials";
+import { mp_mapTrials } from "./trials/mp_mapTrials";
+import { t_timelineScript } from "../shared/helpers/timelineHelpers";
+import { t_timelineDef } from "./trials/mp_timelineDef";
 
-import { NAME_CORPUS_DEF } from '../shared/helpers/loadCorpus';
-import { setTaskClassCss } from '../shared/helpers/cssHelpers';
+import { NAME_CORPUS_DEF } from "../shared/helpers/loadCorpus";
+import { setTaskClassCss } from "../shared/helpers/cssHelpers";
 
 const tr = {
   ...mapTrials,

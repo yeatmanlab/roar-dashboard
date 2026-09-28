@@ -6,19 +6,20 @@ Defines the main task class.
 4. Imports css styles.
 */
 
-import { camelize } from '@bdelab/roar-utils';
-import { startRun } from '@roar-platform/assessment-sdk/compat/firekit';
-import { isTaskFinished } from './tasks/shared/helpers/isTaskFinished';
-import './styles/styles.scss'; // getting all the css styles
-import { initSentry } from './sentry';
-import { wireScoreAdapter } from './sdk/roav-apps-firekit-facade.js';
-import { buildRunMetadata } from './tasks/shared/helpers/runMetadata';
-import { initPreloadTrials } from './tasks/shared/trials/preloadTrials';
-import { initTrialSaving } from './tasks/shared/helpers/initTrialSaving';
-import taskConfig from './tasks/taskConfig';
-import { initMediaAssets } from './tasks/shared/helpers/mediaAssets';
-import { sessionSet } from './tasks/shared/helpers/sessionHelpers';
-import { SESSION_KEYS as SK } from './tasks/shared/helpers/sessionKeys';
+import { camelize } from "@bdelab/roar-utils";
+import { startRun } from "@roar-platform/assessment-sdk/compat/firekit";
+import { isTaskFinished } from "./tasks/shared/helpers/isTaskFinished";
+import "./styles/styles.scss"; // getting all the css styles
+import { initSentry } from "./sentry";
+import { initPreloadTrials } from "./tasks/shared/trials/preloadTrials";
+import { initTrialSaving } from "./tasks/shared/helpers/initTrialSaving";
+import taskConfig from "./tasks/taskConfig";
+import { initMediaAssets } from "./tasks/shared/helpers/mediaAssets";
+import { sessionSet } from "./tasks/shared/helpers/sessionHelpers";
+import { SESSION_KEYS as SK } from "./tasks/shared/helpers/sessionKeys";
+import { installAssessmentLifecycleGuards } from "./tasks/shared/helpers/audioHelpers";
+import { wireScoreAdapter } from "./sdk/roav-apps-firekit-facade.js";
+import { buildRunMetadata } from "./tasks/shared/helpers/runMetadata";
 
 export class TaskLauncher {
   constructor(gameParams, userParams, displayElement) {
@@ -28,6 +29,7 @@ export class TaskLauncher {
   }
 
   async init() {
+    installAssessmentLifecycleGuards(); // @fix-freeze-audio
     initSentry();
     wireScoreAdapter();
     // Operator/participant-supplied context (PID + demographics from the launch URL) is
@@ -37,9 +39,19 @@ export class TaskLauncher {
 
     const { taskName } = this.gameParams;
 
-    const { initConfig, initStore, loadCorpus, buildTimelineTask, bucketURI, assets } = taskConfig[camelize(taskName)];
+    const {
+      initConfig,
+      initStore,
+      loadCorpus,
+      buildTimelineTask,
+      bucketURI,
+      assets,
+    } = taskConfig[camelize(taskName)];
 
-    const config = await initConfig(this.gameParams, this.userParams);
+    const config = await initConfig(
+      this.gameParams,
+      this.userParams,
+    );
     this.config = config;
     sessionSet(SK.CONFIG, config);
 

@@ -1,6 +1,6 @@
-import store from 'store2';
-import { sessionHas, sessionSet } from './sessionHelpers';
-import { SESSION_KEYS as SK } from './sessionKeys';
+import store from "store2";
+import { sessionHas, sessionSet } from "./sessionHelpers";
+import { SESSION_KEYS as SK } from "./sessionKeys";
 
 export const clearStoreOnTimelineStartDef = () => {
   sessionSet(SK.FPS, undefined);
@@ -37,6 +37,9 @@ export const clearStoreOnTimelineStartDef = () => {
 
   // measures
   sessionSet(SK.SCREEN_CALIBRATED, false);
+
+  // debug
+  sessionSet(SK.DEBUG, false);
 };
 
 export const clearStoreOnAppStartDef = () => {

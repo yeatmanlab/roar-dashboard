@@ -1,11 +1,11 @@
-import { mapTrials } from '../../shared/trials/mapTrials';
-import { rvp_mapTrials } from './rvp_mapTrials';
-import { ModeGame, AssessmentStage } from '../../shared/helpers/namingHelpers';
-import { DURATIONS } from '../../shared/helpers/constants';
-import { ModeSelStim, TypeStimRvp } from './rvp_rvpTrial';
-import { VALIDATION, RVP } from '../helpers/rvp_constants';
-import { sessionGet } from '../../shared/helpers/sessionHelpers';
-import { RVP_SESSION_KEYS as SK } from '../helpers/rvp_sessionKeys';
+import { mapTrials } from "../../shared/trials/mapTrials";
+import { rvp_mapTrials } from "./rvp_mapTrials";
+import { ModeGame, AssessmentStage } from "../../shared/helpers/namingHelpers";
+import { DURATIONS } from "../../shared/helpers/constants";
+import { ModeSelStim, TypeStimRvp } from "./rvp_rvpTrial";
+import { VALIDATION, RVP } from "../helpers/rvp_constants";
+import { sessionGet } from "../../shared/helpers/sessionHelpers";
+import { RVP_SESSION_KEYS as SK } from "../helpers/rvp_sessionKeys";
 
 const tr = {
   ...mapTrials,
@@ -19,17 +19,24 @@ export const t_timelineDef = () => {
 
   arrTrials.push(tr.t_saveConfigBlockStim());
 
-  arrTrials.push(tr.t_enterFullscreen(true));
+  arrTrials.push(tr.t_enterFullscreen(false)); // @fix-freeze-audio - adding explicit audio enable request
 
   arrTrials.push(tr.t_enterLandscape());
 
   arrTrials.push(tr.t_installTouchGuards());
 
-  arrTrials.push(tr.t_collectDataMonitor());
+  arrTrials.push(
+    // @fix-freeze-audio - white background
+    tr.t_collectDataMonitor({
+      keyImgBg: "",
+    }),
+  );
 
   arrTrials.push(tr.t_setAllowModeInputAll(true));
 
   arrTrials.push(tr.t_initCatsAll());
+
+  arrTrials.push(tr.t_enableAudio()); // @fix-freeze-audio - adding explicit audio enable request
 
   arrTrials.push(
     tr.t_instructionGeneral(
@@ -37,7 +44,7 @@ export const t_timelineDef = () => {
         animateBtn: true,
         durationTrial: DURATIONS.WAIT_FOR_RESPONSE,
       },
-      'intro',
+      "intro",
     ),
   );
 
@@ -46,18 +53,18 @@ export const t_timelineDef = () => {
       {
         modeGameSkipResponse: ModeGame.ALL,
       },
-      'instr-task-1',
+      "instr-task-1",
     ),
   );
 
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'map-0'],
+        keyImgCharacter: ["", "", "map-0"],
         modeGameSkipResponse: ModeGame.ALL,
         modeGameTrial: ModeGame.GAME,
       },
-      'instr-task-2',
+      "instr-task-2",
     ),
   );
 
@@ -73,17 +80,17 @@ export const t_timelineDef = () => {
         typeStim: TypeStimRvp.OPTO,
         modeSelStim: ModeSelStim.NAME,
         numStim: 2,
-        namesStim: ['tree', 'flower'],
+        namesStim: ["tree", "flower"],
         posTarg: 1,
         durationResp: RVP.DURATION_RESP_DEMO_MAX,
       },
       info: {
-        nameBlock: 'block-instr-demo-1',
+        nameBlock: "block-instr-demo-1",
         stageAssessment: AssessmentStage.INSTRUCTION,
         evaluateValidity: false,
         playAudio: true,
         showImgBg: modeGame === ModeGame.GAME,
-        keyImgBg: ['', '', 'bg-blank'],
+        keyImgBg: ["", "", "bg-blank"],
         animateMarkFix: true,
         animateMarkTarg: true,
         animateBtnResp: true,
@@ -101,7 +108,7 @@ export const t_timelineDef = () => {
           includeTrialResp: false,
         },
       },
-      'instr-demo-1-start',
+      "instr-demo-1-start",
     ),
   );
 
@@ -118,7 +125,7 @@ export const t_timelineDef = () => {
           animateStimTarg: true,
         },
       },
-      'instr-demo-1-pos-0',
+      "instr-demo-1-pos-0",
     ),
   );
 
@@ -134,7 +141,7 @@ export const t_timelineDef = () => {
           animateStimTarg: true,
         },
       },
-      'instr-demo-1-pos-1',
+      "instr-demo-1-pos-1",
     ),
   );
 
@@ -148,18 +155,18 @@ export const t_timelineDef = () => {
           disableBtnsRespNonTarg: true,
         },
       },
-      'instr-demo-1-end',
+      "instr-demo-1-end",
     ),
   );
 
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'map-1'],
-        keyImgBg: ['', '', 'bg-opto'],
+        keyImgCharacter: ["", "", "map-1"],
+        keyImgBg: ["", "", "bg-opto"],
         modeGameSkipResponse: ModeGame.ALL,
       },
-      'instr-after-demo-1',
+      "instr-after-demo-1",
     ),
   );
 
@@ -170,17 +177,17 @@ export const t_timelineDef = () => {
         typeStim: TypeStimRvp.OPTO,
         modeSelStim: ModeSelStim.NAME,
         numStim: 4,
-        namesStim: ['rabbit', 'car', 'butterfly', 'duck'],
+        namesStim: ["rabbit", "car", "butterfly", "duck"],
         posTarg: 0,
         durationResp: RVP.DURATION_RESP_DEMO_MAX,
       },
       info: {
-        nameBlock: 'block-instr-demo-2',
+        nameBlock: "block-instr-demo-2",
         stageAssessment: AssessmentStage.INSTRUCTION,
         evaluateValidity: false,
         playAudio: true,
         showImgBg: modeGame === ModeGame.GAME,
-        keyImgBg: ['', '', 'bg-blank'],
+        keyImgBg: ["", "", "bg-blank"],
         animateBtnResp: true,
         animateStimTarg: true,
         includeTrialResp: false,
@@ -198,7 +205,7 @@ export const t_timelineDef = () => {
           animateStimTarg: false,
         },
       },
-      'instr-demo-2-start',
+      "instr-demo-2-start",
     ),
   );
 
@@ -214,7 +221,7 @@ export const t_timelineDef = () => {
           includeTrialResp: false,
         },
       },
-      'instr-demo-2-pos-0',
+      "instr-demo-2-pos-0",
     ),
   );
 
@@ -228,7 +235,7 @@ export const t_timelineDef = () => {
         },
         info: {},
       },
-      'instr-demo-2-pos-1',
+      "instr-demo-2-pos-1",
     ),
   );
 
@@ -242,7 +249,7 @@ export const t_timelineDef = () => {
         },
         info: {},
       },
-      'instr-demo-2-pos-2',
+      "instr-demo-2-pos-2",
     ),
   );
 
@@ -256,7 +263,7 @@ export const t_timelineDef = () => {
         },
         info: {},
       },
-      'instr-demo-2-pos-3',
+      "instr-demo-2-pos-3",
     ),
   );
 
@@ -273,7 +280,7 @@ export const t_timelineDef = () => {
           disableBtnsRespNonTarg: true,
         },
       },
-      'instr-demo-2-end',
+      "instr-demo-2-end",
     ),
   );
 
@@ -284,11 +291,11 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'map-2'],
+        keyImgCharacter: ["", "", "map-2"],
         animateBtn: true,
         modeGameSkipResponse: ModeGame.ALL,
       },
-      'practice-before-practice-av',
+      "practice-before-practice-av",
     ),
   );
 
@@ -301,11 +308,11 @@ export const t_timelineDef = () => {
         durationResp: RVP.DURATION_RESP_PRACTICE_AV_MAX,
       },
       info: {
-        nameBlock: 'block-practice-av',
+        nameBlock: "block-practice-av",
         stageAssessment: AssessmentStage.PRACTICE,
         evaluateValidity: false,
         showImgBg: modeGame === ModeGame.GAME,
-        keyImgBg: ['', '', 'bg-blank'],
+        keyImgBg: ["", "", "bg-blank"],
         playAudio: true,
       },
     }),
@@ -314,7 +321,7 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_createBlockRvp({
       playFeedbackAv: true,
-      tagReqRvp: 'practice-av',
+      tagReqRvp: "practice-av",
       arrMetaparams: [
         { numStim: 2, posTarg: 0 },
         { numStim: 2, posTarg: 1 },
@@ -331,10 +338,10 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'warn-fast'],
+        keyImgCharacter: ["", "", "warn-fast"],
         modeGameSkipResponse: ModeGame.ALL,
       },
-      'practice-before-practice',
+      "practice-before-practice",
     ),
   );
 
@@ -347,7 +354,7 @@ export const t_timelineDef = () => {
         durationResp: RVP.DURATION_RESP_PRACTICE_MAX,
       },
       info: {
-        nameBlock: 'block-practice',
+        nameBlock: "block-practice",
         stageAssessment: AssessmentStage.PRACTICE,
         evaluateValidity: false,
       },
@@ -370,22 +377,22 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'planet-crystal'],
+        keyImgCharacter: ["", "", "planet-crystal"],
         modeGameTrial: ModeGame.GAME,
         modeGameSkipResponse: ModeGame.ALL,
       },
-      'practice-after-practice',
+      "practice-after-practice",
     ),
   );
 
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'planet-crystal'],
+        keyImgCharacter: ["", "", "planet-crystal"],
         durationTrial: DURATIONS.BREAK,
         animateBtn: true,
       },
-      'instr-take-best-guess',
+      "instr-take-best-guess",
     ),
   );
 
@@ -400,13 +407,13 @@ export const t_timelineDef = () => {
     }),
   );
 
-  arrTrials.push(tr.t_startNewBlockValidation('block-opto'));
+  arrTrials.push(tr.t_startNewBlockValidation("block-opto"));
 
   arrTrials.push(
     tr.t_setcreateBlockRvpAdapt({
       indBlockReq: 0,
       tagReqInstrBefore: null,
-      tagReqInstrExtra: 'test-warn-fast',
+      tagReqInstrExtra: "test-warn-fast",
     }),
   );
 
@@ -414,7 +421,7 @@ export const t_timelineDef = () => {
     tr.t_setcreateBlockRvpAdapt({
       indBlockReq: 1,
       paramsInstrBefore: {
-        keyImgCharacter: ['', '', 'map-3'],
+        keyImgCharacter: ["", "", "map-3"],
       },
     }),
   );
@@ -423,9 +430,9 @@ export const t_timelineDef = () => {
     tr.t_setcreateBlockRvpAdapt({
       indBlockReq: 2,
       paramsInstrBefore: {
-        keyImgCharacter: ['', '', 'map-4'],
+        keyImgCharacter: ["", "", "map-4"],
       },
-      tagReqInstrBefore: 'test-keep-going-half',
+      tagReqInstrBefore: "test-keep-going-half",
     }),
   );
 
@@ -436,12 +443,12 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgBg: ['', '', 'bg-pseudo'],
-        keyImgCharacter: ['', '', 'planet-glass'],
+        keyImgBg: ["", "", "bg-pseudo"],
+        keyImgCharacter: ["", "", "planet-glass"],
         durationTrial: DURATIONS.BREAK,
         animateBtn: true,
       },
-      'test-break-after-block-1',
+      "test-break-after-block-1",
     ),
   );
 
@@ -449,13 +456,13 @@ export const t_timelineDef = () => {
   // block-pseudo
   // ==================================
 
-  arrTrials.push(tr.t_startNewBlockValidation('block-pseudo'));
+  arrTrials.push(tr.t_startNewBlockValidation("block-pseudo"));
 
   arrTrials.push(
     tr.t_setcreateBlockRvpAdapt({
       indBlockReq: 3,
       tagReqInstrBefore: null,
-      tagReqInstrExtra: 'test-warn-fast',
+      tagReqInstrExtra: "test-warn-fast",
     }),
   );
 
@@ -463,7 +470,7 @@ export const t_timelineDef = () => {
     tr.t_setcreateBlockRvpAdapt({
       indBlockReq: 4,
       paramsInstrBefore: {
-        keyImgCharacter: ['', '', 'map-5'],
+        keyImgCharacter: ["", "", "map-5"],
       },
     }),
   );
@@ -472,9 +479,9 @@ export const t_timelineDef = () => {
     tr.t_setcreateBlockRvpAdapt({
       indBlockReq: 5,
       paramsInstrBefore: {
-        keyImgCharacter: ['', '', 'map-6'],
+        keyImgCharacter: ["", "", "map-6"],
       },
-      tagReqInstrBefore: 'test-keep-going-last',
+      tagReqInstrBefore: "test-keep-going-last",
     }),
   );
 
@@ -486,10 +493,10 @@ export const t_timelineDef = () => {
     tr.t_instructionGeneral(
       {
         animateBtn: true,
-        keyImgCharacter: ['', '', 'planet-earth'],
+        keyImgCharacter: ["", "", "planet-earth"],
         durationTrial: DURATIONS.BREAK,
       },
-      'end-screen',
+      "end-screen",
     ),
   );
 

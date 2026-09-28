@@ -1,10 +1,15 @@
-import jsPsychAudioButtonResponse from '@jspsych/plugin-audio-button-response';
+import jsPsychAudioButtonResponse from "@jspsych/plugin-audio-button-response";
 // import jsPsychCallFunction from "@jspsych/plugin-call-function";
-import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
-import { mediaAssets } from '../shared/helpers/mediaAssets';
-import { ET_SESSION_KEYS as SK } from './et_sessionKeys';
-import { jsPsych } from '../shared/helpers/taskSetup';
-import { et_stateResetOngoing, et_TypeSaveSnapshots, state, t_et_stateSave } from './et_state';
+import jsPsychAudioMultiResponse from "@jspsych-contrib/plugin-audio-multi-response";
+import { mediaAssets } from "../shared/helpers/mediaAssets";
+import { ET_SESSION_KEYS as SK } from "./et_sessionKeys";
+import { jsPsych } from "../shared/helpers/taskSetup";
+import {
+  et_stateResetOngoing,
+  et_TypeSaveSnapshots,
+  state,
+  t_et_stateSave,
+} from "./et_state";
 import {
   fm_fmRun,
   fm_xMinFromCoords,
@@ -17,36 +22,48 @@ import {
   fm_drawPoint,
   fm_def_fillStateOnResultsFm,
   fm_calcMetricsHead,
-} from './et_fmHelpers';
+} from "./et_fmHelpers";
 
 import {
   et_videoCardHtml,
   et_videoInit,
   et_videoPause,
   et_videoStart,
-  // et_videoStop,
-} from './et_videoHelpers';
-import { ET } from './et_constants';
-import { fillTextKeyValuesDef, ModeGame, NameTask, TAG_REQ_DEF, TypeKey } from '../shared/helpers/namingHelpers';
-import { sessionGet } from '../shared/helpers/sessionHelpers';
-import { t_instructionTech } from '../shared/trials/instructionTech';
-import { et_calcMedianArrStruct, et_calcMedianTrimArrStruct } from './et_utils';
+} from "./et_videoHelpers";
+import { ET } from "./et_constants";
+import {
+  fillTextKeyValuesDef,
+  ModeGame,
+  NameTask,
+  TAG_REQ_DEF,
+  TypeKey,
+} from "../shared/helpers/namingHelpers";
+import { sessionGet } from "../shared/helpers/sessionHelpers";
+import { t_instructionTech } from "../shared/trials/instructionTech";
+import { et_calcMedianArrStruct, et_calcMedianTrimArrStruct } from "./et_utils";
 
 const TypeMoveHead = {
-  MOVE_RIGHT: 'move-right',
-  MOVE_LEFT: 'move-left',
-  ROTATE_RIGHT: 'rotate-right',
-  ROTATE_LEFT: 'rotate-left',
-  TILT_RIGHT: 'tilt-right',
-  TILT_LEFT: 'tilt-left',
-  NONE: 'none',
+  MOVE_RIGHT: "move-right",
+  MOVE_LEFT: "move-left",
+  ROTATE_RIGHT: "rotate-right",
+  ROTATE_LEFT: "rotate-left",
+  TILT_RIGHT: "tilt-right",
+  TILT_LEFT: "tilt-left",
+  NONE: "none",
 };
 
 // tolMove -- in percent of width (full width 1)
 // tolRotate -- ratio of head centroid to min / max of heads
 // tolTilt -- ratio to the height of eye's BB
 
-const typeMoveHeadToCenter = (coordsHead, coordsEyeL, coordsEyeR, tolMove = 0.05, tolRotate = 0.1, tolTilt = 0.35) => {
+const typeMoveHeadToCenter = (
+  coordsHead,
+  coordsEyeL,
+  coordsEyeR,
+  tolMove = 0.05,
+  tolRotate = 0.1,
+  tolTilt = 0.35,
+) => {
   const centroidHead = fm_calcCentroid(coordsHead);
   if (centroidHead[0] < 0.5 - tolMove) {
     return TypeMoveHead.MOVE_RIGHT;
@@ -79,7 +96,6 @@ const typeMoveHeadToCenter = (coordsHead, coordsEyeL, coordsEyeR, tolMove = 0.05
   const dyEyeAver = (dyEyeL + dyEyeR) / 2;
   const yCenterL = (yMinEyeL + yMaxEyeL) / 2;
   const yCenterR = (yMinEyeR + yMaxEyeR) / 2;
-  // TODO: MIRROR EYES???
   if (yCenterL < yCenterR - tolTilt * dyEyeAver) {
     return TypeMoveHead.TILT_LEFT;
   }
@@ -91,19 +107,16 @@ const typeMoveHeadToCenter = (coordsHead, coordsEyeL, coordsEyeR, tolMove = 0.05
 
 const PERC_TRIM_LOW_IRIS = 30;
 
-// those are references from last SAVE METRICS
-// TODO: also all of that is in PIXELS??? of the camera IMAGE???
-// why not in just fractions -- as output from faceMesh???
+export const et_vdCalcFlMult = (widthImg, heightImg) =>
+  Math.min(widthImg, heightImg);
 
-// TODO: coordsHeadAux -- do we want to save it in any way?????
-// contourHead: state.coordsHeadAux, // TODO: this should not be here --- should be middle of contours????
-// TODO: this should not be here!!!!!!!!!!!!!
-//  state.configCalibr = config;
-//  store.session.set(SK.CALIBR_HT, config);
-
-export const et_vdCalcFlMult = (widthImg, heightImg) => Math.min(widthImg, heightImg);
-
-export const et_vdCalcVd = (sizeIrisL, sizeIrisR, flNorm, widthImg, heightImg) => {
+export const et_vdCalcVd = (
+  sizeIrisL,
+  sizeIrisR,
+  flNorm,
+  widthImg,
+  heightImg,
+) => {
   const sizeIrisWorld = ET.SIZE_IRIS_WORLD_DEF;
   const flMult = et_vdCalcFlMult(widthImg, heightImg);
   const fl = flMult * flNorm;
@@ -113,7 +126,13 @@ export const et_vdCalcVd = (sizeIrisL, sizeIrisR, flNorm, widthImg, heightImg) =
   return vd;
 };
 
-export const et_vdCalcFlNorm = (sizeIrisL, sizeIrisR, vd, widthImg, heightImg) => {
+export const et_vdCalcFlNorm = (
+  sizeIrisL,
+  sizeIrisR,
+  vd,
+  widthImg,
+  heightImg,
+) => {
   const sizeIrisWorld = ET.SIZE_IRIS_WORLD_DEF;
   const flMult = et_vdCalcFlMult(widthImg, heightImg);
   const flL = (10 * sizeIrisL * vd * widthImg) / sizeIrisWorld;
@@ -123,11 +142,23 @@ export const et_vdCalcFlNorm = (sizeIrisL, sizeIrisR, vd, widthImg, heightImg) =
   return flNorm;
 };
 
-export const et_vdApplyCalibr = (vdCalibr, arrMetricsIris, percTrimLowIris = PERC_TRIM_LOW_IRIS) => {
+export const et_vdApplyCalibr = (
+  vdCalibr,
+  arrMetricsIris,
+  percTrimLowIris = PERC_TRIM_LOW_IRIS,
+) => {
   state.cal.vdCalibrated = false;
   if (arrMetricsIris.length > 0) {
-    const widthMedianIrisL = et_calcMedianTrimArrStruct(arrMetricsIris, 'widthIrisL', percTrimLowIris);
-    const widthMedianIrisR = et_calcMedianTrimArrStruct(arrMetricsIris, 'widthIrisR', percTrimLowIris);
+    const widthMedianIrisL = et_calcMedianTrimArrStruct(
+      arrMetricsIris,
+      "widthIrisL",
+      percTrimLowIris,
+    );
+    const widthMedianIrisR = et_calcMedianTrimArrStruct(
+      arrMetricsIris,
+      "widthIrisR",
+      percTrimLowIris,
+    );
 
     state.cal.vd.flNorm = et_vdCalcFlNorm(
       widthMedianIrisL,
@@ -147,10 +178,10 @@ export const et_htApplyCalibr = (arrMetricsHead, coordsHeadMid) => {
   state.cal.htCalibrated = false;
   if (arrMetricsHead.length > 0) {
     const metricsMedianHead = {
-      widthHead: et_calcMedianArrStruct(arrMetricsHead, 'widthHead'),
-      heightHead: et_calcMedianArrStruct(arrMetricsHead, 'heightHead'),
-      xCenterHead: et_calcMedianArrStruct(arrMetricsHead, 'xCenterHead'),
-      yCenterHead: et_calcMedianArrStruct(arrMetricsHead, 'yCenterHead'),
+      widthHead: et_calcMedianArrStruct(arrMetricsHead, "widthHead"),
+      heightHead: et_calcMedianArrStruct(arrMetricsHead, "heightHead"),
+      xCenterHead: et_calcMedianArrStruct(arrMetricsHead, "xCenterHead"),
+      yCenterHead: et_calcMedianArrStruct(arrMetricsHead, "yCenterHead"),
     };
     state.cal.ht = { ...metricsMedianHead };
     state.cal.ht.coordsHead = coordsHeadMid;
@@ -163,7 +194,10 @@ export const et_htApplyCalibr = (arrMetricsHead, coordsHeadMid) => {
 // ============================================================
 
 export const ht_def_fillStateOnResultsFm = () => {
-  if (state.cal.vdCalibrated && state.metricsIris) {
+  // changing condition from state.cal.vdCalibrated so that
+  // relative vd can be tracked without vd calibration -
+  // using default vd
+  if (state.cal.vd.vd && state.metricsIris) {
     if (state.metricsIris.widthIrisL && state.metricsIris.widthIrisR) {
       state.vdCur = et_vdCalcVd(
         state.metricsIris.widthIrisL,
@@ -186,11 +220,6 @@ export function vd_calibr_onResultsFaceMesh(resFm) {
   if (!resFm.multiFaceLandmarks) {
     return;
   }
-  // state.canvasNativeEyeL = null;
-  // state.canvasNativeEyeR = null;
-  // state.canvasScaledEyeL = null;
-  // state.canvasScaledEyeR = null;
-
   fm_def_fillStateOnResultsFm(resFm);
   ht_def_fillStateOnResultsFm();
 }
@@ -199,17 +228,22 @@ export function vd_calibr_onResultsFaceMesh(resFm) {
 // t_et_vdCalibr
 // -----------------------------------------------------------
 
-const tagTrialVdCalibr = 'vd-calibr';
+const tagTrialVdCalibr = "vd-calibr";
 
-const paramsVdCalibrDef = (tagReq = TAG_REQ_DEF, tagModeGame = ModeGame.ALL, tagNameTask = NameTask.ET) => ({
+const paramsVdCalibrDef = (
+  tagReq = TAG_REQ_DEF,
+  tagModeGame = ModeGame.ALL,
+  tagNameTask = NameTask.ET,
+) => ({
   tagTrial: tagTrialVdCalibr,
   tagReq: tagReq,
   tagModeGame: tagModeGame, // hint: set to undefined to trigger current game mode
   tagNameTask: tagNameTask, // hint: set to undefined to trigger current task
   vdCalibr: ET.VD_DEF,
   durCalibr: ET.HT.DUR_CALIBR,
-  keyImgNoGlasses: 'sharedTechIconNoGlassesAll',
-  keyImgMeasureVd: 'sharedTechIconMeasureVdAll', // TODO: change to dist
+  keyImgNoGlasses: "sharedTechIconNoGlassesAll",
+  keyImgMeasureVd: "sharedTechIconMeasureVdAll",
+  showLog: false,
 });
 
 // FALLBACK
@@ -227,11 +261,11 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
   let coordsHeadMid = null;
 
   const StageTrial = {
-    NO_GLASSES: 'no-glasses',
-    MEASURE_VD: 'measure-vd',
-    CENTER: 'center',
-    CALIBRATE: 'calibrate',
-    FINISH: 'finish',
+    NO_GLASSES: "no-glasses",
+    MEASURE_VD: "measure-vd",
+    CENTER: "center",
+    CALIBRATE: "calibrate",
+    FINISH: "finish",
   };
 
   // class="shared-tech-card-img-xl",
@@ -242,9 +276,9 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
       text3: paramsStage.text3,
       showLineMidVert: false,
       showProgressBar: stageTrial === StageTrial.CALIBRATE,
-      showLog: true,
+      showLog: params.showLog,
       textBtn1: paramsStage.textBtn,
-      idBtn1: stageTrial === StageTrial.CALIBRATE ? '' : 'id-button',
+      idBtn1: stageTrial === StageTrial.CALIBRATE ? "" : "id-button",
     };
     return et_videoCardHtml(paramsCard);
   };
@@ -253,10 +287,34 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
     params = { ...paramsVdCalibrDef(), ...paramsIn };
     const { tagTrial, tagReq, tagModeGame, tagNameTask } = params;
     const paramsStageIn = {
-      text1: [tagTrial, `${tagReq}.${stageTrial}`, 'text1', tagModeGame, tagNameTask],
-      text2: [tagTrial, `${tagReq}.${stageTrial}`, 'text2', tagModeGame, tagNameTask],
-      text3: [tagTrial, `${tagReq}.${stageTrial}`, 'text3', tagModeGame, tagNameTask],
-      textBtn: [tagTrial, `${tagReq}.${stageTrial}`, 'text-button', tagModeGame, tagNameTask],
+      text1: [
+        tagTrial,
+        `${tagReq}.${stageTrial}`,
+        "text1",
+        tagModeGame,
+        tagNameTask,
+      ],
+      text2: [
+        tagTrial,
+        `${tagReq}.${stageTrial}`,
+        "text2",
+        tagModeGame,
+        tagNameTask,
+      ],
+      text3: [
+        tagTrial,
+        `${tagReq}.${stageTrial}`,
+        "text3",
+        tagModeGame,
+        tagNameTask,
+      ],
+      textBtn: [
+        tagTrial,
+        `${tagReq}.${stageTrial}`,
+        "text-button",
+        tagModeGame,
+        tagNameTask,
+      ],
       keyAudio: [tagTrial, tagReq, stageTrial, tagModeGame, tagNameTask],
     };
     paramsStage = fillTextKeyValuesDef(paramsStageIn);
@@ -266,8 +324,8 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
     prepareParamsStage(StageTrial.NO_GLASSES);
     const paramsInstr = {
       ...paramsStage,
-      text4: '',
-      textExtra: '',
+      text4: "",
+      textExtra: "",
       keyImg: params.keyImgNoGlasses,
     };
     return t_instructionTech(paramsInstr);
@@ -277,8 +335,8 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
     prepareParamsStage(StageTrial.MEASURE_VD);
     const paramsInstr = {
       ...paramsStage,
-      text4: '',
-      textExtra: '',
+      text4: "",
+      textExtra: "",
       keyImg: params.keyImgMeasureVd,
     };
     return t_instructionTech(paramsInstr);
@@ -289,7 +347,10 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
     type: jsPsychAudioMultiResponse,
     stimulus: () => {
       prepareParamsStage(StageTrial.CENTER);
-      return mediaAssets.audio[paramsStage.keyAudio] ?? mediaAssets.audio.sharedNullAudioAll;
+      return (
+        mediaAssets.audio[paramsStage.keyAudio] ??
+        mediaAssets.audio.sharedNullAudioAll
+      );
     },
     prompt: () => {
       const html = htmlLayout(StageTrial.CENTER);
@@ -297,15 +358,15 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
     },
     keyboard_choices: () => [TypeKey.DUMMY],
     button_choices: () => [],
-    button_html: () => '',
+    button_html: () => "",
     trial_ends_after_audio: () => false,
     on_load: () => {
-      const btn = document.getElementById('id-button');
+      const btn = document.getElementById("id-button");
       const callbackOnBtnPress = () => {
         jsPsych.pluginAPI.pressKey(TypeKey.DUMMY);
       };
-      btn.addEventListener('click', callbackOnBtnPress);
-      const elVideoView = document.getElementById('id-video');
+      btn.addEventListener("click", callbackOnBtnPress);
+      const elVideoView = document.getElementById("id-video");
       if (state.cameraStream) {
         elVideoView.srcObject = state.cameraStream;
       }
@@ -320,7 +381,10 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
       type: jsPsychAudioMultiResponse,
       stimulus: () => {
         prepareParamsStage(StageTrial.CALIBRATE);
-        return mediaAssets.audio[paramsStage.keyAudio] ?? mediaAssets.audio.sharedNullAudioAll;
+        return (
+          mediaAssets.audio[paramsStage.keyAudio] ??
+          mediaAssets.audio.sharedNullAudioAll
+        );
       },
       prompt: () => {
         const html = htmlLayout(StageTrial.CALIBRATE);
@@ -328,13 +392,14 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
       },
       keyboard_choices: () => [TypeKey.DUMMY],
       button_choices: () => [],
-      button_html: () => '',
+      button_html: () => "",
       trial_ends_after_audio: () => false,
       on_load: () => {
-        // TODO: very-very important
-        state.collectSnapshots = false; // TODO: should be true with proper setting
+        // @THINK:  important - do we want to collect snapshots during vd calibration?
+        //          at this stage, ETis not yet running and distance is not calibrated and is relative only
+        state.collectSnapshots = false;
 
-        const elVideoView = document.getElementById('id-video');
+        const elVideoView = document.getElementById("id-video");
         if (state.cameraStream) {
           elVideoView.srcObject = state.cameraStream;
         }
@@ -351,7 +416,9 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
               arrMerticsHead.push(state.metricsHead);
             }
             progress += 1;
-            document.getElementById('id-progress-bar').style.width = `${progress}%`;
+            document.getElementById(
+              "id-progress-bar",
+            ).style.width = `${progress}%`;
           } else {
             clearInterval(intervalMetricsRecord);
             intervalMetricsRecord = null;
@@ -366,7 +433,7 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
           }
           et_stateResetOngoing();
           progress = 0;
-          document.getElementById('id-progress-bar').style.width = '0';
+          document.getElementById("id-progress-bar").style.width = "0";
         };
 
         resetRecordMetrics();
@@ -375,11 +442,14 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
         state.faceMesh.onResults(vd_calibr_onResultsFaceMesh);
         state.continueProcessing = true;
         progress = 0;
-        setTimeout(() => fm_fmRun(), ET.FM.TIMEOUT_START);
+        setTimeout(() => fm_fmRun(), ET.FM.TIMEOUT_FM_START);
         const timeIntervalMetricsRecord = params.durCalibr / 100;
         setTimeout(() => {
-          intervalMetricsRecord = setInterval(recordMetrics, timeIntervalMetricsRecord);
-        }, 1.2 * ET.FM.TIMEOUT_START);
+          intervalMetricsRecord = setInterval(
+            recordMetrics,
+            timeIntervalMetricsRecord,
+          );
+        }, 1.2 * ET.FM.TIMEOUT_FM_START);
       },
       on_finish: () => {
         state.continueProcessing = false;
@@ -394,17 +464,20 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
 
   const trialFinish = () => {
     const log = () => {
-      document.getElementById('id-log').innerText = JSON.stringify(state.cal, null, 2);
+      document.getElementById("id-log").innerText = JSON.stringify(
+        state.cal,
+        null,
+        2,
+      );
     };
 
     prepareParamsStage(StageTrial.FINISH);
     const paramsInstr = {
       ...paramsStage,
-      text4: '',
-      textExtra: '',
+      text4: "",
+      textExtra: "",
       modeGameSkipResponse: ModeGame.ALL,
-      // TODO: temp
-      showLog: true,
+      showLog: params.showLog,
       on_load_ext: log,
     };
     return t_instructionTech(paramsInstr);
@@ -424,7 +497,8 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
       }),
       trialFinish(),
     ],
-    conditional_function: () => sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.VD_CALIBRATE),
+    conditional_function: () =>
+      sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.VD_CALIBRATE),
   };
 };
 
@@ -432,19 +506,40 @@ export const t_et_vdCalibr = (paramsIn = {}) => {
 //  PLAYGROUND
 // ============================================================
 
-// TODO: NOTE: IMPORTANT: here canvasWork is FOR VISUALIZATION ONLY
-// images for FaceMesh are coming from videoIn
 export function ht_calibrPlayground_onResultsFaceMesh(resFm) {
   vd_calibr_onResultsFaceMesh(resFm);
+
+  if (!resFm.multiFaceLandmarks) {
+    return;
+  }
 
   const drawCentroid = false;
 
   // eslint-disable-next-line prefer-destructuring
-  const { canvasWork, widthImg, heightImg, coordsHead, coordsEyeL, coordsIrisR, coordsIrisL, coordsEyeR } = state;
+  const {
+    canvasWork,
+    widthImg,
+    heightImg,
+    coordsHead,
+    coordsHeadExtr,
+    coordsEyeL,
+    coordsEyeR,
+    coordsEyeInnerL,
+    coordsEyeInnerR,
+    coordsEyeFullL,
+    coordsEyeFullR,
+    coordsIrisR,
+    coordsIrisL,
+    coordsIrisCenterR,
+    coordsIrisCenterL,
+    coordsNose,
+    coordsNoseTip,
+    coordsPnP,
+  } = state;
   canvasWork.width = widthImg;
   canvasWork.height = heightImg;
 
-  const contextCanvasWork = canvasWork.getContext('2d');
+  const contextCanvasWork = canvasWork.getContext("2d");
   contextCanvasWork.save();
   contextCanvasWork.clearRect(0, 0, widthImg, heightImg);
 
@@ -455,68 +550,336 @@ export function ht_calibrPlayground_onResultsFaceMesh(resFm) {
       heightImg,
       canvasWork,
       true,
-      'rgb(225,225,225)',
-      'rgb(225, 225, 225)',
+      "rgb(225,225,225)",
+      "rgb(225, 225, 225)",
     );
     if (drawCentroid) {
       const centroidCalibr = fm_calcCentroid(state.cal.ht.coordsHead);
-      fm_drawPoint(centroidCalibr[0], centroidCalibr[1], widthImg, heightImg, canvasWork, 'rgb(175, 175, 175)', 10);
+      fm_drawPoint(
+        centroidCalibr[0],
+        centroidCalibr[1],
+        widthImg,
+        heightImg,
+        canvasWork,
+        "rgb(175, 175, 175)",
+        10,
+      );
     }
   }
 
-  fm_drawContour(state.coordsHead, widthImg, heightImg, canvasWork, true, 'blue', 'rgba(146,166,251,0.7)');
-  if (drawCentroid) {
-    const centroidHead = fm_calcCentroid(coordsHead);
-    fm_drawPoint(centroidHead[0], centroidHead[1], widthImg, heightImg, canvasWork, 'rgb(146,166,251)', 10);
-  }
-
-  fm_drawBB(
-    coordsEyeL[0][0],
-    coordsEyeL[1][1],
-    coordsEyeL[2][0],
-    coordsEyeL[3][1],
-    widthImg,
-    heightImg,
-    canvasWork,
-    true,
-    'blue',
-    'rgb(250, 150, 0)',
-  );
-  fm_drawBB(
-    coordsEyeR[0][0],
-    coordsEyeR[1][1],
-    coordsEyeR[2][0],
-    coordsEyeR[3][1],
-    widthImg,
-    heightImg,
-    canvasWork,
-    true,
-    'blue',
-    'rgb(250, 150, 0)',
-  );
-  fm_drawContour(coordsEyeL, widthImg, heightImg, canvasWork, true, 'blue', 'rgb(250, 225, 0)');
-  fm_drawContour(coordsEyeR, widthImg, heightImg, canvasWork, true, 'blue', 'rgb(250, 225, 0)');
-  fm_drawContour(coordsIrisL, widthImg, heightImg, canvasWork, true, 'blue', '#f700d2');
-  fm_drawContour(coordsIrisR, widthImg, heightImg, canvasWork, true, 'blue', '#f700d2');
-
-  const typeMoveToCenter = typeMoveHeadToCenter(coordsHead, coordsEyeL, coordsEyeR);
-  const elMoveHead = document.getElementById('id-move-head');
-  const elMsgSaveMetrics = document.getElementById('id-msg-save-metrics');
-  if (elMoveHead && elMsgSaveMetrics) {
-    if (typeMoveToCenter === TypeMoveHead.NONE) {
-      elMoveHead.innerHTML = `<h3 style="color: #00bb00; background-color:yellow">head centered</h3>`;
-    } else {
-      elMoveHead.innerHTML = `<h3 style="color: red; background-color: yellow">${typeMoveToCenter.replace(
-        '-',
-        ' head ',
-      )}</h3>`;
+  if (coordsHead) {
+    fm_drawContour(
+      state.coordsHead,
+      widthImg,
+      heightImg,
+      canvasWork,
+      true,
+      "blue",
+      "rgba(146,166,251,0.7)",
+    );
+    if (drawCentroid) {
+      const centroidHead = fm_calcCentroid(coordsHead);
+      fm_drawPoint(
+        centroidHead[0],
+        centroidHead[1],
+        widthImg,
+        heightImg,
+        canvasWork,
+        "rgb(146,166,251)",
+        10,
+      );
     }
   }
+
+  if (coordsHeadExtr) {
+    fm_drawContour(
+      coordsHeadExtr,
+      widthImg,
+      heightImg,
+      canvasWork,
+      false,
+      "red",
+    );
+
+    const sizeMax = 15;
+    const sizeStep = 2;
+    for (let i = 0; i < coordsHeadExtr.length; i += 1) {
+      const [x, y] = state.coordsHeadExtr[i];
+      fm_drawPoint(
+        x,
+        y,
+        widthImg,
+        heightImg,
+        canvasWork,
+        "blue",
+        sizeMax - sizeStep * (i - 1),
+      );
+    }
+  }
+
+  if (coordsEyeL) {
+    fm_drawBB(
+      coordsEyeL[0][0],
+      coordsEyeL[1][1],
+      coordsEyeL[2][0],
+      coordsEyeL[3][1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      true,
+      "blue",
+      "rgb(0, 200, 30)", //  "rgb(250, 150, 0)",
+    );
+    fm_drawContour(
+      coordsEyeL,
+      widthImg,
+      heightImg,
+      canvasWork,
+      true,
+      "blue",
+      "rgb(0, 200, 30)", // "rgb(250, 225, 0)",
+    );
+    fm_drawPoint(
+      coordsEyeL[0][0],
+      coordsEyeL[0][1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "blue",
+      15,
+    );
+    fm_drawPoint(
+      coordsEyeL[1][0],
+      coordsEyeL[1][1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "blue",
+      8,
+    );
+  }
+
+  if (coordsEyeR) {
+    fm_drawBB(
+      coordsEyeR[0][0],
+      coordsEyeR[1][1],
+      coordsEyeR[2][0],
+      coordsEyeR[3][1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      true,
+      "blue",
+      "rgb(250, 150, 0)", //  "rgb(250, 150, 0)",
+    );
+    fm_drawContour(
+      coordsEyeR,
+      widthImg,
+      heightImg,
+      canvasWork,
+      true,
+      "blue",
+      "rgb(250, 150, 0)", // "rgb(250, 225, 0)",
+    );
+    fm_drawPoint(
+      coordsEyeR[0][0],
+      coordsEyeR[0][1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "blue",
+      15,
+    );
+    fm_drawPoint(
+      coordsEyeR[1][0],
+      coordsEyeR[1][1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "blue",
+      8,
+    );
+  }
+  if (coordsEyeFullL) {
+    fm_drawContour(
+      coordsEyeFullL,
+      widthImg,
+      heightImg,
+      canvasWork,
+      true,
+      "black",
+      "rgb(200, 200, 200)",
+    );
+  }
+  if (coordsEyeFullR) {
+    fm_drawContour(
+      coordsEyeFullR,
+      widthImg,
+      heightImg,
+      canvasWork,
+      true,
+      "black",
+      "rgb(200, 200, 200)",
+    );
+  }
+
+  if (coordsEyeL) {
+    fm_drawContour(
+      coordsIrisL,
+      widthImg,
+      heightImg,
+      canvasWork,
+      true,
+      "blue",
+      "rgb(158, 253, 152)", // "#f700d2",
+    );
+    fm_drawPoint(
+      coordsIrisL[0][0],
+      coordsIrisL[0][1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "blue",
+      15,
+    );
+    fm_drawPoint(
+      coordsIrisL[1][0],
+      coordsIrisL[1][1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "blue",
+      8,
+    );
+  }
+  if (coordsEyeInnerL) {
+    fm_drawContour(
+      coordsEyeInnerL,
+      widthImg,
+      heightImg,
+      canvasWork,
+      false,
+      "red",
+    );
+  }
+  if (coordsEyeInnerR) {
+    fm_drawContour(
+      coordsEyeInnerR,
+      widthImg,
+      heightImg,
+      canvasWork,
+      false,
+      "red",
+    );
+  }
+
+  if (coordsIrisR) {
+    fm_drawContour(
+      coordsIrisR,
+      widthImg,
+      heightImg,
+      canvasWork,
+      true,
+      "blue",
+      "rgb(251, 235, 143)", // "#f700d2",
+    );
+    fm_drawPoint(
+      coordsIrisR[0][0],
+      coordsIrisR[0][1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "blue",
+      15,
+    );
+    fm_drawPoint(
+      coordsIrisR[1][0],
+      coordsIrisR[1][1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "blue",
+      8,
+    );
+  }
+
+  if (coordsIrisCenterL) {
+    fm_drawPoint(
+      coordsIrisCenterL[0],
+      coordsIrisCenterL[1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "rgb(0, 200, 30)",
+      10,
+    );
+  }
+  if (coordsIrisCenterR) {
+    fm_drawPoint(
+      coordsIrisCenterR[0],
+      coordsIrisCenterR[1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "rgb(250, 150, 0)",
+      10,
+    );
+  }
+
+  if (coordsNose) {
+    fm_drawContour(
+      coordsNose,
+      widthImg,
+      heightImg,
+      canvasWork,
+      false,
+      "rgb(255,0,255)",
+    );
+  }
+  if (coordsNoseTip) {
+    fm_drawPoint(
+      coordsNoseTip[0],
+      coordsNoseTip[1],
+      widthImg,
+      heightImg,
+      canvasWork,
+      "rgb(255,0,255)",
+      12,
+    );
+  }
+
+  if (coordsPnP) {
+    for (let i = 0; i < coordsPnP.length; i += 1) {
+      const [x, y] = coordsPnP[i];
+      fm_drawPoint(x, y, widthImg, heightImg, canvasWork, "red", 20);
+    }
+  }
+
+  if (coordsHead && coordsEyeL && coordsEyeR) {
+    const typeMoveToCenter = typeMoveHeadToCenter(
+      coordsHead,
+      coordsEyeL,
+      coordsEyeR,
+    );
+    const elMoveHead = document.getElementById("id-move-head");
+    const elMsgSaveMetrics = document.getElementById("id-msg-save-metrics");
+    if (elMoveHead && elMsgSaveMetrics) {
+      if (typeMoveToCenter === TypeMoveHead.NONE) {
+        elMoveHead.innerHTML = `<h3 style="color: #00bb00; background-color:yellow">head centered</h3>`;
+      } else {
+        elMoveHead.innerHTML = `<h3 style="color: red; background-color: yellow">${typeMoveToCenter.replace(
+          "-",
+          " head ",
+        )}</h3>`;
+      }
+    }
+  }
+
   contextCanvasWork.restore();
 
-  const flNormCur = parseFloat(document.getElementById('id-input-nfl')?.value);
+  const flNormCur = parseFloat(document.getElementById("id-input-nfl")?.value);
 
-  if (flNormCur) {
+  if (flNormCur && state.metricsIris) {
     const vdCur = et_vdCalcVd(
       state.metricsIris.widthIrisL,
       state.metricsIris.widthIrisR,
@@ -524,12 +887,14 @@ export function ht_calibrPlayground_onResultsFaceMesh(resFm) {
       widthImg,
       heightImg,
     );
-    document.getElementById('id-dist-abs').textContent = vdCur.toFixed(0);
+    document.getElementById("id-dist-abs").textContent = vdCur.toFixed(0);
 
     if (state.cal.vdCalibrated) {
       const vdCalibr = state.cal.vd.vd;
       const ratioDistView = vdCur / vdCalibr;
-      document.getElementById('id-dist-rel').textContent = (100 * ratioDistView).toFixed(0);
+      document.getElementById("id-dist-rel").textContent = (
+        100 * ratioDistView
+      ).toFixed(0);
     }
     state.vdCur = vdCur;
   }
@@ -540,7 +905,9 @@ const paramsHtCalibrPlaygroundDef = {
   durCalibr: ET.HT.DUR_CALIBR,
 };
 
-export const t_et_htCalibrPlayground = (paramsIn = {} /* viewingDistance */) => {
+export const t_et_htCalibrPlayground = (
+  paramsIn = {} /* viewingDistance */,
+) => {
   let params = null;
 
   const trialCalibration = {
@@ -590,19 +957,21 @@ export const t_et_htCalibrPlayground = (paramsIn = {} /* viewingDistance */) => 
           <h3>Head and Distance Tracking</h3>
           <div id="id-msg-save-metrics"></div>
           <div id="id-move-head"></div>
-          <div style="width:${widthCanvas}vh; height:${params.heightCanvas}vh; margin:0 auto;">
+          <div style="width:${widthCanvas}vh; height:${
+            params.heightCanvas
+          }vh; margin:0 auto;">
             <canvas id="id-canvas-work" style="width:100%; height:100%; border:1px solid black;"></canvas>
           </div>
         </div>`;
     },
-    choices: ['NEXT'],
+    choices: ["NEXT"],
     on_load: () => {
-      state.canvasWork = document.getElementById('id-canvas-work');
+      state.canvasWork = document.getElementById("id-canvas-work");
       et_videoInit();
       et_videoStart();
       state.faceMesh.onResults(ht_calibrPlayground_onResultsFaceMesh);
       state.continueProcessing = true;
-      setTimeout(() => fm_fmRun(), ET.FM.TIMEOUT_START);
+      setTimeout(() => fm_fmRun(), ET.FM.TIMEOUT_FM_START);
     },
     on_start: () => {},
     on_finish: () => {

@@ -1,10 +1,10 @@
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import { sessionGet } from '../../shared/helpers/sessionHelpers';
-import { RVP_SESSION_KEYS as SK } from '../helpers/rvp_sessionKeys';
-import { AssessmentStage } from '../../shared/helpers/namingHelpers';
-import { jsPsych } from '../../shared/helpers/taskSetup';
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import { sessionGet } from "../../shared/helpers/sessionHelpers";
+import { RVP_SESSION_KEYS as SK } from "../helpers/rvp_sessionKeys";
+import { AssessmentStage } from "../../shared/helpers/namingHelpers";
+import { jsPsych } from "../../shared/helpers/taskSetup";
 
-const tagTrial = 'save-config-block-stim';
+const tagTrial = "save-config-block-stim";
 
 export const t_saveConfigBlockStim = () => ({
   type: jsPsychCallFunction,

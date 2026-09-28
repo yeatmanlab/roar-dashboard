@@ -1,8 +1,8 @@
-import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
-import { jsPsych } from '../shared/helpers/taskSetup';
-import { state } from './et_state';
+import jsPsychHtmlButtonResponse from "@jspsych/plugin-html-button-response";
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import jsPsychAudioMultiResponse from "@jspsych-contrib/plugin-audio-multi-response";
+import { jsPsych } from "../shared/helpers/taskSetup";
+import { state } from "./et_state";
 import {
   AssessmentStage,
   fillTextKeyValuesDef,
@@ -10,20 +10,29 @@ import {
   NameTask,
   TAG_REQ_DEF,
   TypeKey,
-} from '../shared/helpers/namingHelpers';
-import { mediaAssets } from '../shared/helpers/mediaAssets';
-import { sessionGet, sessionSet } from '../shared/helpers/sessionHelpers';
-import { ET_SESSION_KEYS as SK } from './et_sessionKeys';
-import { ET } from './et_constants';
-
-// TODO: it sets window.cameraStream -- it should NOT be like that
+} from "../shared/helpers/namingHelpers";
+import { mediaAssets } from "../shared/helpers/mediaAssets";
+import { sessionGet, sessionSet } from "../shared/helpers/sessionHelpers";
+import { ET_SESSION_KEYS as SK } from "./et_sessionKeys";
+import { ET } from "./et_constants";
+import {
+  browserExitsFullscreenOnNativeUI,
+  enterFullscreenCompat,
+  exitFullscreen,
+  isFullscreen,
+} from "../shared/trials/screenHelpers";
+import { t_instructionTech } from "../shared/trials/instructionTech";
 
 export const et_videoInit = () => {
-  const videoIn = document.createElement('video');
-  videoIn.id = 'id-input-video';
-  videoIn.className = 'videoIn';
-  videoIn.style.display = 'none';
-  videoIn.setAttribute('playsinline', 'true');
+  const elVideo = document.getElementById("id-input-video");
+  if (elVideo) {
+    elVideo.remove();
+  }
+  const videoIn = document.createElement("video");
+  videoIn.id = "id-input-video";
+  videoIn.className = "videoIn";
+  videoIn.style.display = "none";
+  videoIn.setAttribute("playsinline", "true");
   videoIn.muted = true;
   videoIn.autoplay = true;
   document.body.appendChild(videoIn);
@@ -40,8 +49,19 @@ export const et_videoStart = () => {
 export const et_videoStop = () => {
   if (state.videoIn && state.videoIn.srcObject) {
     state.videoIn.srcObject.getTracks().forEach((t) => t.stop());
+  } else if (state.cameraStream) {
+    state.cameraStream.getTracks().forEach((t) => t.stop());
+  }
+  const elVideo = document.getElementById("id-input-video");
+  if (elVideo) {
+    elVideo.remove();
   }
 };
+
+export const t_et_videoStop = () => ({
+  type: jsPsychCallFunction,
+  func: () => et_videoStop(),
+});
 
 export const et_videoPause = () => {
   if (state.videoIn) {
@@ -50,32 +70,36 @@ export const et_videoPause = () => {
 };
 
 const paramsVideoCardHtmlDef = {
-  text1: '',
-  text2: '',
-  text3: '',
+  text1: "",
+  text2: "",
+  text3: "",
   showLineMidVert: false,
   showProgressBar: false,
   showLog: false,
-  textBtn1: '',
-  idBtn1: '',
-  textBtn2: '',
-  idBtn2: '',
+  textBtn1: "",
+  idBtn1: "",
+  textBtn2: "",
+  idBtn2: "",
 };
 
 export const et_videoCardHtml = (paramsIn) => {
   const params = { ...paramsVideoCardHtmlDef, ...paramsIn };
-  const strVisLog = `visibility: ${params.showLog ? 'visible' : 'hidden'}`;
-  const strVisProgressBar = `visibility: ${params.showProgressBar ? 'visible' : 'hidden'}`;
-  const strVisLineMidVert = `visibility: ${params.showLineMidVert ? 'visible' : 'hidden'}`;
+  const strVisLog = `visibility: ${params.showLog ? "visible" : "hidden"}`;
+  const strVisProgressBar = `visibility: ${
+    params.showProgressBar ? "visible" : "hidden"
+  }`;
+  const strVisLineMidVert = `visibility: ${
+    params.showLineMidVert ? "visible" : "hidden"
+  }`;
   const htmlBtn1 =
-    params.idBtn1 === ''
-      ? ''
+    params.idBtn1 === ""
+      ? ""
       : `<button id="${params.idBtn1}" class="shared-tech-button-medium">
       ${params.textBtn1}
     </button>`;
   const htmlBtn2 =
-    params.idBtn2 === ''
-      ? ''
+    params.idBtn2 === ""
+      ? ""
       : `<button id="${params.idBtn2}" class="shared-tech-button-medium">
       ${params.textBtn2}
     </button>`;
@@ -87,9 +111,9 @@ export const et_videoCardHtml = (paramsIn) => {
     </div>
     <div class="et-video-card-container">
       <div class="et-video-card-text-wrap">
-        ${params.text1 ? `<p>${params.text1}</p>` : '&nbsp'}
-        ${params.text2 ? `<p>${params.text2}</p>` : '&nbsp'}
-        ${params.text3 ? `<p>${params.text3}</p>` : '&nbsp'}
+        ${params.text1 ? `<p>${params.text1}</p>` : "&nbsp"}
+        ${params.text2 ? `<p>${params.text2}</p>` : "&nbsp"}
+        ${params.text3 ? `<p>${params.text3}</p>` : "&nbsp"}
       </div>
       <div style="width: fit-content;">
         <div 
@@ -127,51 +151,61 @@ export const et_videoCardHtml = (paramsIn) => {
 // t_et_videoEnable
 //= ======================================================
 
-const tagtrialVideoEnable = 'video-enable';
+const tagtrialVideoEnable = "video-enable";
 
-const paramsVideoEnableDef = (tagReq = TAG_REQ_DEF, tagModeGame = ModeGame.ALL, tagNameTask = NameTask.ET) => {
+const paramsVideoEnableDef = (
+  tagReq = TAG_REQ_DEF,
+  tagModeGame = ModeGame.ALL,
+  tagNameTask = NameTask.ET,
+) => {
   const tagTrial = tagtrialVideoEnable;
   return {
     tagReq: tagReq,
     tagModeGame: tagModeGame, // hint: set to undefined to trigger current game mode
     tagNameTask: tagNameTask, // hint: set to undefined to trigger current task
-    text1: [tagTrial, tagReq, 'text1', tagModeGame, tagNameTask],
-    text2: [tagTrial, tagReq, 'text2', tagModeGame, tagNameTask],
-    keyAudio: [tagTrial, tagReq, '', tagModeGame, tagNameTask],
-    textBtn: [tagTrial, tagReq, 'text-button', tagModeGame, tagNameTask],
-    keyImg: 'sharedTechIconCameraAll',
-    delayBtnsEnable: 4000,
+    text1: [tagTrial, tagReq, "text1", tagModeGame, tagNameTask],
+    text2: [tagTrial, tagReq, "text2", tagModeGame, tagNameTask],
+    keyAudio: [tagTrial, tagReq, "", tagModeGame, tagNameTask],
+    textBtn: [tagTrial, tagReq, "text-button", tagModeGame, tagNameTask],
+    keyImg: "sharedTechIconCameraAll",
+    delayBtnsEnable: 50,
   };
 };
 
 export const t_et_videoEnable = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
   let params;
   let videoEnabled = true;
-  let strError = '';
+  let strError = "";
 
   const prepareParams = () => {
     // eslint-disable-next-line no-param-reassign
     paramsIn.tagReq ??= tagReq;
 
     params = {
-      ...fillTextKeyValuesDef(paramsVideoEnableDef(paramsIn.tagReq, paramsIn.tagModeGame, paramsIn.tagNameTask)),
+      ...fillTextKeyValuesDef(
+        paramsVideoEnableDef(
+          paramsIn.tagReq,
+          paramsIn.tagModeGame,
+          paramsIn.tagNameTask,
+        ),
+      ),
       ...fillTextKeyValuesDef(paramsIn),
     };
   };
 
   const htmlLayout = () => {
     const hasImg = !!mediaAssets.images[params.keyImg];
-    let htmlImg = '';
+    let htmlImg = "";
     if (hasImg) {
       htmlImg = `<img src="${mediaAssets.images[params.keyImg]}" 
-        class="shared-tech-card-img-small">`;
+        class="shared-tech-card-img-medium">`;
     }
     return `
       <div class="shared-tech-card-container">
         ${htmlImg}
         <div class="shared-tech-card-text-wrap">
-          ${params.text1 ? `<p>${params.text1}</p>` : ''}
-          ${params.text2 ? `<p>${params.text2}</p>` : ''}
+          ${params.text1 ? `<p>${params.text1}</p>` : ""}
+          ${params.text2 ? `<p>${params.text2}</p>` : ""}
         </div>
         <div class="shared-tech-button-wrap">
             <button id="id-button" class="shared-tech-button-medium">
@@ -183,54 +217,63 @@ export const t_et_videoEnable = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
 
   const trialVideoEnable = () => ({
     type: jsPsychAudioMultiResponse,
-    stimulus: () => mediaAssets.audio[params.keyAudio] ?? mediaAssets.audio.sharedNullAudioAll,
+    stimulus: () =>
+      mediaAssets.audio[params.keyAudio] ??
+      mediaAssets.audio.sharedNullAudioAll,
     prompt: () => {
       const html = htmlLayout();
       return html;
     },
     keyboard_choices: () => [TypeKey.DUMMY],
     button_choices: () => [],
-    button_html: () => '',
+    button_html: () => "",
     trial_ends_after_audio: () => false,
     on_load: () => {
-      const btn = document.getElementById('id-button');
+      const btn = document.getElementById("id-button");
       btn.disabled = true;
       setTimeout(() => {
         btn.disabled = false;
       }, params.delayBtnsEnable);
       const callbackOnBtnPress = async (e) => {
-        if (!e.isTrusted) return;
+        if (!e.isTrusted) {
+          return;
+        }
         e.stopPropagation();
-        // TODO: @STATE
+
+        const requireExitFullscreen = browserExitsFullscreenOnNativeUI();
+        const isFullscreenCur = isFullscreen();
+        if (requireExitFullscreen && isFullscreenCur) {
+          await exitFullscreen();
+        }
+
         state.cameraStream = await navigator.mediaDevices
           .getUserMedia({
             video: {
               width: { ideal: ET.VIDEO.WIDTH_REQ },
               height: { ideal: ET.VIDEO.HEIGHT_REQ },
               frameRate: { ideal: ET.VIDEO.FPS_REQ, max: ET.VIDEO.FPS_REQ },
-              facingMode: 'user',
+              facingMode: "user",
             },
-            // audio: true, // TODO: make sure that we do not need microphone
           })
-          // To test that failure path works:
+          // @THINK:
+          // to test that failure path works:
           // state.cameraStream = await Promise.reject(new Error("test denial"))
           .catch((err) => {
             strError = err;
             videoEnabled = false;
           });
 
-        if (videoEnabled) {
-          btn.removeEventListener('click', callbackOnBtnPress, {
-            capture: true,
-          });
-          jsPsych.pluginAPI.pressKey(TypeKey.DUMMY);
-        } else {
+        if (!videoEnabled) {
           // eslint-disable-next-line no-console
-          console.log(`Camera error: ${strError}`);
+          console.error(`Camera error: ${strError}`);
         }
+        btn.removeEventListener("click", callbackOnBtnPress, {
+          capture: true,
+        });
+        jsPsych.pluginAPI.pressKey(TypeKey.DUMMY);
       };
 
-      btn.addEventListener('click', callbackOnBtnPress, { capture: true });
+      btn.addEventListener("click", callbackOnBtnPress, { capture: true });
     },
     on_finish: () => {
       sessionSet(SK.VIDEO_ENABLED, videoEnabled);
@@ -259,24 +302,71 @@ export const t_et_videoEnable = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
   };
 };
 
-//= ======================================================
+// =======================================================
+// t_et_cameraConfirm
+// =======================================================
+
+const tagTrialCameraConfirm = "camera-confirm";
+
+export const t_et_cameraConfirm = (tagReq = TAG_REQ_DEF) => {
+  let cameraConfirmed;
+
+  return t_instructionTech(
+    {
+      tagTrial: tagTrialCameraConfirm,
+      tagNameTask: NameTask.ET,
+      keyImg: "sharedTechIconCameraScreenTopAll",
+      onClickBtn1: () => {
+        cameraConfirmed = true;
+      },
+      onClickBtn2: () => {
+        cameraConfirmed = false;
+      },
+      on_finish_ext: () => {
+        if (!cameraConfirmed) {
+          sessionSet(SK.CAMERA_CONFIRMED, false);
+          sessionSet(SK.VIDEO_ENABLED, false);
+        } else {
+          sessionSet(SK.CAMERA_CONFIRMED, true);
+        }
+        jsPsych.data.addDataToLastTrial({
+          save_trial: true,
+          assessment_stage: AssessmentStage.DATA,
+          correct: true,
+          type_trial: tagTrialCameraConfirm,
+          id_trial: tagTrialCameraConfirm,
+          pid: sessionGet(SK.CONFIG).pid,
+          camera_confirmed: cameraConfirmed,
+          video_enabled: sessionGet(SK.VIDEO_ENABLED),
+        });
+      },
+    },
+    tagReq,
+  );
+};
+
+// =======================================================
 // t_et_videoConfirm
-//= ======================================================
+// =======================================================
 
-const tagTrialVideoConfirm = 'video-confirm';
+const tagTrialVideoConfirm = "video-confirm";
 
-const paramsVideoConfirmDef = (tagReq = TAG_REQ_DEF, tagModeGame = ModeGame.ALL, tagNameTask = NameTask.ET) => {
+const paramsVideoConfirmDef = (
+  tagReq = TAG_REQ_DEF,
+  tagModeGame = ModeGame.ALL,
+  tagNameTask = NameTask.ET,
+) => {
   const tagTrial = tagTrialVideoConfirm;
   return {
     tagReq: tagReq,
     tagModeGame: tagModeGame, // hint: set to undefined to trigger current game mode
     tagNameTask: tagNameTask, // hint: set to undefined to trigger current task
-    text1: [tagTrial, tagReq, 'text1', tagModeGame, tagNameTask],
-    text2: [tagTrial, tagReq, 'text2', tagModeGame, tagNameTask],
-    text3: [tagTrial, tagReq, 'text3', tagModeGame, tagNameTask],
-    keyAudio: [tagTrial, tagReq, '', tagModeGame, tagNameTask],
-    textBtnYes: [tagTrial, tagReq, 'text-button-yes', tagModeGame, tagNameTask],
-    textBtnNo: [tagTrial, tagReq, 'text-button-no', tagModeGame, tagNameTask],
+    text1: [tagTrial, tagReq, "text1", tagModeGame, tagNameTask],
+    text2: [tagTrial, tagReq, "text2", tagModeGame, tagNameTask],
+    text3: [tagTrial, tagReq, "text3", tagModeGame, tagNameTask],
+    keyAudio: [tagTrial, tagReq, "", tagModeGame, tagNameTask],
+    textBtnYes: [tagTrial, tagReq, "text-button-yes", tagModeGame, tagNameTask],
+    textBtnNo: [tagTrial, tagReq, "text-button-no", tagModeGame, tagNameTask],
   };
 };
 
@@ -289,7 +379,13 @@ export const t_et_videoConfirm = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
     paramsIn.tagReq ??= tagReq;
 
     params = {
-      ...fillTextKeyValuesDef(paramsVideoConfirmDef(paramsIn.tagReq, paramsIn.tagModeGame, paramsIn.tagNameTask)),
+      ...fillTextKeyValuesDef(
+        paramsVideoConfirmDef(
+          paramsIn.tagReq,
+          paramsIn.tagModeGame,
+          paramsIn.tagNameTask,
+        ),
+      ),
       ...fillTextKeyValuesDef(paramsIn),
     };
   };
@@ -300,61 +396,44 @@ export const t_et_videoConfirm = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
       text2: params.text2,
       text3: params.text3,
       textBtn1: params.textBtnYes,
-      idBtn1: 'id-button-yes',
+      idBtn1: "id-button-yes",
       textBtn2: params.textBtnNo,
-      idBtn2: 'id-button-no',
+      idBtn2: "id-button-no",
     };
     return et_videoCardHtml(paramsCard);
   };
-  // TODO: video is mirrored left-to-right - maybe a parameter?
-  // `
-  //   <div class="shared-tech-card-container">
-  //     <div>
-  //       <video id="id-video" autoplay muted playsinline
-  //         class="shared-tech-card-img-xl",
-  //         style="
-  //           transform: scaleX(-1);
-  //           aspect-ratio: ${ET.VIDEO.WIDTH_REQ / ET.VIDEO.HEIGHT_REQ}">
-  //        </video>
-  //     </div>
-  //     <div class="shared-tech-card-text-wrap">
-  //       ${params.text1 ? `<p>${params.text1}</p>` : ""}
-  //       ${params.text2 ? `<p>${params.text2}</p>` : ""}
-  //       ${params.text3 ? `<p>${params.text2}</p>` : ""}
-  //     </div>
-  //     <div class="shared-tech-button-wrap">
-  //         <button id="id-button-yes" class="shared-tech-button-medium">
-  //           ${params.textBtnYes}
-  //         </button>
-  //         <button id="id-button-no" class="shared-tech-button-medium">
-  //           ${params.textBtnNo}
-  //         </button>
-  //     </div>
-  //   </div>`;
 
   const trialVideoConfirm = () => ({
     type: jsPsychAudioMultiResponse,
-    stimulus: () => mediaAssets.audio[params.keyAudio] ?? mediaAssets.audio.sharedNullAudioAll,
+    stimulus: () =>
+      mediaAssets.audio[params.keyAudio] ??
+      mediaAssets.audio.sharedNullAudioAll,
     prompt: () => htmlLayout(),
     keyboard_choices: () => [TypeKey.DUMMY],
     button_choices: () => [],
-    button_html: () => '',
+    button_html: () => "",
     trial_ends_after_audio: () => false,
     on_load: () => {
-      ['id-button-yes', 'id-button-no'].forEach((idBtn) => {
-        document.getElementById(idBtn).addEventListener('click', () => {
-          videoConfirmed = idBtn === 'id-button-yes';
+      ["id-button-yes", "id-button-no"].forEach((idBtn) => {
+        document.getElementById(idBtn).addEventListener("click", () => {
+          videoConfirmed = idBtn === "id-button-yes";
+          if (!isFullscreen()) {
+            enterFullscreenCompat();
+          }
+
           jsPsych.pluginAPI.pressKey(TypeKey.DUMMY);
         });
       });
-      const elVideoView = document.getElementById('id-video');
+      const elVideoView = document.getElementById("id-video");
       if (state.cameraStream) {
         elVideoView.srcObject = state.cameraStream;
+        elVideoView.play().catch(() => {});
       }
     },
     on_finish: () => {
       if (!videoConfirmed) {
         sessionSet(SK.VIDEO_ENABLED, false);
+        et_videoStop();
       }
       jsPsych.data.addDataToLastTrial({
         save_trial: true,
@@ -386,7 +465,8 @@ export const t_et_videoConfirm = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
 // ===============================================================
 export const t_et_videoViewPlayground = () => ({
   type: jsPsychHtmlButtonResponse,
-  button_html: '<button class="jspsych-fullscreen-btn" id="id-btn-response">%choice%</button>',
+  button_html:
+    '<button class="jspsych-fullscreen-btn" id="id-btn-response">%choice%</button>',
   stimulus: `
     <div class="roav-card-tech">
       <p>Works better is the face is well-lit & no glasses (if possible)</p>
@@ -398,10 +478,10 @@ export const t_et_videoViewPlayground = () => ({
     <br>
     <br>
   `,
-  choices: ['GO'],
+  choices: ["GO"],
   response_allowed_while_playing: true,
   on_load: () => {
-    const video = document.getElementById('id-video-camera');
+    const video = document.getElementById("id-video-camera");
     if (state.cameraStream && video) {
       video.srcObject = state.cameraStream;
     }
@@ -412,36 +492,80 @@ export const t_et_videoViewPlayground = () => ({
 // VIDEO RECORDING
 // =========================================================
 
+export const et_paramsVideoRecordDef = {
+  videoBitsPerSecond: ET.VIDEO.VIDEO_BITS_PER_SECOND_REQ_DEF,
+};
+
 function getSupportedMimeType() {
-  const types = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+  const types = [
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm",
+    "video/mp4",
+  ];
   return types.find((t) => MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
-export const et_videoRecordStart = () => {
+// @VIDEO FILE  TYPE
+function getExtensionFromMimeType(mimeType) {
+  if (!mimeType) return "webm";
+  if (mimeType.includes("mp4")) return "mp4";
+  if (mimeType.includes("ogg")) return "ogg";
+  if (mimeType.includes("mkv")) return "mkv";
+  return "webm";
+}
+
+// @VIDEO FILE  TYPE
+function getBaseMimeType(mimeType) {
+  if (!mimeType) return "video/webm";
+  return mimeType.split(";")[0];
+}
+
+export const et_videoRecordStart = (paramsIn = {}) => {
+  const configEt = sessionGet(SK.CONFIG_ET);
+  const paramsConfig = configEt?.paramsVideoRecord;
+  const params = { ...et_paramsVideoRecordDef, ...paramsConfig, ...paramsIn };
+
   state.videoChunks = [];
-  if (state.videoRecorder && state.videoRecorder.state === 'recording') {
+  state.timeStartVideoRecord = null;
+  state.timeStopVideoRecord = null;
+  state.videoRecorderMimeType = null;
+
+  if (state.videoRecorder && state.videoRecorder.state === "recording") {
     state.videoRecorder.stop();
   }
   const mimeType = getSupportedMimeType();
   if (!mimeType) {
     // eslint-disable-next-line no-console
-    console.error('ET: no supported video MIME type found');
+    console.error("ET: no supported video MIME type found");
     return;
   }
-  state.videoRecorder = new MediaRecorder(state.cameraStream, { mimeType });
+
+  state.videoRecorder = new MediaRecorder(state.cameraStream, {
+    mimeType,
+    videoBitsPerSecond: params.videoBitsPerSecond,
+  });
+
+  state.videoRecorderMimeType = mimeType; // @VIDEO FILE TYPE
+
   state.videoRecorder.ondataavailable = (event) => {
     if (event.data.size > 0) {
       state.videoChunks.push(event.data);
     }
   };
-  state.timeStartVideoRecord = Date.now();
+  state.videoRecorder.onstart = () => {
+    state.timeStartVideoRecord = Date.now();
+  };
   state.videoRecorder.start();
 };
 
 export async function et_videoRecordStop() {
   await new Promise((resolve) => {
-    if (state.videoRecorder && state.videoRecorder.state === 'recording') {
-      state.videoRecorder.onstop = resolve;
+    if (state.videoRecorder && state.videoRecorder.state === "recording") {
+      state.videoRecorder.onstop = () => {
+        state.timeStopVideoRecord = Date.now();
+        resolve();
+      };
       state.videoRecorder.stop();
     } else {
       resolve();
@@ -450,10 +574,14 @@ export async function et_videoRecordStop() {
 }
 
 export async function et_videoRecordSave(nameFile) {
-  const blob = new Blob(state.videoChunks, { type: 'video/webm' });
+  // @VIDEO FILE TYPE
+  // const blob = new Blob(state.videoChunks, { type: "video/webm" });
+  const mimeTypeBase = getBaseMimeType(state.videoRecorderMimeType);
+  const blob = new Blob(state.videoChunks, { type: mimeTypeBase });
+
   if (blob.size === 0) {
     // eslint-disable-next-line no-console
-    console.error('ET: no video data recorded');
+    console.error("ET: no video data recorded");
     return null;
   }
   try {
@@ -465,7 +593,7 @@ export async function et_videoRecordSave(nameFile) {
     return url;
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('ET: error uploading video:', error);
+    console.error("ET: error uploading video:", error);
     return null;
   }
 }
@@ -477,51 +605,90 @@ export const et_videoValid = (video) => {
   return video.readyState >= 2 && video.videoWidth > 0;
 };
 
-export const t_et_videoRecordStart = () => ({
+export const t_et_videoRecordStart = (paramsIn = {}) => ({
   timeline: [
     {
       type: jsPsychCallFunction,
-      func: () => et_videoRecordStart(),
+      func: () => et_videoRecordStart(paramsIn),
     },
   ],
-  conditional_function: () => sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.VIDEO_RECORD),
+  conditional_function: () =>
+    sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.VIDEO_RECORD),
 });
 
-export const t_et_videoRecordSave = (nameFileOrFn) => {
-  let timeStopVideoRecord = null;
+export const t_et_videoRecordStop = () => ({
+  timeline: [
+    {
+      type: jsPsychCallFunction,
+      async: true,
+      func: async (done) => {
+        await et_videoRecordStop();
+        done();
+      },
+    },
+  ],
+  conditional_function: () =>
+    sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.VIDEO_RECORD),
+});
+
+export const t_et_videoRecordSave = (idTrialSaveOrFn) => {
+  let idTrialSave = null;
+  const tagTrial = "video-record-save";
+  let videoRecordError = null;
+
   return {
     timeline: [
       {
         type: jsPsychCallFunction,
         async: true,
         func: (done) => {
-          const nameFile = typeof nameFileOrFn === 'function' ? nameFileOrFn() : nameFileOrFn;
+          idTrialSave =
+            typeof idTrialSaveOrFn === "function"
+              ? idTrialSaveOrFn()
+              : idTrialSaveOrFn;
           et_videoRecordStop()
+            // eslint-disable-next-line arrow-body-style
             .then(() => {
-              timeStopVideoRecord = Date.now();
-              return et_videoRecordSave(`${nameFile}_${state.timeStartVideoRecord}_${timeStopVideoRecord}.webm`);
+              // @VIDEO FILE TYPE
+              const extFile = getExtensionFromMimeType(
+                state.videoRecorderMimeType,
+              );
+              return et_videoRecordSave(
+                `video_${idTrialSave}_${state.timeStartVideoRecord}_${state.timeStopVideoRecord}.${extFile}`,
+              );
             })
             .then((url) => {
               state.videoRecordUrl = url;
               done();
             })
-            .catch(() => done());
+            .catch((err) => {
+              // state.videoRecordUrl = null;
+              videoRecordError = String(err);
+              done();
+            });
         },
         on_finish: () => {
-          // alert("Video saved to: " + state.videoRecordUrl);
+          if (sessionGet(SK.DEBUG)) {
+            // eslint-disable-next-line no-console
+            console.log("VIDEO URL: ", state.videoRecordUrl);
+          }
           jsPsych.data.addDataToLastTrial({
             save_trial: true,
             assessment_stage: AssessmentStage.DATA,
             correct: true,
-            type_trial: 'video-record-save',
+            type_trial: tagTrial,
+            id_trial: `upload:${tagTrial}:${idTrialSave}`,
+            id_trial_save: idTrialSave,
             pid: sessionGet(SK.CONFIG).pid,
             url: state.videoRecordUrl,
             time_start_video_record: state.timeStartVideoRecord,
-            time_stop_video_record: timeStopVideoRecord,
+            time_stop_video_record: state.timeStopVideoRecord,
+            video_record_error: videoRecordError,
           });
         },
       },
     ],
-    conditional_function: () => sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.VIDEO_RECORD),
+    conditional_function: () =>
+      sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.VIDEO_RECORD),
   };
 };

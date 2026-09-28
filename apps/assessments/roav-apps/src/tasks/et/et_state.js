@@ -1,16 +1,19 @@
 /* eslint-disable no-underscore-dangle */
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import { ET_SESSION_KEYS as SK } from './et_sessionKeys';
-import { AssessmentStage } from '../shared/helpers/namingHelpers';
-import { sessionGet } from '../shared/helpers/sessionHelpers';
-import { jsPsych } from '../shared/helpers/taskSetup';
-import { CALIBR_ET_DEF, CALIBR_VD_DEF } from './et_constants';
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import { ET_SESSION_KEYS as SK } from "./et_sessionKeys";
+import { AssessmentStage } from "../shared/helpers/namingHelpers";
+import { sessionGet } from "../shared/helpers/sessionHelpers";
+import { jsPsych } from "../shared/helpers/taskSetup";
+import { CALIBR_ET_DEF, CALIBR_VD_DEF, ET } from "./et_constants";
 
-// TODO:
-// SUPER IMPORTANT: figure out when we are saving ---
-// we might not be runnign ET at all, only FM to estimate distance
-
-const KEYS_SNAPSHOT_MIN = ['vdCur', 'timeStartFm', 'xyTargFm', 'xyModel', 'xyPred', 'xyPredPx'];
+const KEYS_SNAPSHOT_MIN = [
+  "vdCur",
+  "timeStartFm",
+  "xyTargFm",
+  "xyModel",
+  "xyPred",
+  "xyPredPx",
+];
 
 export const et_paramsSnapsotDef = {
   saveLandmarks: false,
@@ -26,9 +29,15 @@ export const state = {
   videoIn: null,
   cameraStream: null,
   videoRecorder: null,
+  videoRecorderMimeType: null, // @VIDEO FILE TYPE
   videoChunks: [],
   videoRecordUrl: null,
   timeStartVideoRecord: null,
+  timeStopVideoRecord: null,
+
+  typeModel: ET.ET.TYPE_MODEL_DEF,
+  timeoutFm: ET.FM.TIMEOUT_FM_DEF,
+  timeoutModel: ET.ET.TIMEOUT_MODEL_DEF,
 
   elMarkGaze: null,
   canvasWork: null, // just a general drawing canvas to pass between function calls
@@ -41,6 +50,7 @@ export const state = {
   widthImg: null,
   heightImg: null,
 
+  imgsNativeEyePending: null,
   canvasNativeEyeL: null,
   canvasNativeEyeR: null,
   canvasScaledEyeL: null,
@@ -48,27 +58,50 @@ export const state = {
 
   metricsIris: null,
   metricsHead: null,
-  coordsIrisL: null,
-  coordsIrisR: null,
-  coordsEyeL: null,
-  coordsEyeR: null,
-  coordsHead: null,
+  coordsIrisL: null, // 471, 470, 469, 472
+  coordsIrisR: null, // 476, 475, 474, 477
+  coordsIrisCenterL: null, // 468
+  coordsIrisCenterR: null, // 473
+  coordsEyeL: null, // 130, 27, 243, 23
+  coordsEyeR: null, // 463, 257, 359, 253
+  coordsEyeInnerL: null, // 33, 159, 133, 145
+  coordsEyeInnerR: null, // 362, 386, 263, 374
+  coordsEyeFullL: null, // 33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246
+  coordsEyeFullR: null, // 362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398
+
+  coordsHead: null, // 10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109
+  coordsHeadExtr: null, // 234, 10, 454, 152
+
+  // added later, for calculation of the head pose
+  coordsNose: null, // 102, 6, 331, 2
+  coordsNoseTip: null, // 1
+  coordsPnP: null, // 33, 263, 1, 61, 291, 199
 
   vdCur: null,
   timeCur: null,
   timeStartFm: null,
   timeResFm: null,
 
-  xyTarg: null, // ongoing target // 0-100 of monitor width - insane!!!!!!!!!!!
+  xyTarg: null, // ongoing target - 0-100 of monitor width @@THINK - how can it work for different monitor width?
   xyTargFm: null, // target that is being processed by the model
   xyModel: null,
   xyPred: null,
-  xyPredPx: null, // TODO: fill this in
+  xyPredPx: null,
 
   // === calibration
 
+  calFix: {
+    xxFix: null,
+    yyFix: null,
+    timeStartFixFirst: null,
+    timesStartFix: null,
+    timesEndFix: null,
+    dursFix: null,
+    dursGap: null,
+  },
+
   cal: {
-    htCalibrated: false, // not used currently
+    htCalibrated: false,
     vdCalibrated: false,
     etCalibrated: false,
     screenCalibrated: false,
@@ -81,7 +114,7 @@ export const state = {
     },
 
     vd: {
-      sizeIris: null, // (1080 * 11.7) / (10 * 50 * 1920)    // 0.01316
+      sizeIris: null, // (1080 * 11.7) / (10 * 50 * 1920) = 0.01316...
       vd: null, // 50
       flNorm: null, // 1
       flMult: null, // 1080
@@ -93,7 +126,6 @@ export const state = {
     },
 
     ht: {
-      // not used currently
       widthHead: null,
       heightHead: null,
       xCenterHead: null,
@@ -104,8 +136,25 @@ export const state = {
 
   // saving & snapshots
   collectSnapshots: true,
-  paramsSnapshot: et_paramsSnapsotDef, // will be defaulted to et_paramsSnapshotDef
+  paramsSnapshot: et_paramsSnapsotDef,
   snapshots: [],
+};
+
+export const et_stateResetCalTarg = () => {
+  state.calFix.xxFix = [];
+  state.calFix.yyFix = [];
+  state.calFix.timeStartFixFirst = null;
+  state.calFix.timesStartFix = [];
+  state.calFix.timesEndFix = [];
+  state.calFix.dursFix = [];
+  state.calFix.dursGap = [];
+  state.calFix.arrWindowInnerWidth = [];
+  state.calFix.arrWindowOuterWidth = [];
+  state.calFix.arrWindowInnerHeight = [];
+  state.calFix.arrWindowOuterHeight = [];
+  state.calFix.arrWindowScreenX = [];
+  state.calFix.arrWindowScreenY = [];
+  state.calFix.params = null;
 };
 
 export const et_stateSetFirekit = (firekit) => {
@@ -116,33 +165,38 @@ export const et_stateResetSnapshots = () => {
   state.snapshots = [];
 };
 
-// TODO: update all of that
-export const et_stateResetOngoing = () => {
+// @@TODO: if needed, we can just save landmarks to snapshot
+// with landmarks numbers as their IDs to reduce indexing level in DB
+export const et_stateResetOngoing = (resetTarg = false) => {
   state.landmarks = null;
   state.img = null;
   state.widthImg = null;
   state.heightImg = null;
 
-  // state.canvasNativeEyeL = null;
-  // state.canvasNativeEyeR = null;
-  // state.canvasScaledEyeL = null;
-  // state.canvasScaledEyeR = null;
-
   state.metricsIris = null;
   state.metricsHead = null;
   state.coordsIrisL = null;
   state.coordsIrisR = null;
+  state.coordsIrisCenterL = null;
+  state.coordsIrisCenterR = null;
   state.coordsEyeL = null;
   state.coordsEyeR = null;
   state.coordsHead = null;
+  state.coordsHeadExtr = null;
+  state.coordsPnP = null;
+
+  state.imgsNativeEyePending = null;
+
+  if (resetTarg) {
+    state.xyTarg = null;
+  }
+  state.xyTargFm = null;
 
   state.vdCur = null;
   state.timeCur = null;
   state.timeResFm = null;
   state.timeStartFm = null;
 
-  // state.xyTarg = null; - this is NOT set by iterations
-  // state.xyTargFm = null;
   state.xyModel = null;
   state.xyPred = null;
   state.xyPredPx = null;
@@ -174,7 +228,6 @@ export const et_stateResetCal = () => {
   };
 
   state.cal.ht = {
-    // not used currently
     widthHead: null,
     heightHead: null,
     xCenterHead: null,
@@ -186,13 +239,11 @@ export const et_stateResetCal = () => {
 export const et_stateSnapshot = (paramsIn = {}) => {
   const params = { ...state.paramsSnapshot, ...paramsIn };
   const snapshot = {
-    // timeCur: state.timeCur,  // aux, not informative time - maybe remove it
     timeStartFm: state.timeStartFm,
     timeResFm: state.timeResFm,
     timeStartVideoRecord: state.timeStartVideoRecord,
     vdCur: state.vdCur,
 
-    // img: null, // TODO: do not save, we have video
     widthImg: state.widthImg,
     heightImg: state.heightImg,
 
@@ -200,8 +251,12 @@ export const et_stateSnapshot = (paramsIn = {}) => {
     metricsHead: state.metricsHead,
     coordsIrisL: state.coordsIrisL,
     coordsIrisR: state.coordsIrisR,
+    coordsIrisCenterL: state.coordsIrisCenterL,
+    coordsIrisCenterR: state.coordsIrisCenterR,
     coordsEyeL: state.coordsEyeL,
     coordsEyeR: state.coordsEyeR,
+    coordsHeadExtr: state.coordsHeadExtr,
+    coordsPnP: state.coordsPnP,
 
     xyTarg: state.xyTarg,
     xyTargFm: state.xyTargFm,
@@ -209,20 +264,26 @@ export const et_stateSnapshot = (paramsIn = {}) => {
     xyPred: state.xyPred,
     xyPredPx: state.xyPredPx,
 
-    // extras
     landmarks: params.saveLandmarks ? state.landmarks : null,
     coordsHead: params.saveCoordsHead ? state.coordsHead : null,
 
-    // imgNativeEyeL: params.saveImgNativeEye ? state.canvasNativeEyeL?.getContext('2d').getImageData(0, 0, state.canvasNativeEyeL.width, state.canvasNativeEyeL.height) ?? null : null,
-    // imgNativeEyeR: params.saveImgNativeEye ? state.canvasNativeEyeR?.getContext('2d').getImageData(0, 0, state.canvasNativeEyeR.width, state.canvasNativeEyeR.height) ?? null : null,
-    // imgScaledEyeL: params.saveImgScaledEye ? state.canvasScaledEyeL?.getContext('2d').getImageData(0, 0, state.canvasScaledEyeL.width, state.canvasScaledEyeL.height) ?? null : null,
-    // imgScaledEyeR: params.saveImgScaledEye ? state.canvasScaledEyeR?.getContext('2d').getImageData(0, 0, state.canvasScaledEyeR.width, state.canvasScaledEyeR.height) ?? null : null,
-
+    imgsNativeEye: state.imgsNativeEyePending,
+    
     // with compression, but takes very LONG time
-    imgNativeEyeL: params.saveImgNativeEye ? (state.canvasNativeEyeL?.toDataURL('image/png') ?? null) : null,
-    imgNativeEyeR: params.saveImgNativeEye ? (state.canvasNativeEyeR?.toDataURL('image/png') ?? null) : null,
-    imgScaledEyeL: params.saveImgScaledEye ? (state.canvasScaledEyeL?.toDataURL('image/png') ?? null) : null,
-    imgScaledEyeR: params.saveImgScaledEye ? (state.canvasScaledEyeR?.toDataURL('image/png') ?? null) : null,
+    /*
+    imgNativeEyeL: params.saveImgNativeEye
+      ? state.canvasNativeEyeL?.toDataURL("image/png") ?? null
+      : null,
+    imgNativeEyeR: params.saveImgNativeEye
+      ? state.canvasNativeEyeR?.toDataURL("image/png") ?? null
+      : null,
+    imgScaledEyeL: params.saveImgScaledEye
+      ? state.canvasScaledEyeL?.toDataURL("image/png") ?? null
+      : null,
+    imgScaledEyeR: params.saveImgScaledEye
+      ? state.canvasScaledEyeR?.toDataURL("image/png") ?? null
+      : null,
+    */
   };
   return snapshot;
 };
@@ -231,7 +292,9 @@ export const et_stateSnapshotsToMin = (snapshots) => {
   if (!snapshots) {
     return null;
   }
-  const snapshotsMin = snapshots.map((s) => Object.fromEntries(KEYS_SNAPSHOT_MIN.map((k) => [k, s[k]])));
+  const snapshotsMin = snapshots.map((s) =>
+    Object.fromEntries(KEYS_SNAPSHOT_MIN.map((k) => [k, s[k]])),
+  );
   return snapshotsMin;
 };
 
@@ -264,10 +327,19 @@ export const et_stateSnapshotsToMinArrays = (snapshots) => {
     yCoordsIrisL: [],
     xCoordsIrisR: [],
     yCoordsIrisR: [],
+    xCoordsIrisCenterL: [],
+    yCoordsIrisCenterL: [],
+    xCoordsIrisCenterR: [],
+    yCoordsIrisCenterR: [],
     xCoordsEyeL: [],
     yCoordsEyeL: [],
     xCoordsEyeR: [],
     yCoordsEyeR: [],
+    xCoordsHeadExtr: [],
+    yCoordsHeadExtr: [],
+    xCoordsPnP: [],
+    yCoordsPnP: [],
+    imgsNativeEye: []
   };
 
   snapshots.forEach((s) => {
@@ -304,6 +376,10 @@ export const et_stateSnapshotsToMinArrays = (snapshots) => {
       result.xCoordsIrisR.push(x);
       result.yCoordsIrisR.push(y);
     });
+    result.xCoordsIrisCenterL.push(s.coordsIrisCenterL?.[0] ?? null);
+    result.yCoordsIrisCenterL.push(s.coordsIrisCenterL?.[1] ?? null);
+    result.xCoordsIrisCenterR.push(s.coordsIrisCenterR?.[0] ?? null);
+    result.yCoordsIrisCenterR.push(s.coordsIrisCenterR?.[1] ?? null);
     s.coordsEyeL.forEach(([x, y]) => {
       result.xCoordsEyeL.push(x);
       result.yCoordsEyeL.push(y);
@@ -312,20 +388,29 @@ export const et_stateSnapshotsToMinArrays = (snapshots) => {
       result.xCoordsEyeR.push(x);
       result.yCoordsEyeR.push(y);
     });
+
+    s.coordsHeadExtr?.forEach(([x, y]) => {
+      result.xCoordsHeadExtr.push(x);
+      result.yCoordsHeadExtr.push(y);
+    });
+    s.coordsPnP?.forEach(([x, y]) => {
+      result.xCoordsPnP.push(x);
+      result.yCoordsPnP.push(y);
+    });
+    result.imgsNativeEye.push(s.imgsNativeEye ?? null);
   });
+  
 
   return result;
 };
 
-// TODO: update all of that
-
 export const et_TypeSaveSnapshots = {
-  NONE: 'none',
-  MIN: 'min',
-  FULL: 'full',
+  NONE: "none",
+  MIN: "min",
+  FULL: "full",
 };
 
-export const et_stateInfoSave = (saveCal, typeSaveSnapshots) => {
+export const et_stateInfoSave = (saveCal, saveCalFix, typeSaveSnapshots) => {
   let snapshotsRes = null;
   if (typeSaveSnapshots === et_TypeSaveSnapshots.FULL) {
     snapshotsRes = state.snapshots;
@@ -338,6 +423,7 @@ export const et_stateInfoSave = (saveCal, typeSaveSnapshots) => {
     widthImg: state.widthImg,
     heightImg: state.heightImg,
     cal: saveCal ? state.cal : null,
+    calFix: saveCalFix ? state.calFix : null,
     snapshots: snapshotsRes,
   };
   return info;
@@ -346,6 +432,7 @@ export const et_stateInfoSave = (saveCal, typeSaveSnapshots) => {
 export const et_paramsStateSaveDef = {
   idTrialSaveOrFn: null,
   saveCal: true,
+  saveCalFix: false,
   typeSaveSnapshots: et_TypeSaveSnapshots.MIN,
   requestUpload: false,
 };
@@ -357,55 +444,63 @@ export const t_et_stateSave = (paramsIn) => {
   let idTrialSave = null;
   let infoSave = null;
   let url = null;
-  const tagTrial = 'et-state-save';
+  const tagTrial = "et-state-save";
   return {
     type: jsPsychCallFunction,
     async: true,
     func: async (done) => {
-      idTrialSave = typeof params.idTrialSaveOrFn === 'function' ? params.idTrialSaveOrFn() : params.idTrialSaveOrFn;
-      infoSave = et_stateInfoSave(params.saveCal, params.typeSaveSnapshots);
+      idTrialSave =
+        typeof params.idTrialSaveOrFn === "function"
+          ? params.idTrialSaveOrFn()
+          : params.idTrialSaveOrFn;
+      infoSave = et_stateInfoSave(
+        params.saveCal,
+        params.saveCalFix,
+        params.typeSaveSnapshots,
+      );
 
       if (params.requestUpload) {
         const blob = new Blob([JSON.stringify(infoSave)], {
-          type: 'application/json',
+          type: "application/json",
         });
         try {
           url = await state.firekit.uploadFileOrBlobToStorage({
             // filename: `state_${idTrialSave}_${Date.now()}.json`,
-            filename: `state_${idTrialSave}_${Date.now()}.webm`, // TODO: should be .json
+            filename: `state_${idTrialSave}_${Date.now()}.webm`, // @TODO: should be .json but .json files are currently not allowed to be downloaded
             assessmentPid: sessionGet(SK.CONFIG).pid,
             fileOrBlob: blob,
           });
         } catch (e) {
           // eslint-disable-next-line no-console
-          console.error('ET: error uploading state:', e);
+          console.error("ET: error uploading state:", e);
         }
       }
       done();
     },
     on_finish: () => {
-      // TODO: should be false
       const debugSave = false;
       if (debugSave) {
         const blob = new Blob([JSON.stringify(infoSave)], {
-          type: 'application/json',
+          type: "application/json",
         });
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = `${idTrialSave}.json`;
         a.click();
       }
+
+      const tagUpload = params.requestUpload ? "upload" : "";
 
       jsPsych.data.addDataToLastTrial({
         save_trial: true,
         assessment_stage: AssessmentStage.DATA,
         correct: true,
         type_trial: tagTrial,
-        id_trial: `${tagTrial}:${idTrialSave}`,
+        id_trial: `${tagUpload}:${tagTrial}:${idTrialSave}`,
         id_trial_save: idTrialSave,
         pid: sessionGet(SK.CONFIG).pid,
         url: url,
-        state: params.requestUpload ? null : infoSave,
+        state: params.requestUpload ? null : JSON.stringify(infoSave),
       });
     },
   };
@@ -425,20 +520,9 @@ export const et_stateFallbackDef = () => {
   }
 };
 
-// TODO: super important --- record eye contours at each iteration (+ iris contours if possible) - to estimate head position
 export const t_et_stateFallbackDef = () => ({
   type: jsPsychCallFunction,
   func: () => {
     et_stateFallbackDef();
   },
 });
-
-// async function et_etRunIteration() {
-//   const {faceMesh, videoIn} = state;
-//   if (!faceMesh || !et_videoValid(videoIn)) { ... }
-
-//   if (state.timeCur !== null) {       // skip first iteration
-//     et_snapshotState();               // capture completed previous iteration
-//   }
-//   et_stateResetOngoing();
-//   ...

@@ -12,11 +12,28 @@
     "prompt": "Switch to landscape view",
     "label-button": "GO"
   },
+  "enable-audio": {
+    "prompt": "Please enable audio",
+    "label-button": "OK"
+  },
   "et": {
+    "camera-confirm": {
+      "def": {
+        "all": {
+          "text1": "",
+          "text2": "If your device has a <b>video camera</b> and it is located at the <b>top of the screen</b>, press {{btn-start}}YES{{btn-end}}",
+          "text3": "Otherwise, press {{btn-start}}NO{{btn-end}}",
+          "text4": "",
+          "text-extra": "",
+          "text-button-1": "{{text-only}}YES",
+          "text-button-2": "{{text-only}}NO"
+        }
+      }
+    },
     "video-enable": {
       "def": {
         "all": {
-          "text1": "Please allow access to the <b>video camera</b>.",
+          "text1": "Please allow access to the <b>video camera</b>",
           "text2": "",
           "text-button": "{{text-only}}OK"
         }
@@ -26,8 +43,8 @@
       "def": {
         "all": {
           "text1": "",
-          "text2": "If camera is working and you can see yourself, press {{btn-start}}YES{{btn-end}}.",
-          "text3": "Otherwise, press {{btn-start}}NO{{btn-end}}.",
+          "text2": "If <b>camera is working</b> and you can see yourself <b>facing forward</b>, press {{btn-start}}YES{{btn-end}}",
+          "text3": "Otherwise, press {{btn-start}}NO{{btn-end}}",
           "text-button-yes": "{{text-only}}YES",
           "text-button-no": "{{text-only}}NO"
         }
@@ -38,39 +55,39 @@
         "no-glasses": {
           "all": {
             "text1": "",
-            "text2": "If you are wearing <b>glasses</b>, please take them <b>off</b>.",
-            "text3": "You will be able to put them back on in a minute.",
+            "text2": "If you are wearing <b>glasses</b>, please take them <b>off</b>",
+            "text3": "You will be able to put them back on in a minute",
             "text-button": "{{text-only}}DONE"
           }
         },
         "measure-vd": {
           "all": {
-            "text1": "Position your eyes <b>50 CENTIMETERS</b> from the screen.",
-            "text2": "Then look straight ahead and keep still.",
-            "text3": "Press the button below without moving your head.",
+            "text1": "Position your eyes <b>50 CENTIMETERS</b> from the screen",
+            "text2": "Then look straight ahead and keep still",
+            "text3": "Press the button below without moving your head",
             "text-button": "{{text-only}}DONE"
           }
         },
         "center": {
           "all": {
-            "text1": "Center your head without moving it closer or farther.",
-            "text2": "Then keep still and press the button.",
+            "text1": "Center your head without moving it closer or farther",
+            "text2": "Then keep still and press the button",
             "text3": "",
             "text-button": "{{text-only}}DONE"
           }
         },
         "calibrate": {
           "all": {
-            "text1": "Look straight ahead.",
-            "text2": "Keep very still for a moment!",
+            "text1": "Look <b>straight ahead</b>",
+            "text2": "Keep <b>very still</b> for a moment!",
             "text3": "",
             "text-button": ""
           }
         },
         "finish": {
           "all": {
-            "text1": "Thank you!",
-            "text2": "You can move your head again and put your glasses back on.",
+            "text1": "<b>Thank you!</b>",
+            "text2": "You can move your head again and put your glasses back on",
             "text3": "",
             "text-button": "{{text-only}}NEXT"
           }
@@ -80,22 +97,35 @@
     "instruction-tech": {
       "video-not-enabled-ok-to-continue": {
         "all": {
-          "text1": "There seems to be a problem with camera access.",
-          "text2": "If you would like to retry, please check the settings on your device and restart the app.",
-          "text3": "Otherwise, it is OK to continue without video access.",
+          "text1": "There seems to be a problem with the camera",
+          "text2": "If you would like to retry, please check the settings on your device and restart the app",
+          "text3": "Otherwise, you can continue without video access",
           "text4": "",
-          "text-extra": "@TODO: image no camera",
-          "text-button": "{{text-only}}NEXT"
+          "text-extra": "",
+          "text-button-1": "{{text-only}}NEXT",
+          "text-button-2": ""
         }
       },
-      "vd-calibr-intro": {
+      "camera-intro": {
         "all": {
-          "text1": "Now we will set up the <b>viewing distance</b>.",
+          "text1": "We will now set up your <b>video camera</b>",
           "text2": "",
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "{{text-only}}NEXT"
+          "text-button-1": "{{text-only}}NEXT",
+          "text-button-2": ""
+        }
+      },
+      "vd-calibr-intro": {
+        "all": {
+          "text1": "Now we will set up the <b>viewing distance</b>",
+          "text2": "",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button-1": "{{text-only}}NEXT",
+          "text-button-2": ""
         }
       }
     }
@@ -119,7 +149,8 @@
           "text3": "This part should be completed by an adult",
           "text4": "",
           "text-extra": "",
-          "text-button": "{{text-only}}NEXT"
+          "text-button-1": "{{text-only}}NEXT",
+          "text-button-2": ""
         }
       },
       "setup-ruler": {
@@ -129,7 +160,8 @@
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "{{text-only}}NEXT"
+          "text-button-1": "{{text-only}}NEXT",
+          "text-button-2": ""
         }
       },
       "setup-end": {
@@ -139,7 +171,8 @@
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "{{text-only}}NEXT"
+          "text-button-1": "{{text-only}}NEXT",
+          "text-button-2": ""
         }
       },
       "setup-start-assessment": {
@@ -149,7 +182,8 @@
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "{{text-only}}START"
+          "text-button-1": "{{text-only}}START",
+          "text-button-2": ""
         }
       }
     }
@@ -976,10 +1010,10 @@
     "instruction": {
       "intro": {
         "game": {
-          "text1": "@@@Welcome!",
-          "text2": "@@@I am Luna the space cat.",
-          "text3": "@@@Ready to play a fun game?",
-          "text4": "@@@Press the <b>spaceship</b> to start!"
+          "text1": "",
+          "text2": "",
+          "text3": "",
+          "text4": ""
         },
         "stand": {
           "text1": "Welcome!",
@@ -990,7 +1024,7 @@
       },
       "et-calibr-before-practice": {
         "game": {
-          "text1": "@@@",
+          "text1": "",
           "text2": "",
           "text3": "",
           "text4": ""
@@ -1013,6 +1047,22 @@
           "text1": "Awesome!",
           "text2": "Now let us do it one more time.",
           "text3": "Remember to keep your head very still and follow the dot with your eyes only.",
+          "text4": ""
+        }
+      },
+      "et-calibr-collect-jump": {
+        "stand": {
+          "text1": "Keep going!",
+          "text2": "The dot will jump faster now.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "et-calibr-collect-smooth": {
+        "stand": {
+          "text1": "You are doing great!",
+          "text2": "Now the dot will move smoothly.",
+          "text3": "Keep following it with your eyes.",
           "text4": ""
         }
       },
@@ -1147,7 +1197,7 @@
       "shape-ident-intro": {
         "stand": {
           "text1": "Match the picture in the middle!",
-          "text2": "Notice the picture in the middle of a group.",
+          "text2": "Notice the picture in the <b>middle of a group</b>.",
           "text3": "Then press a matching button.",
           "text4": "Let us see how it works."
         }
@@ -1156,7 +1206,7 @@
         "stand": {
           "text1": "Compare the pictures!",
           "text2": "You will see two pictures, one on the left and one on the right.",
-          "text3": "Decide whether they are the same or different.",
+          "text3": "Decide whether they are the <b>same</b> or <b>different</b>.",
           "text4": "Here is how it works."
         }
       },
@@ -1164,7 +1214,7 @@
         "stand": {
           "text1": "Compare the middle pictures!",
           "text2": "You will see two groups of pictures, one on the left and one on the right.",
-          "text3": "Notice the middle picture in each group and compare them.",
+          "text3": "Notice the <b>middle picture</b> in each group and compare them.",
           "text4": "Let us see how it works."
         }
       }
@@ -1177,7 +1227,8 @@
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "NEXT"
+          "text-button-1": "NEXT",
+          "text-button-2": ""
         }
       },
       "@eval-welcome": {
@@ -1187,7 +1238,8 @@
           "text3": "Please complete a survey at the end",
           "text4": "",
           "text-extra": "The current UI and instructions are for the playground only <br> and are not intended for the in-class assessment",
-          "text-button": "NEXT"
+          "text-button-1": "NEXT",
+          "text-button-2": ""
         }
       },
       "@eval-setup-ruler": {
@@ -1197,7 +1249,8 @@
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "NEXT"
+          "text-button-1": "NEXT",
+          "text-button-2": ""
         }
       },
       "@eval-test-structure": {
@@ -1207,7 +1260,8 @@
           "text3": "You will have a limited time to respond",
           "text4": "",
           "text-extra": "",
-          "text-button": "NEXT"
+          "text-button-1": "NEXT",
+          "text-button-2": ""
         }
       },
       "@eval-keep-fixation": {
@@ -1217,7 +1271,8 @@
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "NEXT"
+          "text-button-1": "NEXT",
+          "text-button-2": ""
         }
       },
       "@eval-slow-trials": {
@@ -1227,7 +1282,8 @@
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "GO"
+          "text-button-1": "GO",
+          "text-button-2": ""
         }
       },
       "@eval-fast-trials": {
@@ -1237,7 +1293,8 @@
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "GO"
+          "text-button-1": "GO",
+          "text-button-2": ""
         }
       },
       "@eval-task-shape-ident": {
@@ -1247,7 +1304,8 @@
           "text3": "Respond by pressing the <b>on-screen buttons</b>",
           "text4": "",
           "text-extra": "",
-          "text-button": "START"
+          "text-button-1": "START",
+          "text-button-2": ""
         }
       },
       "@eval-task-shape-compare-ref": {
@@ -1257,7 +1315,8 @@
           "text3": "Decide whether they are the <b>same or not</b>",
           "text4": "Respond by pressing the <b>on-screen buttons</b> <br> or the <b>up and down arrows</b> on your keyboard",
           "text-extra": "",
-          "text-button": "START"
+          "text-button-1": "START",
+          "text-button-2": ""
         }
       },
       "@eval-task-shape-compare-lr": {
@@ -1267,7 +1326,8 @@
           "text3": "Decide whether they are the <b>same or not</b>",
           "text4": "Respond by pressing the <b>on-screen buttons</b> <br> or the <b>up and down arrows</b> on your keyboard",
           "text-extra": "",
-          "text-button": "START"
+          "text-button-1": "START",
+          "text-button-2": ""
         }
       },
       "@eval-task-orient-ident": {
@@ -1277,7 +1337,8 @@
           "text3": "Respond by pressing the <b>on-screen buttons</b> <br> or the <b>arrow keys</b> on your keyboard",
           "text4": "",
           "text-extra": "",
-          "text-button": "START"
+          "text-button-1": "START",
+          "text-button-2": ""
         }
       },
       "@unused-eval-task-orient-compare-ref": {
@@ -1287,7 +1348,8 @@
           "text3": "Decide whether they are flying in the <b>same direction or not</b>",
           "text4": "Respond by pressing the <b>on-screen buttons</b> <br> or the <b>up and down arrows</b> on your keyboard",
           "text-extra": "",
-          "text-button": "START"
+          "text-button-1": "START",
+          "text-button-2": ""
         }
       },
       "@eval-take-survey": {
@@ -1297,7 +1359,8 @@
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "START"
+          "text-button-1": "START",
+          "text-button-2": ""
         }
       },
       "@eval-end-screen": {
@@ -1307,7 +1370,8 @@
           "text3": "",
           "text4": "",
           "text-extra": "",
-          "text-button": "FINISH"
+          "text-button-1": "FINISH",
+          "text-button-2": ""
         }
       }
     },

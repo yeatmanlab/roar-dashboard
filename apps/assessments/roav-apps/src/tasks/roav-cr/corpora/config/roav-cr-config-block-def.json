@@ -48,6 +48,24 @@
         "numTrialNoflank": 0,
         "instrNoflank": false
       }
+    ],
+    "sv-test": [
+      {
+        "tagParams": "shape-ident|hv|sync|",
+        "numTrial": 10,
+        "instr": false,
+        "numTrialNoflank": 0,
+        "instrNoflank": false
+      }
+    ],
+    "sv-short": [
+      {
+        "tagParams": "shape-ident|hv|sync|",
+        "numTrial": 10,
+        "instr": true,
+        "numTrialNoflank": 0,
+        "instrNoflank": false
+      }
     ]
   },
   "mapMetaparamsBlock": {
@@ -58,7 +76,7 @@
       "_nameFlank": "cloud",
       "showFlankHor": true,
       "showFlankVert": true,
-      "ratioMax": 1,
+      "ratioMax": 0.7,
       "_eccentTarg": 6,
       "_unitEccentTarg": "deg",
       "durationTargPre": 0,
@@ -71,7 +89,7 @@
       "_nameFlank": "cloud",
       "showFlankHor": true,
       "showFlankVert": true,
-      "ratioMax": 1,
+      "ratioMax": 0.7,
       "_eccentTarg": 6,
       "_unitEccentTarg": "deg",
       "durationTargPre": -67,
@@ -84,7 +102,7 @@
       "_nameFlank": "cloud",
       "showFlankHor": true,
       "showFlankVert": true,
-      "ratioMax": 0.75,
+      "ratioMax": 0.7,
       "_eccentTarg": 6,
       "_unitEccentTarg": "deg",
       "durationTargPre": 0,
@@ -97,7 +115,7 @@
       "_nameFlank": "cloud",
       "showFlankHor": true,
       "showFlankVert": true,
-      "ratioMax": 0.75,
+      "ratioMax": 0.7,
       "_eccentTarg": 6,
       "_unitEccentTarg": "deg",
       "durationTargPre": -67,

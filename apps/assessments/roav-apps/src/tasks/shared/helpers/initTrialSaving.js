@@ -1,5 +1,5 @@
-import { cloneDeep } from 'lodash';
-import { jsPsych } from './taskSetup';
+import { cloneDeep } from "lodash";
+import { jsPsych } from "./taskSetup";
 
 // sets session data AND
 // modifies jspsych functions to
@@ -11,10 +11,10 @@ import { jsPsych } from './taskSetup';
 //        .opts keeps track of global callbacks, like on_finish - that is how we can mutate it
 
 // jsPsych assessment stages the SDK accepts for a trial write. roav-apps also emits
-// 'data' / 'instruction' / 'none' stage trials (device config, screen calibration, QUEST
+// "data" / "instruction" / "none" stage trials (device config, screen calibration, QUEST
 // params) that carry no `correct` field; the SDK rejects those stages, so they are filtered
 // out in on_data_update below.
-const WRITABLE_STAGES = new Set(['practice', 'practice_response', 'test', 'test_response']);
+const WRITABLE_STAGES = new Set(["practice", "practice_response", "test", "test_response"]);
 
 // computedScoreCallback for writeTrial: roav-apps performs no score computation (no IRT /
 // normed scoring), so the accumulated raw counts from the facade — already shaped as

@@ -1,16 +1,16 @@
-import { jsPsych } from '../shared/helpers/taskSetup';
-import 'regenerator-runtime/runtime';
-import { initValidationFlagsHandler } from '../shared/trials/validityHelpers';
-import { rvp_clearStoreOnTimelineStart } from './helpers/rvp_initStore';
-import { sessionGet, sessionSet } from '../shared/helpers/sessionHelpers';
-import { RVP_SESSION_KEYS as SK } from './helpers/rvp_sessionKeys';
+import { jsPsych } from "../shared/helpers/taskSetup";
+import "regenerator-runtime/runtime";
+import { initValidationFlagsHandler } from "../shared/trials/validityHelpers";
+import { rvp_clearStoreOnTimelineStart } from "./helpers/rvp_initStore";
+import { sessionGet, sessionSet } from "../shared/helpers/sessionHelpers";
+import { RVP_SESSION_KEYS as SK } from "./helpers/rvp_sessionKeys";
 
-import { mapTrials } from '../shared/trials/mapTrials';
-import { rvp_mapTrials } from './trials/rvp_mapTrials';
-import { t_timelineScript } from '../shared/helpers/timelineHelpers';
-import { t_timelineDef } from './trials/rvp_timelineDef';
-import { NAME_CORPUS_DEF } from '../shared/helpers/loadCorpus';
-import { setTaskClassCss } from '../shared/helpers/cssHelpers';
+import { mapTrials } from "../shared/trials/mapTrials";
+import { rvp_mapTrials } from "./trials/rvp_mapTrials";
+import { t_timelineScript } from "../shared/helpers/timelineHelpers";
+import { t_timelineDef } from "./trials/rvp_timelineDef";
+import { NAME_CORPUS_DEF } from "../shared/helpers/loadCorpus";
+import { setTaskClassCss } from "../shared/helpers/cssHelpers";
 
 const tr = {
   ...mapTrials,

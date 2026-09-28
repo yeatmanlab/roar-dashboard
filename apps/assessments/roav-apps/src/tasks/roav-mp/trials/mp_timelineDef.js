@@ -1,5 +1,5 @@
-import { mapTrials } from '../../shared/trials/mapTrials';
-import { mp_mapTrials } from './mp_mapTrials';
+import { mapTrials } from "../../shared/trials/mapTrials";
+import { mp_mapTrials } from "./mp_mapTrials";
 import {
   ModeGame,
   ModeInput,
@@ -7,12 +7,12 @@ import {
   SubtypeTrial,
   AssessmentStage,
   TypeKey,
-} from '../../shared/helpers/namingHelpers';
-import { VALIDATION, RDK, COHERENCE } from '../helpers/mp_constants';
-import { DURATIONS } from '../../shared/helpers/constants';
-import { DirRdk } from './mp_rdk';
-import { sessionGet } from '../../shared/helpers/sessionHelpers';
-import { MP_SESSION_KEYS as SK } from '../helpers/mp_sessionKeys';
+} from "../../shared/helpers/namingHelpers";
+import { VALIDATION, RDK, COHERENCE } from "../helpers/mp_constants";
+import { DURATIONS } from "../../shared/helpers/constants";
+import { DirRdk } from "./mp_rdk";
+import { sessionGet } from "../../shared/helpers/sessionHelpers";
+import { MP_SESSION_KEYS as SK } from "../helpers/mp_sessionKeys";
 
 const tr = {
   ...mapTrials,
@@ -25,13 +25,20 @@ export const t_timelineDef = () => {
 
   const arrTrials = [];
 
-  arrTrials.push(tr.t_enterFullscreen(true));
+  arrTrials.push(tr.t_enterFullscreen(false)); // @fix-freeze-audio - adding explicit audio enable request
 
   arrTrials.push(tr.t_enterLandscape());
 
   arrTrials.push(tr.t_installTouchGuards());
 
-  arrTrials.push(tr.t_collectDataMonitor());
+  arrTrials.push(
+    // @fix-freeze-audio - white background
+    tr.t_collectDataMonitor({
+      keyImgBg: "",
+    }),
+  );
+
+  arrTrials.push(tr.t_enableAudio()); // @fix-freeze-audio - adding explicit audio enable request
 
   arrTrials.push(tr.t_createQuest(configQuest.params));
 
@@ -41,7 +48,7 @@ export const t_timelineDef = () => {
         animateBtn: true,
         durationTrial: DURATIONS.WAIT_FOR_RESPONSE,
       },
-      'intro',
+      "intro",
     ),
   );
 
@@ -52,11 +59,11 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'character-others-flying-away'],
+        keyImgCharacter: ["", "", "character-others-flying-away"],
         modeGameTrial: ModeGame.GAME,
         modeGameSkipResponse: ModeGame.GAME,
       },
-      'instr-task',
+      "instr-task",
     ),
   );
 
@@ -72,7 +79,7 @@ export const t_timelineDef = () => {
         modeInputTargetAnswerTrial: ModeInput.ALL,
         modeInputTargetTrial: ModeInput.ALL,
       },
-      'instr-input-all',
+      "instr-input-all",
     ),
   );
 
@@ -81,11 +88,11 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'swarms-left-right'],
+        keyImgCharacter: ["", "", "swarms-left-right"],
         animateBtn: true,
         modeGameSkipResponse: ModeGame.ALL, // @new
       },
-      'alt-instr-ready-to-watch-right',
+      "alt-instr-ready-to-watch-right",
     ),
   );
 
@@ -105,14 +112,14 @@ export const t_timelineDef = () => {
         _fixation_duration_pre: 0,
       },
       info: {
-        nameBlock: 'block-instruction',
+        nameBlock: "block-instruction",
         stageAssessment: AssessmentStage.INSTRUCTION,
         evaluateValidity: false,
         playAudio: true,
         gapColorSameAsBorder: true,
         animateFade: false,
-        keyImgBtnLeft: ['rdk', '', 'button-key-left'],
-        keyImgBtnRight: ['rdk', '', 'button-key-right'],
+        keyImgBtnLeft: ["rdk", "", "button-key-left"],
+        keyImgBtnRight: ["rdk", "", "button-key-right"],
       },
     }),
   );
@@ -131,7 +138,7 @@ export const t_timelineDef = () => {
           showBtnLeft: false,
         },
       },
-      'instr-demo-right',
+      "instr-demo-right",
     ),
   );
 
@@ -141,7 +148,7 @@ export const t_timelineDef = () => {
         animateBtn: true,
         modeGameSkipResponse: ModeGame.ALL, // @new
       },
-      'alt-instr-response-right',
+      "alt-instr-response-right",
     ),
   );
 
@@ -159,7 +166,7 @@ export const t_timelineDef = () => {
           enableBtnRight: false,
         },
       },
-      'instr-demo-left',
+      "instr-demo-left",
     ),
   );
 
@@ -170,11 +177,11 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'characters-objects-left-right'],
+        keyImgCharacter: ["", "", "characters-objects-left-right"],
         animateBtn: true,
         modeGameSkipResponse: ModeGame.ALL, // @new
       },
-      'practice-ready-to-watch-feedback',
+      "practice-ready-to-watch-feedback",
     ),
   );
 
@@ -188,14 +195,14 @@ export const t_timelineDef = () => {
       },
       info: {
         stageAssessment: AssessmentStage.PRACTICE,
-        nameBlock: 'block-practice-feedback-av',
+        nameBlock: "block-practice-feedback-av",
         evaluateValidity: false,
-        keyAudio: ['rdk', 'practice-feedback', ''],
-        textBanner: ['rdk', 'practice-feedback', 'text2'],
+        keyAudio: ["rdk", "practice-feedback", ""],
+        textBanner: ["rdk", "practice-feedback", "text2"],
         playAudio: true,
         gapColorSameAsBorder: true,
-        keyImgBtnLeft: ['rdk', '', 'button-key-left'],
-        keyImgBtnRight: ['rdk', '', 'button-key-right'],
+        keyImgBtnLeft: ["rdk", "", "button-key-left"],
+        keyImgBtnRight: ["rdk", "", "button-key-right"],
       },
     }),
   );
@@ -214,10 +221,10 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'character-objects'],
+        keyImgCharacter: ["", "", "character-objects"],
         modeGameSkipResponse: ModeGame.ALL, // @new
       },
-      'practice-ready-to-watch-no-feedback',
+      "practice-ready-to-watch-no-feedback",
     ),
   );
 
@@ -229,7 +236,7 @@ export const t_timelineDef = () => {
       },
       info: {
         stageAssessment: AssessmentStage.PRACTICE,
-        nameBlock: 'block-practice-1',
+        nameBlock: "block-practice-1",
         showTextBanner: false,
       },
     }),
@@ -250,11 +257,11 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'character-reward-4'],
+        keyImgCharacter: ["", "", "character-reward-4"],
         modeGameTrial: ModeGame.GAME,
         modeGameSkipResponse: ModeGame.GAME,
       },
-      'practice-reward-after-no-feedback',
+      "practice-reward-after-no-feedback",
     ),
   );
 
@@ -264,7 +271,7 @@ export const t_timelineDef = () => {
         durationTrial: DURATIONS.BREAK,
         animateBtn: true,
       },
-      'instr-take-best-guess',
+      "instr-take-best-guess",
     ),
   );
 
@@ -279,13 +286,13 @@ export const t_timelineDef = () => {
   // block-test-1
   // ==================================
 
-  arrTrials.push(tr.t_startNewBlockValidation('block-test-1'));
+  arrTrials.push(tr.t_startNewBlockValidation("block-test-1"));
   arrTrials.push(
     tr.t_setParamsBlockRdk({
       metaparams: {},
       info: {
         stageAssessment: AssessmentStage.TEST,
-        nameBlock: 'block-test-1',
+        nameBlock: "block-test-1",
         showTextBanner: false,
       },
       reset: true,
@@ -311,11 +318,11 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'character-objects'],
+        keyImgCharacter: ["", "", "character-objects"],
         animateBtn: true,
         modeGameSkipResponse: ModeGame.ALL, // @new
       },
-      'reminder',
+      "reminder",
     ),
   );
 
@@ -324,11 +331,11 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'character-reward-6'],
+        keyImgCharacter: ["", "", "character-reward-6"],
         durationTrial: DURATIONS.BREAK,
         animateBtn: true,
       },
-      'test-break-after-block-1',
+      "test-break-after-block-1",
     ),
   );
 
@@ -336,13 +343,13 @@ export const t_timelineDef = () => {
   // block-test-2
   // ==================================
 
-  arrTrials.push(tr.t_startNewBlockValidation('block-test-2'));
+  arrTrials.push(tr.t_startNewBlockValidation("block-test-2"));
   arrTrials.push(
     tr.t_setParamsBlockRdk({
       metaparams: {},
       info: {
         stageAssessment: AssessmentStage.TEST,
-        nameBlock: 'block-test-2',
+        nameBlock: "block-test-2",
         showTextBanner: false,
       },
       reset: false,
@@ -364,11 +371,11 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'character-objects'],
+        keyImgCharacter: ["", "", "character-objects"],
         animateBtn: true,
         modeGameSkipResponse: ModeGame.ALL, // @new
       },
-      'reminder',
+      "reminder",
     ),
   );
 
@@ -377,11 +384,11 @@ export const t_timelineDef = () => {
   arrTrials.push(
     tr.t_instructionGeneral(
       {
-        keyImgCharacter: ['', '', 'character-reward-7'],
+        keyImgCharacter: ["", "", "character-reward-7"],
         durationTrial: DURATIONS.BREAK,
         animateBtn: true,
       },
-      'test-break-after-block-2',
+      "test-break-after-block-2",
     ),
   );
 
@@ -389,13 +396,13 @@ export const t_timelineDef = () => {
   // block-test-3
   // ==================================
 
-  arrTrials.push(tr.t_startNewBlockValidation('block-test-3'));
+  arrTrials.push(tr.t_startNewBlockValidation("block-test-3"));
   arrTrials.push(
     tr.t_setParamsBlockRdk({
       metaparams: {},
       info: {
         stageAssessment: AssessmentStage.TEST,
-        nameBlock: 'block-test-3',
+        nameBlock: "block-test-3",
         showTextBanner: false,
       },
       reset: false,
@@ -417,9 +424,9 @@ export const t_timelineDef = () => {
     tr.t_instructionGeneral(
       {
         animateBtn: true,
-        keyImgCharacter: ['', '', 'character-reward-8'],
+        keyImgCharacter: ["", "", "character-reward-8"],
       },
-      'end-screen',
+      "end-screen",
     ),
   );
 

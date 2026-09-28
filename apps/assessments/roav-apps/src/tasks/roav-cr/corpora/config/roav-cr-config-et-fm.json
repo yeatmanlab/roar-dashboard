@@ -32,12 +32,84 @@
   "arrParamsCalibrCollect": [
     {
       "enabled": true,
+      "idCalibr": "collect-center-side-hor-0",
+      "typeMove": "center-side",
+      "typeShift": "hor-only",
+      "sizeMarkFix": 20,
+      "durFix": 1500,
+      "durGap": 0,
+      "_xCenter": 50,
+      "_yCenter": 40,
+      "_xShiftMin": 4,
+      "_xShiftMax": 8,
+      "numSection": 1,
+      "durDiscardFixStart": 250,
+      "durDiscardFixEnd": 100,
+      "applyCalibr": false,
+      "durSection": 9000
+    },
+    {
+      "enabled": true,
+      "idCalibr": "collect-center-side-hor-1",
+      "typeMove": "center-side",
+      "typeShift": "hor-only",
+      "sizeMarkFix": 20,
+      "durFix": 1500,
+      "durGap": 0,
+      "_xCenter": 50,
+      "_yCenter": 40,
+      "_xShiftMin": 0,
+      "_xShiftMax": 4,
+      "numSection": 1,
+      "durDiscardFixStart": 250,
+      "durDiscardFixEnd": 100,
+      "applyCalibr": false,
+      "durSection": 9000
+    },
+    {
+      "enabled": true,
+      "idCalibr": "collect-center-side-hor-2",
+      "typeMove": "center-side",
+      "typeShift": "hor-only",
+      "sizeMarkFix": 20,
+      "durFix": 1500,
+      "durGap": 0,
+      "_xCenter": 50,
+      "_yCenter": 40,
+      "_xShiftMin": 0,
+      "_xShiftMax": 8,
+      "numSection": 1,
+      "durDiscardFixStart": 250,
+      "durDiscardFixEnd": 100,
+      "applyCalibr": false,
+      "durSection": 9000
+    },
+    {
+      "enabled": true,
+      "idCalibr": "collect-center-side-hor-3",
+      "typeMove": "center-side",
+      "typeShift": "hor-only",
+      "sizeMarkFix": 20,
+      "durFix": 1500,
+      "durGap": 0,
+      "_xCenter": 50,
+      "_yCenter": 40,
+      "_xShiftMin": 0,
+      "_xShiftMax": 8,
+      "numSection": 1,
+      "durDiscardFixStart": 250,
+      "durDiscardFixEnd": 100,
+      "applyCalibr": false,
+      "durSection": 9000
+    },
+    {
+      "enabled": true,
       "idCalibr": "collect-jump-zigzag-0",
       "typeMove": "zigzag",
       "sizeMarkFix": 20,
       "durFix": 1500,
       "durGap": 0,
-      "_xShiftMin": 2,
+      "_xShiftMin": 0,
       "_xShiftMax": 4,
       "_yShiftMin": 0,
       "_yShiftMax": 2,
@@ -48,7 +120,7 @@
       "durDiscardFixStart": 250,
       "durDiscardFixEnd": 100,
       "applyCalibr": false,
-      "durSection": 7500
+      "durSection": 9000
     },
     {
       "enabled": true,
@@ -68,10 +140,10 @@
       "durDiscardFixStart": 250,
       "durDiscardFixEnd": 100,
       "applyCalibr": false,
-      "durSection": 7500
+      "durSection": 9000
     },
     {
-      "enabled": true,
+      "enabled": false,
       "idCalibr": "collect-jump-hor-0",
       "typeMove": "zigzag",
       "sizeMarkFix": 20,
@@ -87,10 +159,10 @@
       "_heightSection": 20,
       "_widthSection": 40,
       "applyCalibr": false,
-      "durSection": 7500
+      "durSection": 9000
     },
     {
-      "enabled": true,
+      "enabled": false,
       "idCalibr": "collect-jump-hor-1",
       "typeMove": "zigzag",
       "sizeMarkFix": 20,
@@ -106,7 +178,7 @@
       "_heightSection": 20,
       "_widthSection": 40,
       "applyCalibr": false,
-      "durSection": 7500
+      "durSection": 9000
     },
     {
       "enabled": true,
@@ -116,10 +188,10 @@
       "sizeMarkFix": 20,
       "unitShiftX": "%width",
       "unitShiftY": "%height",
-      "_xShiftMin": 0.2,
-      "_xShiftMax": 0.4,
-      "_yShiftMin": 0.2,
-      "_yShiftMax": 0.4,
+      "_xShiftMin": 0.25,
+      "_xShiftMax": 0.25,
+      "_yShiftMin": 0.125,
+      "_yShiftMax": 0.125,
       "durFix": 16,
       "durGap": 0,
       "_heightSection": 80,
@@ -127,7 +199,7 @@
       "numSection": 3,
       "indSection": 0,
       "applyCalibr": false,
-      "durSection": 8000
+      "durSection": 9000
     },
     {
       "enabled": true,
@@ -137,10 +209,10 @@
       "sizeMarkFix": 20,
       "unitShiftX": "%width",
       "unitShiftY": "%height",
-      "_xShiftMin": 0.2,
-      "_xShiftMax": 0.4,
-      "_yShiftMin": 0.2,
-      "_yShiftMax": 0.4,
+      "_xShiftMin": 0.25,
+      "_xShiftMax": 0.25,
+      "_yShiftMin": 0.125,
+      "_yShiftMax": 0.125,
       "durFix": 16,
       "durGap": 0,
       "_heightSection": 80,
@@ -148,7 +220,7 @@
       "numSection": 3,
       "indSection": 1,
       "applyCalibr": false,
-      "durSection": 8000
+      "durSection": 9000
     },
     {
       "enabled": true,
@@ -158,10 +230,10 @@
       "sizeMarkFix": 20,
       "unitShiftX": "%width",
       "unitShiftY": "%height",
-      "_xShiftMin": 0.15,
-      "_xShiftMax": 0.3,
-      "_yShiftMin": 0.15,
-      "_yShiftMax": 0.3,
+      "_xShiftMin": 0.25,
+      "_xShiftMax": 0.25,
+      "_yShiftMin": 0.125,
+      "_yShiftMax": 0.125,
       "durFix": 16,
       "durGap": 0,
       "_heightSection": 80,
@@ -169,7 +241,7 @@
       "numSection": 3,
       "indSection": 2,
       "applyCalibr": false,
-      "durSection": 8000
+      "durSection": 9000
     }
   ],
   "saveSnapshotsCalibr": true,
@@ -196,21 +268,21 @@
   },
   "paramsEtCalibr": {
     "runFm": true,
-    "runModel": true,
+    "runModel": false,
     "typeModel": "at-crops-bbs",
     "timeoutFm": 16,
     "timeoutModel": 16
   },
   "paramsEtCalibrCollect": {
     "runFm": true,
-    "runModel": true,
+    "runModel": false,
     "typeModel": "at-crops-bbs",
     "timeoutFm": 16,
     "timeoutModel": 16
   },
   "paramsEtCr": {
     "runFm": true,
-    "runModel": true,
+    "runModel": false,
     "typeModel": "at-crops-bbs",
     "timeoutFm": 16,
     "timeoutModel": 16

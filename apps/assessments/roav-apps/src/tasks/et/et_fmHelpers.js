@@ -1,22 +1,32 @@
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
 
 // import ndarray from "ndarray";
 // import ops from "ndarray-ops";
-import { et_stateResetOngoing, et_stateSnapshot, state } from './et_state';
-import { ET } from './et_constants';
-
-export const FM_CONT_IRIS_L = [
-  [474, 475],
-  [475, 476],
-  [476, 477],
-  [477, 474],
-];
+import { et_stateResetOngoing, et_stateSnapshot, state } from "./et_state";
+import { ET } from "./et_constants";
 
 export const FM_CONT_IRIS_R = [
-  [469, 470],
-  [470, 471],
-  [471, 472],
-  [472, 469],
+  //  [474, 475],
+  //  [475, 476],
+  //  [476, 477],
+  //  [477, 474],
+
+  [476, 475],
+  [475, 474],
+  [474, 477],
+  [477, 476],
+];
+
+export const FM_CONT_IRIS_L = [
+  //  [469, 470],
+  //  [470, 471],
+  //  [471, 472],
+  //  [472, 469],
+
+  [471, 470],
+  [470, 469],
+  [469, 472],
+  [472, 471],
 ];
 
 export const FM_CONT_HEAD = [
@@ -60,6 +70,23 @@ export const FM_CONT_HEAD = [
 
 export const FM_PNTS_EYE_L = [130, 27, 243, 23];
 export const FM_PNTS_EYE_R = [463, 257, 359, 253];
+export const FM_PNTS_EYE_INNER_L = [33, 159, 133, 145];
+export const FM_PNTS_EYE_INNER_R = [362, 386, 263, 374];
+export const FM_PNTS_EYE_FULL_L = [
+  33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246,
+];
+export const FM_PNTS_EYE_FULL_R = [
+  362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384,
+  398,
+];
+
+export const FM_PNTS_HEAD_EXTR = [234, 10, 454, 152];
+export const FM_PNTS_PNP = [33, 263, 1, 61, 291, 199];
+
+export const FM_PNTS_NOSE = [102, 6, 331, 2];
+export const FM_PNT_NOSE_TIP = 1;
+export const FM_PNT_IRIS_CENTER_L = 468;
+export const FM_PNT_IRIS_CENTER_R = 473;
 
 // export const calibrHtDef = {
 //   xCenterHead: 0.4383369982242584,
@@ -108,13 +135,25 @@ export const FM_PNTS_EYE_R = [463, 257, 359, 253];
 //   ],
 // };
 
-export const fm_xMinFromCoords = (coords) => Math.min(...coords.map((coord) => coord[0]));
-export const fm_xMaxFromCoords = (coords) => Math.max(...coords.map((coord) => coord[0]));
-export const fm_yMinFromCoords = (coords) => Math.min(...coords.map((coord) => coord[1]));
-export const fm_yMaxFromCoords = (coords) => Math.max(...coords.map((coord) => coord[1]));
+export const fm_xMinFromCoords = (coords) =>
+  Math.min(...coords.map((coord) => coord[0]));
+export const fm_xMaxFromCoords = (coords) =>
+  Math.max(...coords.map((coord) => coord[0]));
+export const fm_yMinFromCoords = (coords) =>
+  Math.min(...coords.map((coord) => coord[1]));
+export const fm_yMaxFromCoords = (coords) =>
+  Math.max(...coords.map((coord) => coord[1]));
 
-export const fm_drawPoint = (x, y, widthImg, heightImg, canvas, clr = 'black', sizePx = 5) => {
-  const ctx = canvas.getContext('2d');
+export const fm_drawPoint = (
+  x,
+  y,
+  widthImg,
+  heightImg,
+  canvas,
+  clr = "black",
+  sizePx = 5,
+) => {
+  const ctx = canvas.getContext("2d");
   ctx.beginPath();
   ctx.arc(x * widthImg, y * heightImg, sizePx / 2, 0, 2 * Math.PI);
   ctx.fillStyle = clr;
@@ -131,10 +170,10 @@ export const fm_drawBB = (
   heightImg,
   canvas,
   fill,
-  clrEdge = 'yellow',
-  clrFill = 'yellow',
+  clrEdge = "yellow",
+  clrFill = "yellow",
 ) => {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   const x = xMin * widthImg;
   const y = yMin * heightImg;
   const w = (xMax - xMin) * widthImg;
@@ -153,13 +192,16 @@ export const fm_drawContour = (
   heightImg,
   canvas,
   fill,
-  clrEdge = 'blue',
-  clrFill = 'rgba(13, 110, 253, 0.5)',
+  clrEdge = "blue",
+  clrFill = "rgba(13, 110, 253, 0.5)",
 ) => {
-  const ctx = canvas.getContext('2d');
+  if (!coords) {
+    return;
+  }
+  const ctx = canvas.getContext("2d");
   ctx.beginPath();
   coords.forEach(([x, y], i) => {
-    ctx[i === 0 ? 'moveTo' : 'lineTo'](x * widthImg, y * heightImg);
+    ctx[i === 0 ? "moveTo" : "lineTo"](x * widthImg, y * heightImg);
   });
   ctx.closePath();
   if (fill) {
@@ -209,7 +251,7 @@ export const fm_calcAreaPolygon = (coords) => {
   return Math.abs(area / 2);
 };
 
-// TODO: careful - what if it is intersecting the vertices!!! - we will get wrong winding number...
+// @THINK incorrect answer if the ray is intersecting a vertex...
 export const fm_isPointInsidePolygon = (point, coords) => {
   let inside = false;
   const x = point[0];
@@ -221,7 +263,8 @@ export const fm_isPointInsidePolygon = (point, coords) => {
     const yi = coords[i][1];
     const xj = coords[j][0];
     const yj = coords[j][1];
-    const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    const intersect =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
     if (intersect) inside = !inside;
   }
   return inside;
@@ -261,14 +304,13 @@ export const fm_def_beforeSendToFm = () => {
   state.timeStartFm = Date.now();
 };
 
-// TODO: it seems to help with concurrent calls, but understand better!
 export async function fm_fmRun() {
   if (!state.continueProcessing) {
     return;
   }
   fm_def_beforeSendToFm();
   await state.faceMesh.send({ image: state.videoIn });
-  setTimeout(fm_fmRun, 0);
+  setTimeout(fm_fmRun, state.timeoutFm);
 }
 
 export const fm_loadMediaPipe = () =>
@@ -277,7 +319,7 @@ export const fm_loadMediaPipe = () =>
       resolve();
       return;
     }
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = `${ET.FM.URL_BASE}/${ET.FM.NAME_FILE_SCRIPT}`;
     script.onload = resolve;
     script.onerror = reject;
@@ -286,12 +328,11 @@ export const fm_loadMediaPipe = () =>
 
 export const paramsFmInitDef = {
   selfieMode: true,
-  enableFaceGeometry: false, // TODO: does not work with true
+  enableFaceGeometry: false, // @NOTE: does not work with true (at least in current version of FM)
   minDetectionConfidence: ET.FM.CONF_DETECT_MIN,
   minTrackingConfidence: ET.FM.CONF_TRACK_MIN,
 };
 
-// TODO: attaches faceMesh to window!!!!!!!!! should export from the file
 export const fm_fmInit = (params) => {
   state.faceMesh = new window.FaceMesh({
     locateFile: (nameFile) => `${ET.FM.URL_BASE}/${nameFile}`,
@@ -320,14 +361,29 @@ export const t_et_fmInit = (paramsIn = {}) => {
   };
 };
 
+export const fm_fmClose = async () => {
+  if (state.faceMesh) {
+    await state.faceMesh.close();
+    state.faceMesh = null;
+  }
+};
+
+export const t_et_fmClose = () => ({
+  type: jsPsychCallFunction,
+  async: true,
+  func: async (done) => {
+    await fm_fmClose();
+    done();
+  },
+});
+
 export const fm_def_fillStateOnResultsFm = (resFm) => {
   if (!resFm.multiFaceLandmarks || resFm.multiFaceLandmarks.length === 0) {
     et_stateResetOngoing(); // needed because snapshot is collected at the beginning of the next iteration - handle lost face correctly
     return;
   }
-  // TODO: think whether it is OK to override time here -
-  //  it guarantees saving the time, but a bit delayed compared to
-  //  actual frame...
+  // @THINK: think whether it is OK to override time here
+  // it guarantees saving the time, but a bit delayed compared to the actual frame...
   state.timeResFm = new Date().getTime();
   state.landmarks = resFm.multiFaceLandmarks;
 
@@ -341,9 +397,21 @@ export const fm_def_fillStateOnResultsFm = (resFm) => {
     state.coordsIrisL = fm_indsPairToCoords(fmLandmarks, FM_CONT_IRIS_L);
     state.coordsIrisR = fm_indsPairToCoords(fmLandmarks, FM_CONT_IRIS_R);
     state.metricsIris = {
-      widthIrisL: fm_xMaxFromCoords(state.coordsIrisL) - fm_xMinFromCoords(state.coordsIrisL),
-      widthIrisR: fm_xMaxFromCoords(state.coordsIrisR) - fm_xMinFromCoords(state.coordsIrisR),
+      widthIrisL:
+        fm_xMaxFromCoords(state.coordsIrisL) -
+        fm_xMinFromCoords(state.coordsIrisL),
+      widthIrisR:
+        fm_xMaxFromCoords(state.coordsIrisR) -
+        fm_xMinFromCoords(state.coordsIrisR),
     };
+    state.coordsIrisCenterL = [
+      fmLandmarks[FM_PNT_IRIS_CENTER_L].x,
+      fmLandmarks[FM_PNT_IRIS_CENTER_L].y,
+    ];
+    state.coordsIrisCenterR = [
+      fmLandmarks[FM_PNT_IRIS_CENTER_R].x,
+      fmLandmarks[FM_PNT_IRIS_CENTER_R].y,
+    ];
 
     // // --- viewing distance
     // if (state.cal.vdCalibrated) {
@@ -357,42 +425,133 @@ export const fm_def_fillStateOnResultsFm = (resFm) => {
 
     // --- head
     state.coordsHead = fm_indsPairToCoords(fmLandmarks, FM_CONT_HEAD);
+    state.coordsHeadExtr = fm_indsToCoords(fmLandmarks, FM_PNTS_HEAD_EXTR);
     state.metricsHead = fm_calcMetricsHead(state.coordsHead);
+    // --- head rotation - for visualization only here
+    state.coordsPnP = fm_indsToCoords(fmLandmarks, FM_PNTS_PNP);
 
     // --- eye: contours & metrics
     state.coordsEyeL = fm_indsToCoords(fmLandmarks, FM_PNTS_EYE_L);
     state.coordsEyeR = fm_indsToCoords(fmLandmarks, FM_PNTS_EYE_R);
+    state.coordsEyeInnerL = fm_indsToCoords(fmLandmarks, FM_PNTS_EYE_INNER_L);
+    state.coordsEyeInnerR = fm_indsToCoords(fmLandmarks, FM_PNTS_EYE_INNER_R);
+    state.coordsEyeFullL = fm_indsToCoords(fmLandmarks, FM_PNTS_EYE_FULL_L);
+    state.coordsEyeFullR = fm_indsToCoords(fmLandmarks, FM_PNTS_EYE_FULL_R);
+
+    // --- nose
+    state.coordsNose = fm_indsToCoords(fmLandmarks, FM_PNTS_NOSE);
+    state.coordsNoseTip = [
+      fmLandmarks[FM_PNT_NOSE_TIP].x,
+      fmLandmarks[FM_PNT_NOSE_TIP].y,
+    ];
+
+    if (state.paramsSnapshot.saveImgNativeEye) {
+      state.imgsNativeEyePending = { 
+        imgL: { img: null}, 
+        imgR: { img: null}
+      }
+    }
 
     // eslint-disable-next-line no-restricted-syntax
-    for (const [coords, canvasNative, canvasScaled] of [
-      [state.coordsEyeL, state.canvasNativeEyeL, state.canvasScaledEyeL],
-      [state.coordsEyeR, state.canvasNativeEyeR, state.canvasScaledEyeR],
+    for (const [coords, canvasNative, canvasScaled, imgNativeEyePending] of [
+      [state.coordsEyeL, state.canvasNativeEyeL, state.canvasScaledEyeL, state.imgsNativeEyePending?.imgL],
+      [state.coordsEyeR, state.canvasNativeEyeR, state.canvasScaledEyeR, state.imgsNativeEyePending?.imgR],
     ]) {
       const xMinEye = fm_xMinFromCoords(coords) * state.widthImg;
       const yMinEye = fm_yMinFromCoords(coords) * state.heightImg;
-      const widthEye = (fm_xMaxFromCoords(coords) - fm_xMinFromCoords(coords)) * state.widthImg;
-      const heightEye = (fm_yMaxFromCoords(coords) - fm_yMinFromCoords(coords)) * state.heightImg;
+      const widthEye =
+        (fm_xMaxFromCoords(coords) - fm_xMinFromCoords(coords)) *
+        state.widthImg;
+      const heightEye =
+        (fm_yMaxFromCoords(coords) - fm_yMinFromCoords(coords)) *
+        state.heightImg;
 
       if (canvasNative) {
         canvasNative.width = widthEye;
         canvasNative.height = heightEye;
-        const contextNative = canvasNative.getContext('2d', {
+        const contextNative = canvasNative.getContext("2d", {
           willReadFrequently: true,
         });
         contextNative.save();
         contextNative.translate(widthEye, 0);
         contextNative.scale(-1, 1);
-        contextNative.drawImage(resFm.image, xMinEye, yMinEye, widthEye, heightEye, 0, 0, widthEye, heightEye);
+        contextNative.drawImage(
+          resFm.image,
+          xMinEye,
+          yMinEye,
+          widthEye,
+          heightEye,
+          0,
+          0,
+          widthEye,
+          heightEye,
+        );
         contextNative.restore();
       }
 
       if (canvasScaled) {
-        canvasScaled.width = ET.ET.SIZE_IMG_EYE_MODEL;
-        canvasScaled.height = ET.ET.SIZE_IMG_EYE_MODEL;
-        const contextScaled = canvasScaled.getContext('2d', {
+        const contextScaled = canvasScaled.getContext("2d", {
           willReadFrequently: true,
         });
-        contextScaled.drawImage(canvasNative, 0, 0, ET.ET.SIZE_IMG_EYE_MODEL, ET.ET.SIZE_IMG_EYE_MODEL);
+        contextScaled.clearRect(0, 0, canvasScaled.width, canvasScaled.height);
+        contextScaled.save();
+        contextScaled.translate(ET.ET.SIZE_IMG_EYE_MODEL, 0);
+        contextScaled.scale(-1, 1);
+        contextScaled.drawImage(
+          resFm.image,
+          xMinEye,
+          yMinEye,
+          widthEye,
+          heightEye,
+          0,
+          0,
+          ET.ET.SIZE_IMG_EYE_MODEL,
+          ET.ET.SIZE_IMG_EYE_MODEL,
+        );
+        contextScaled.restore();
+
+        if (imgNativeEyePending) {
+          createImageBitmap(resFm.image, xMinEye, yMinEye, widthEye, heightEye).then((bmp) => {
+            const canvasCrop = document.createElement("canvas");
+            canvasCrop.width = bmp.width;
+            canvasCrop.height = bmp.height;
+            canvasCrop.getContext("2d").drawImage(bmp, 0, 0);
+            // const ctxCrop = canvasCrop.getContext("2d");
+            // ctxCrop.translate(bmp.width, 0);
+            // ctxCrop.scale(-1, 1);
+            // ctxCrop.drawImage(bmp, 0, 0);
+            canvasCrop.toBlob((blob) => {
+              const reader = new FileReader();
+              reader.onloadend = () => { imgNativeEyePending.img = reader.result; };
+              reader.readAsDataURL(blob);
+              bmp.close();
+            }, "image/png");
+          });
+        }
+
+        /*
+        if (state.paramsSnapshot.saveImgNativeEye) {
+          const entry = { img: null };
+          if (!state.imgsNativeEyePending) state.imgsNativeEyePending = [];
+          state.imgsNativeEyePending.push(entry);
+          createImageBitmap(resFm.image, xMinEye, yMinEye, widthEye, heightEye).then((bmp) => {
+            const canvasCrop = document.createElement("canvas");
+            canvasCrop.width = bmp.width;
+            canvasCrop.height = bmp.height;
+            canvasCrop.getContext("2d").drawImage(bmp, 0, 0);
+            canvasCrop.toBlob((blob) => {
+              const reader = new FileReader();
+              reader.onloadend = () => { entry.img = reader.result; };
+              reader.readAsDataURL(blob);
+              bmp.close();
+            }, "image/png");
+        });
+      }
+      */
+  
+
+
+
       }
     }
   });

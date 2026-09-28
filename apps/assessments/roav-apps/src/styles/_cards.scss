@@ -1,4 +1,4 @@
-@use 'vars' as *;
+@use "vars" as *;
 
 // ============================================
 // INSTRUCTION CARD
@@ -16,7 +16,8 @@
   justify-content: center;
   gap: clamp(10px, 1svh, 20px);
   z-index: 90;
-  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
 }
 
 // card
@@ -140,6 +141,15 @@
   display: block;
   max-width: 20vw;
   max-height: 25vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.roav-card-sys-img-small {
+  display: block;
+  max-width: 20vw;
+  max-height: 15vh;
   width: auto;
   height: auto;
   object-fit: contain;

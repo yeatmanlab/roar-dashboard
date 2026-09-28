@@ -21,7 +21,10 @@ export const indsRandomNoRepeatExcl = (numInds, lenArr, indsExcl) => {
 
 export const indsRandomExcl = (numInds, lenArr, indsExcl) => {
   const pool = [...Array(lenArr).keys()].filter((i) => !indsExcl.includes(i));
-  return Array.from({ length: numInds }, () => pool[Math.floor(Math.random() * pool.length)]);
+  return Array.from(
+    { length: numInds },
+    () => pool[Math.floor(Math.random() * pool.length)],
+  );
 };
 
 export const indRandom = (lenArr) => Math.floor(Math.random() * lenArr);
@@ -42,7 +45,10 @@ export const elemRandomExcl = (arr, elemsExcl) => {
 };
 
 export const elemsRandom = (numInds, arr) =>
-  Array.from({ length: numInds }, () => arr[Math.floor(Math.random() * arr.length)]);
+  Array.from(
+    { length: numInds },
+    () => arr[Math.floor(Math.random() * arr.length)],
+  );
 
 // creates [0, 0, 0, 1, 1, 1, ... , indMax, indMax, indMax]
 export const createArrIndsRepeat = (numRepeat, indMax) =>

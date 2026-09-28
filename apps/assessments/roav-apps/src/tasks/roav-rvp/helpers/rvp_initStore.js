@@ -1,6 +1,10 @@
-import { sessionSet } from '../../shared/helpers/sessionHelpers';
-import { RVP_SESSION_KEYS as SK } from './rvp_sessionKeys';
-import { clearStoreOnAppStartDef, clearStoreOnTimelineStartDef, initStore } from '../../shared/helpers/initStore';
+import { sessionSet } from "../../shared/helpers/sessionHelpers";
+import { RVP_SESSION_KEYS as SK } from "./rvp_sessionKeys";
+import {
+  clearStoreOnAppStartDef,
+  clearStoreOnTimelineStartDef,
+  initStore,
+} from "../../shared/helpers/initStore";
 
 export const rvp_clearStoreOnTimelineStart = () => {
   clearStoreOnTimelineStartDef();
@@ -18,4 +22,5 @@ export const rvp_clearStoreOnAppStart = () => {
   sessionSet(SK.MAPS_STIM, null);
 };
 
-export const rvp_initStore = () => initStore(rvp_clearStoreOnAppStart, rvp_clearStoreOnTimelineStart);
+export const rvp_initStore = () =>
+  initStore(rvp_clearStoreOnAppStart, rvp_clearStoreOnTimelineStart);

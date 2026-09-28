@@ -1,8 +1,8 @@
 /* eslint-disable no-underscore-dangle */
-import { ValidityEvaluator, createEvaluateValidity } from '@bdelab/roar-utils';
-import { sessionSet } from '../helpers/sessionHelpers';
-import { SESSION_KEYS as SK } from '../helpers/sessionKeys';
-import { wrapAsJsPsychTrial } from '../helpers/jspsychHelpers';
+import { ValidityEvaluator, createEvaluateValidity } from "@bdelab/roar-utils";
+import { sessionSet } from "../helpers/sessionHelpers";
+import { SESSION_KEYS as SK } from "../helpers/sessionKeys";
+import { wrapAsJsPsychTrial } from "../helpers/jspsychHelpers";
 
 const validationFlagsHandler = {
   updateEngagementFlags: null,
@@ -24,7 +24,7 @@ export const paramsValidityDef = {
   responseTimeLowThreshold: 200,
   accuracyThreshold: 0.5,
   minResponsesRequired: 3,
-  includedReliabilityFlags: ['responseTimeTooFast', 'accuracyTooLow'],
+  includedReliabilityFlags: ["responseTimeTooFast", "accuracyTooLow"],
 };
 
 export const t_createValidityEvaluator = (paramsIn = {}) =>
@@ -38,7 +38,9 @@ export const t_createValidityEvaluator = (paramsIn = {}) =>
   });
 
 export const t_startNewBlockValidation = (nameBlock) =>
-  wrapAsJsPsychTrial(() => validityEvaluator.startNewBlockValidation(nameBlock));
+  wrapAsJsPsychTrial(() =>
+    validityEvaluator.startNewBlockValidation(nameBlock),
+  );
 
 export const t_markAsCompletedValidation = () =>
   wrapAsJsPsychTrial(() => {
@@ -55,12 +57,17 @@ export const t_setEnableTrialsByValidation = (passedValidation, flagEnable) =>
         correct: validityEvaluator._correct,
         completed: validityEvaluator.completed,
       });
-      if ((passedValidation && flags.length === 0) || (!passedValidation && flags.length > 0)) {
+      if (
+        (passedValidation && flags.length === 0) ||
+        (!passedValidation && flags.length > 0)
+      ) {
         sessionSet(SK.ENABLE_TRIALS, flagEnable);
       }
     }
   });
 
-export const t_setEnableTrialsIfValidationPassed = (flagEnable) => t_setEnableTrialsByValidation(true, flagEnable);
+export const t_setEnableTrialsIfValidationPassed = (flagEnable) =>
+  t_setEnableTrialsByValidation(true, flagEnable);
 
-export const t_setEnableTrialsIfValidationFailed = (flagEnable) => t_setEnableTrialsByValidation(false, flagEnable);
+export const t_setEnableTrialsIfValidationFailed = (flagEnable) =>
+  t_setEnableTrialsByValidation(false, flagEnable);

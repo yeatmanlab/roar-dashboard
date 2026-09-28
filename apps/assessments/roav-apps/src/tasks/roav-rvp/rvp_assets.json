@@ -77,6 +77,8 @@
       ]
     },
     "shared": [
+      "shared-tech-icon-audio-all.webp",
+
       "roav-mp-null-audio-all.mp3",
       "roav-mp-tech-icon-landscape-all.webp",
       "roav-mp-tech-icon-fullscreen-all.webp",

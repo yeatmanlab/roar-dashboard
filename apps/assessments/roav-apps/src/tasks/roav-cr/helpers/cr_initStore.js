@@ -1,13 +1,22 @@
-import { sessionSet } from '../../shared/helpers/sessionHelpers';
-import { CR_SESSION_KEYS as SK } from './cr_sessionKeys';
-import { clearStoreOnAppStartDef, clearStoreOnTimelineStartDef, initStore } from '../../shared/helpers/initStore';
-import { et_clearStoreOnAppStart, et_clearStoreOnTimelineStart } from '../../et/et_initStore';
+import { sessionSet } from "../../shared/helpers/sessionHelpers";
+import { CR_SESSION_KEYS as SK } from "./cr_sessionKeys";
+import {
+  clearStoreOnAppStartDef,
+  clearStoreOnTimelineStartDef,
+  initStore,
+} from "../../shared/helpers/initStore";
+import {
+  et_clearStoreOnAppStart,
+  et_clearStoreOnTimelineStart,
+} from "../../et/et_initStore";
 
 export const cr_clearStoreOnTimelineStart = () => {
   clearStoreOnTimelineStartDef();
   et_clearStoreOnTimelineStart();
+  sessionSet(SK.IND_BLOCK, -1);
   sessionSet(SK.CR_METAPARAMS_BLOCK, null);
   sessionSet(SK.CR_INFO_BLOCK, null);
+  sessionSet(SK.SHOW_GAZE, null);
 };
 
 export const cr_clearStoreOnAppStart = () => {
@@ -18,4 +27,5 @@ export const cr_clearStoreOnAppStart = () => {
   sessionSet(SK.CONFIG_QUEST, null);
 };
 
-export const cr_initStore = () => initStore(cr_clearStoreOnAppStart, cr_clearStoreOnTimelineStart);
+export const cr_initStore = () =>
+  initStore(cr_clearStoreOnAppStart, cr_clearStoreOnTimelineStart);

@@ -1,12 +1,15 @@
-import { svgStrToSrc } from '../../shared/trials/svgHelpers';
-import { loadCorpus, downloadJSON } from '../../shared/helpers/loadCorpus';
-import { ModeAdaptBlock, ModeAdaptStim } from '../../shared/helpers/namingHelpers';
-import { sessionGet, sessionSet } from '../../shared/helpers/sessionHelpers';
-import { RVP_SESSION_KEYS as SK } from './rvp_sessionKeys';
+import { svgStrToSrc } from "../../shared/trials/svgHelpers";
+import { loadCorpus, downloadJSON } from "../../shared/helpers/loadCorpus";
+import {
+  ModeAdaptBlock,
+  ModeAdaptStim,
+} from "../../shared/helpers/namingHelpers";
+import { sessionGet, sessionSet } from "../../shared/helpers/sessionHelpers";
+import { RVP_SESSION_KEYS as SK } from "./rvp_sessionKeys";
 
-const LOC_CONFIG_DEF = 'shared/corpora/config';
-export const NAME_CONFIG_STIM_DEF = 'config-stim-def';
-export const NAME_CONFIG_BLOCK_DEF = 'config-block-def';
+const LOC_CONFIG_DEF = "shared/corpora/config";
+export const NAME_CONFIG_STIM_DEF = "config-stim-def";
+export const NAME_CONFIG_BLOCK_DEF = "config-block-def";
 
 const loadSvgStim = async (configsStim, bucketURI) => {
   const mapsStim = {};
@@ -17,7 +20,7 @@ const loadSvgStim = async (configsStim, bucketURI) => {
           const url = `${bucketURI}/shared/corpora/svg/${typeStim}/${filename}`;
           const strSvg = await (await fetch(url)).text();
           return {
-            name: filename.replace('.svg', ''),
+            name: filename.replace(".svg", ""),
             src: svgStrToSrc(strSvg),
           };
         }),
@@ -43,6 +46,12 @@ export const rvp_loadCorpus = async (nameTask, assets, bucketURI) => {
   const nameFileConfigBlock = `${locConfig}/${nameTask}-${nameConfigBlock}.json`;
   const configBlock = await downloadJSON(nameFileConfigBlock);
   sessionSet(SK.CONFIG_BLOCK, configBlock);
-  sessionSet(SK.MODE_ADAPT_STIM, configBlock.modeAdaptStim ?? ModeAdaptStim.NONE);
-  sessionSet(SK.MODE_ADAPT_BLOCK, configBlock.modeAdaptBlock ?? ModeAdaptBlock.NONE);
+  sessionSet(
+    SK.MODE_ADAPT_STIM,
+    configBlock.modeAdaptStim ?? ModeAdaptStim.NONE,
+  );
+  sessionSet(
+    SK.MODE_ADAPT_BLOCK,
+    configBlock.modeAdaptBlock ?? ModeAdaptBlock.NONE,
+  );
 };

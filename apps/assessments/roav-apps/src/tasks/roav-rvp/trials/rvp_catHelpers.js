@@ -1,19 +1,19 @@
-import { Cat } from '@bdelab/jscat';
-import { sessionGet } from '../../shared/helpers/sessionHelpers';
-import { RVP_SESSION_KEYS as SK } from '../helpers/rvp_sessionKeys';
-import { wrapAsJsPsychTrial } from '../../shared/helpers/jspsychHelpers';
+import { Cat } from "@bdelab/jscat";
+import { sessionGet } from "../../shared/helpers/sessionHelpers";
+import { RVP_SESSION_KEYS as SK } from "../helpers/rvp_sessionKeys";
+import { wrapAsJsPsychTrial } from "../../shared/helpers/jspsychHelpers";
 
 export const MethodCat = {
-  MLE: 'MLE',
+  MLE: "MLE",
 };
 
 export const ItemSelectCat = {
-  MFI: 'MFI',
+  MFI: "MFI",
 };
 
 export const THETA_MAX_DEF = 6;
 
-export const TYPE_CAT_COMB = 'comb';
+export const TYPE_CAT_COMB = "comb";
 
 export const SCORE_ROAR_MIN = 100;
 export const SCORE_ROAR_MAX = 900;
@@ -55,7 +55,8 @@ export const calcDifficultyMean = (typeCat, numStim) => {
   return difficultyMean;
 };
 
-export const calcThetaFromProb = (p, a, b, c, d) => b - Math.log((d - p) / (p - c)) / a;
+export const calcThetaFromProb = (p, a, b, c, d) =>
+  b - Math.log((d - p) / (p - c)) / a;
 
 // typeCat is something like "opto" or "pseudo", not combined
 // assuming a, c, d are the same for all items in a block
@@ -75,7 +76,12 @@ export const updateAbilityEstimate = (typeCat, numStim, posTarg, correct) => {
 
 // IMPORTANT: here typeCat is "pseudo" or "opto" (but not TYPE_CAT_COMB)
 // IMPORTANT: correct parameter is TRUE / FALSE (not 1 / 0)
-export const updateAbilityEstimateComb = (typeCat, numStim, posTarg, correct) => {
+export const updateAbilityEstimateComb = (
+  typeCat,
+  numStim,
+  posTarg,
+  correct,
+) => {
   const paramsRasch = catsAll.arrParamsRasch[typeCat];
   const theta = paramsRasch[numStim][posTarg];
   catsAll.catComb.updateAbilityEstimate([theta], correct ? 1 : 0);
@@ -126,14 +132,17 @@ export const calcThetaTransf = (typeCat) => {
 
 export const calcThetaSE = (typeCat) => {
   const cat = getCat(typeCat);
-  const thetaSeCur = cat.seMeasurement === Infinity ? Number.MAX_VALUE : cat.seMeasurement;
+  const thetaSeCur =
+    cat.seMeasurement === Infinity ? Number.MAX_VALUE : cat.seMeasurement;
   return thetaSeCur;
 };
 
 export const calcRoarScore = (typeCat) => {
   const thetaTransf = calcThetaTransf(typeCat);
   let score =
-    SCORE_ROAR_MIN + ((SCORE_ROAR_MAX - SCORE_ROAR_MIN) * (thetaTransf + THETA_MAX_DEF)) / (2 * THETA_MAX_DEF);
+    SCORE_ROAR_MIN +
+    ((SCORE_ROAR_MAX - SCORE_ROAR_MIN) * (thetaTransf + THETA_MAX_DEF)) /
+      (2 * THETA_MAX_DEF);
   score = Math.max(score, SCORE_ROAR_MIN);
   score = Math.min(score, SCORE_ROAR_MAX);
   return score;

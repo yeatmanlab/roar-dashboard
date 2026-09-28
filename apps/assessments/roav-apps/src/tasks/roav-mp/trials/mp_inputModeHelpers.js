@@ -1,8 +1,8 @@
-import { deviceType } from 'detect-it';
-import { ModeGame, ModeInput } from '../../shared/helpers/namingHelpers';
-import { sessionGet, sessionSet } from '../../shared/helpers/sessionHelpers';
-import { MP_SESSION_KEYS as SK } from '../helpers/mp_sessionKeys';
-import { wrapAsJsPsychTrial } from '../../shared/helpers/jspsychHelpers';
+import { deviceType } from "detect-it";
+import { ModeGame, ModeInput } from "../../shared/helpers/namingHelpers";
+import { sessionGet, sessionSet } from "../../shared/helpers/sessionHelpers";
+import { MP_SESSION_KEYS as SK } from "../helpers/mp_sessionKeys";
+import { wrapAsJsPsychTrial } from "../../shared/helpers/jspsychHelpers";
 
 export const updateModeInputTargetRdk = () => {
   const allowModeInputAll = sessionGet(SK.ALLOW_MODE_INPUT_ALL);
@@ -37,7 +37,8 @@ export const initModeInputTargetRdk = () => {
         modeInputTarget = ModeInput.KEYBOARD;
       }
     } else if (modeGame === ModeGame.GAME) {
-      modeInputTarget = deviceType === 'mouseOnly' ? ModeInput.MOUSE : ModeInput.TOUCH;
+      modeInputTarget =
+        deviceType === "mouseOnly" ? ModeInput.MOUSE : ModeInput.TOUCH;
     }
   }
   sessionSet(SK.MODE_INPUT_TARGET_INIT, modeInputTarget);

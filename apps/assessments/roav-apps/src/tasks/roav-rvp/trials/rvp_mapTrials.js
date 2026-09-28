@@ -1,4 +1,4 @@
-import { t_initCatsAll } from './rvp_catHelpers';
+import { t_initCatsAll } from "./rvp_catHelpers";
 import {
   t_setParamsBlockRvp,
   t_createBlockRvp,
@@ -7,9 +7,9 @@ import {
   t_setcreateBlockRvpAdaptTest,
   t_setcreateBlockRvpAdaptExtra,
   t_setEnableTrialsByExistBlockRvpAdapt,
-} from './rvp_rvpBlock';
-import { t_saveConfigBlockStim } from './rvp_rvpHelpers';
-import { t_rvp } from './rvp_rvpTrial';
+} from "./rvp_rvpBlock";
+import { t_saveConfigBlockStim } from "./rvp_rvpHelpers";
+import { t_rvp } from "./rvp_rvpTrial";
 
 export const rvp_mapTrials = {
   t_rvp,

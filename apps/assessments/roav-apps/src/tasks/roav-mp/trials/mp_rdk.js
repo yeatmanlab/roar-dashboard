@@ -1,46 +1,55 @@
 /* eslint-disable no-underscore-dangle */
-import jsPsychAudioKeyboardResponse from '@jspsych/plugin-audio-keyboard-response';
-import jsPsychHtmlKeyboardResponse from '@jspsych/plugin-html-keyboard-response';
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import jsPsychRdk from '@jspsych-contrib/plugin-rdk';
-import { summary } from '../../shared/trials/summaryHelpers';
-import { jsPsych } from '../../shared/helpers/taskSetup';
-import { quest } from '../../shared/trials/questHelpers';
-import { mediaAssets } from '../../shared/helpers/mediaAssets';
+import jsPsychAudioKeyboardResponse from "@jspsych/plugin-audio-keyboard-response";
+import jsPsychHtmlKeyboardResponse from "@jspsych/plugin-html-keyboard-response";
+import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import jsPsychRdk from "@jspsych-contrib/plugin-rdk";
+import { summary } from "../../shared/trials/summaryHelpers";
+import { jsPsych } from "../../shared/helpers/taskSetup";
+import { quest } from "../../shared/trials/questHelpers";
+import { mediaAssets } from "../../shared/helpers/mediaAssets";
 import {
   AssessmentStage,
   fillTextKeyValuesDef,
   ModeGame,
   SubtypeTrial,
   TypeKey,
-} from '../../shared/helpers/namingHelpers';
-import { getValidityEvaluator } from '../../shared/trials/validityHelpers';
+} from "../../shared/helpers/namingHelpers";
+import { getValidityEvaluator } from "../../shared/trials/validityHelpers";
 import {
   updateModeInputInfoOnKeyEvent,
   updateModeInputInfoOnPointerEvent,
   createHelperMouseMoveRecord,
   resetModeInputLast,
-} from '../../shared/trials/inputModeHelpers';
-import { fitTextHorElPx, startReflowLayout, stopReflowLayout } from '../../shared/helpers/layoutHelpers';
+} from "../../shared/trials/inputModeHelpers";
+import {
+  fitTextHorElPx,
+  startReflowLayout,
+  stopReflowLayout,
+} from "../../shared/helpers/layoutHelpers";
 
 import {
   createHelperOrientation,
   t_enterLandscape,
   t_trialEnterFullscreenConditional,
-} from '../../shared/trials/screenHelpers';
-import { sessionGet, sessionSet } from '../../shared/helpers/sessionHelpers';
-import { MP_SESSION_KEYS as SK } from '../helpers/mp_sessionKeys';
-import { FPS_STANDARD, DURATIONS } from '../../shared/helpers/constants';
-import { createHelperAudioCustom } from '../../shared/helpers/audioHelpers';
-import { enableTrialByModeGame } from '../../shared/trials/flowHelpers';
-import { UnitSize, UnitLocation, UnitSpeed, UnitTime } from '../../shared/helpers/unitsHelper';
+} from "../../shared/trials/screenHelpers";
+import { sessionGet, sessionSet } from "../../shared/helpers/sessionHelpers";
+import { MP_SESSION_KEYS as SK } from "../helpers/mp_sessionKeys";
+import { FPS_STANDARD, DURATIONS } from "../../shared/helpers/constants";
+import { createHelperAudioCustom } from "../../shared/helpers/audioHelpers";
+import { enableTrialByModeGame } from "../../shared/trials/flowHelpers";
+import {
+  UnitSize,
+  UnitLocation,
+  UnitSpeed,
+  UnitTime,
+} from "../../shared/helpers/unitsHelper";
 
-const tagTrial = 'rdk';
+const tagTrial = "rdk";
 
 export const DirRdk = {
-  LEFT: 'left',
-  RIGHT: 'right',
-  RANDOM: 'random',
+  LEFT: "left",
+  RIGHT: "right",
+  RANDOM: "random",
 };
 
 export const DOT_LIFE_DEFAULT = 200; // ms
@@ -55,8 +64,8 @@ const metaparamsDef = {
   coherence: 0.5,
   coherent_direction: 0,
   _coherent_direction: DirRdk.RANDOM,
-  dot_color: '#000000',
-  background_color: '#ffffff',
+  dot_color: "#000000",
+  background_color: "#ffffff",
   trial_duration: 10000,
   response_ends_trial: true,
   post_trial_gap: 1000,
@@ -76,7 +85,7 @@ const metaparamsDef = {
   choices: [TypeKey.ARROW_LEFT, TypeKey.ARROW_RIGHT],
   correct_choice: [TypeKey.ARROW_RIGHT],
   fixation_cross: false,
-  _fixation_cross_color: '#000000',
+  _fixation_cross_color: "#000000",
   _fixation_cross_size: 1, // 1 from the paper - but somehow it is 1/2 of cross in RDK
   _fixation_cross_size_unit: UnitSize.DEG,
   fixation_cross_width: undefined,
@@ -115,17 +124,17 @@ const metaparamsDef = {
 const infoDef = (tagReq) => ({
   tagReq: tagReq,
   stageAssessment: AssessmentStage.NONE,
-  nameCorpus: sessionGet(SK.NAME_CORPUS) ?? 'none',
-  nameBlock: 'none',
+  nameCorpus: sessionGet(SK.NAME_CORPUS) ?? "none",
+  nameBlock: "none",
   indTrial: undefined, // within block
   idTrial: undefined,
   evaluateValidity: true,
 
   showImgOverlay: false,
 
-  keyImgBtnLeft: [tagTrial, '', 'button-left'],
-  keyImgBtnRight: [tagTrial, '', 'button-right'],
-  keyImgBgOverlay: [tagTrial, '', 'bg-overlay'],
+  keyImgBtnLeft: [tagTrial, "", "button-left"],
+  keyImgBtnRight: [tagTrial, "", "button-right"],
+  keyImgBgOverlay: [tagTrial, "", "bg-overlay"],
 
   showBtnLeft: true,
   showBtnRight: true,
@@ -134,14 +143,14 @@ const infoDef = (tagReq) => ({
   enableBtnRight: true,
   enableBtnLeft: true,
 
-  keyFeedbackToneCorrect: ['feedback-tone', '', 'correct', ModeGame.ALL],
-  keyFeedbackToneIncorrect: ['feedback-tone', '', 'incorrect', ModeGame.ALL],
+  keyFeedbackToneCorrect: ["feedback-tone", "", "correct", ModeGame.ALL],
+  keyFeedbackToneIncorrect: ["feedback-tone", "", "incorrect", ModeGame.ALL],
   playFeedbackTone: true,
 
-  keyAudio: [tagTrial, tagReq, ''],
+  keyAudio: [tagTrial, tagReq, ""],
   playAudio: false,
 
-  textBanner: [tagTrial, tagReq, 'text2'], // text2 to be able to add text before and after to audio and make banner shorter
+  textBanner: [tagTrial, tagReq, "text2"], // text2 to be able to add text before and after to audio and make banner shorter
   showTextBanner: sessionGet(SK.MODE_GAME) !== ModeGame.GAME,
   showLog: false,
 
@@ -163,14 +172,29 @@ const paramsDummy = {
   response_ends_trial: true,
 };
 
-const degToPx = (deg, viewingDistCm, displayDiagCm, displayWidthPx, displayHeightPx) => {
+const degToPx = (
+  deg,
+  viewingDistCm,
+  displayDiagCm,
+  displayWidthPx,
+  displayHeightPx,
+) => {
   const lenCm = 2 * viewingDistCm * Math.tan((deg * Math.PI) / 180 / 2);
-  const displayDiagPx = Math.sqrt(displayWidthPx * displayWidthPx + displayHeightPx * displayHeightPx);
+  const displayDiagPx = Math.sqrt(
+    displayWidthPx * displayWidthPx + displayHeightPx * displayHeightPx,
+  );
   const lenPx = (lenCm * displayDiagPx) / displayDiagCm;
   return lenPx;
 };
 
-const metaparamsToParams = (metaparams, screen_width, screen_height, view_width, view_height, fps) => {
+const metaparamsToParams = (
+  metaparams,
+  screen_width,
+  screen_height,
+  view_width,
+  view_height,
+  fps,
+) => {
   const params = { ...metaparams };
 
   if (params.border) {
@@ -186,7 +210,9 @@ const metaparamsToParams = (metaparams, screen_width, screen_height, view_width,
     if (!params.border_thickness) {
       const widthScreen = window.screen.width;
       const heightScreen = window.screen.height;
-      params.border_thickness = 0.5 * Math.sqrt(widthScreen * widthScreen + heightScreen * heightScreen);
+      params.border_thickness =
+        0.5 *
+        Math.sqrt(widthScreen * widthScreen + heightScreen * heightScreen);
     }
   }
 
@@ -201,14 +227,15 @@ const metaparamsToParams = (metaparams, screen_width, screen_height, view_width,
     default:
       params.coherent_direction = Math.random() < 0.5 ? RIGHT_DEG : LEFT_DEG;
   }
-  params.correct_choice = params.coherent_direction === 0 ? [params.choices[1]] : [params.choices[0]];
+  params.correct_choice =
+    params.coherent_direction === 0 ? [params.choices[1]] : [params.choices[0]];
 
   // fixation cross_size
   switch (params._fixation_cross_size_unit) {
-    case 'px':
+    case "px":
       params.fixation_cross_width = params._fixation_cross_size;
       break;
-    case 'deg':
+    case "deg":
       params.fixation_cross_width = degToPx(
         params._fixation_cross_size,
         params._viewing_dist_cm,
@@ -296,12 +323,18 @@ const metaparamsToParams = (metaparams, screen_width, screen_height, view_width,
       params.move_distance = params._move_distance;
       break;
     case UnitSpeed.PERCENT_HEIGHT_PER_SEC:
-      params.move_distance = (params._move_distance * screen_height) / 100 / fps;
+      params.move_distance =
+        (params._move_distance * screen_height) / 100 / fps;
       break;
     case UnitSpeed.DEG_PER_SEC:
       params.move_distance =
-        degToPx(params._move_distance, params._viewing_dist_cm, params._screen_diag_cm, screen_width, screen_height) /
-        fps;
+        degToPx(
+          params._move_distance,
+          params._viewing_dist_cm,
+          params._screen_diag_cm,
+          screen_width,
+          screen_height,
+        ) / fps;
       break;
     default:
       params.move_distance = undefined;
@@ -327,7 +360,7 @@ const metaparamsToParams = (metaparams, screen_width, screen_height, view_width,
 //   info: {},
 // };
 
-export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
+export const t_rdk = (paramsTrialIn = {}, tagReq = "def") => {
   let metaparams = null;
 
   let info = null;
@@ -356,18 +389,27 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
 
   const createImageOverlay = (container) => {
     if (info.showImgOverlay && mediaAssets.images[info.keyImgBgOverlay]) {
-      imgOverlay = document.createElement('img');
+      imgOverlay = document.createElement("img");
       imgOverlay.src = mediaAssets.images[info.keyImgBgOverlay];
-      imgOverlay.classList.add('roav-img-fixed-size');
+      imgOverlay.classList.add("roav-img-fixed-size");
       if (info.showImgOverlay && (info.showBtnLeft || info.showBtnRight)) {
-        imgOverlay.classList.add('roav-img-muted');
+        imgOverlay.classList.add("roav-img-muted");
       }
       container.appendChild(imgOverlay);
     }
   };
 
-  const createButtonResponse = (container, leftright, keyPress, animate, enable) => {
-    document.documentElement.style.setProperty('--roav-mp-rdk-aperture', `${paramsMain.aperture_width}px`);
+  const createButtonResponse = (
+    container,
+    leftright,
+    keyPress,
+    animate,
+    enable,
+  ) => {
+    document.documentElement.style.setProperty(
+      "--roav-mp-rdk-aperture",
+      `${paramsMain.aperture_width}px`,
+    );
     const modeGame = sessionGet(SK.MODE_GAME);
     let imgBtn = null;
     if (leftright === DirRdk.LEFT) {
@@ -375,12 +417,15 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
     } else {
       imgBtn = mediaAssets.images[info.keyImgBtnRight];
     }
-    const button = document.createElement('button');
-    button.type = 'button';
+    const button = document.createElement("button");
+    button.type = "button";
     button.className = `roav-button roav-button-lr-large-fixed-${modeGame} ${leftright}`;
-    const img = document.createElement('img');
+    const img = document.createElement("img");
     if (animate) {
-      const classAttention = modeGame === ModeGame.GAME ? 'roav-button-attention-strong' : 'roav-button-attention';
+      const classAttention =
+        modeGame === ModeGame.GAME
+          ? "roav-button-attention-strong"
+          : "roav-button-attention";
       img.classList.add(classAttention);
     }
     img.src = imgBtn;
@@ -388,11 +433,11 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
 
     button.disabled = !enable;
     if (enable) {
-      button.addEventListener('pointerdown', (e) => {
+      button.addEventListener("pointerdown", (e) => {
         inputFromBtn = true;
         updateModeInputInfoOnPointerEvent(e.pointerType);
       });
-      button.addEventListener('click', () => {
+      button.addEventListener("click", () => {
         if (responded) return;
         responded = true;
         if (btnLeft) btnLeft.disabled = true;
@@ -411,7 +456,8 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
 
     const fpsRes = sessionGet(SK.FPS) ?? metaparams._fps;
     const widthWindowFS = sessionGet(SK.WIDTH_WINDOW_FS) ?? window.innerWidth;
-    const heightWindowFS = sessionGet(SK.HEIGHT_WINDOW_FS) ?? window.innerHeight;
+    const heightWindowFS =
+      sessionGet(SK.HEIGHT_WINDOW_FS) ?? window.innerHeight;
 
     const params = metaparamsToParams(
       metaparams,
@@ -433,23 +479,24 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
   };
 
   const fitTextAll = () => {
-    const heightWindowFS = sessionGet(SK.HEIGHT_WINDOW_FS) ?? window.innerHeight;
+    const heightWindowFS =
+      sessionGet(SK.HEIGHT_WINDOW_FS) ?? window.innerHeight;
     const sizeTextMin = (SIZE_FONT_BANNER_MIN * heightWindowFS) / 100;
     const sizeTextMax = (SIZE_FONT_BANNER_MAX * heightWindowFS) / 100;
 
     fitTextHorElPx(
       sizeTextMin,
       sizeTextMax,
-      document.getElementById('id-text'),
-      document.getElementById('id-text-wrap'),
+      document.getElementById("id-text"),
+      document.getElementById("id-text-wrap"),
     );
   };
 
   const createTextBanner = (container) => {
     const modeGame = sessionGet(SK.MODE_GAME);
-    elTextBanner = document.createElement('div');
+    elTextBanner = document.createElement("div");
     elTextBanner.className = `roav-mp-rdk-text-wrap ${modeGame}`;
-    elTextBanner.id = 'id-text-wrap';
+    elTextBanner.id = "id-text-wrap";
     elTextBanner.innerHTML = `
         <div class="roav-mp-rdk-text" id="id-text">${info.textBanner}</div>
     `;
@@ -459,22 +506,22 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
 
   const createDivOverlayFade = (container) => {
     divOverlayFade?.remove();
-    divOverlayFade = document.createElement('div');
-    divOverlayFade.className = 'roav-mp-rdk-div-overlay-fade';
-    divOverlayFade.style.opacity = '0.5';
+    divOverlayFade = document.createElement("div");
+    divOverlayFade.className = "roav-mp-rdk-div-overlay-fade";
+    divOverlayFade.style.opacity = "0.5";
     container.appendChild(divOverlayFade);
   };
 
   const createLayout = (isMainTrial) => {
     const container = jsPsych.getDisplayElement();
-    container.classList.add('roav-container-viewport-fixed');
-    const canvas = container?.getElementsByTagName('canvas')[0] ?? null;
-    canvas?.classList.add('roav-mp-rdk-canvas');
+    container.classList.add("roav-container-viewport-fixed");
+    const canvas = container?.getElementsByTagName("canvas")[0] ?? null;
+    canvas?.classList.add("roav-mp-rdk-canvas");
 
     if (info.showBtnLeft) {
       btnLeft = createButtonResponse(
         container,
-        'left',
+        "left",
         paramsMain.choices[0],
         info.animateBtnLeft && isMainTrial,
         info.enableBtnLeft && isMainTrial,
@@ -483,7 +530,7 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
     if (info.showBtnRight) {
       btnRight = createButtonResponse(
         container,
-        'right',
+        "right",
         paramsMain.choices[1],
         info.animateBtnRight && isMainTrial,
         info.enableBtnRight && isMainTrial,
@@ -506,7 +553,7 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
     stopReflowLayout(callbackReflowLayout);
 
     const container = jsPsych.getDisplayElement();
-    container?.classList.remove('roav-container-viewport-fixed');
+    container?.classList.remove("roav-container-viewport-fixed");
     divOverlayFade?.remove();
     divOverlayFade = null;
     elTextBanner?.remove();
@@ -592,14 +639,16 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
 
   const trialFixation = () => {
     const drawFixation = () => {
-      const canvas = document.getElementById('id-canvas-fix');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.getElementById("id-canvas-fix");
+      const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
       canvas.width = sessionGet(SK.WIDTH_WINDOW_FS);
       canvas.height = sessionGet(SK.HEIGHT_WINDOW_FS);
 
-      const clrBg = paramsMain.border ? paramsMain.border_color : paramsMain.background_color;
+      const clrBg = paramsMain.border
+        ? paramsMain.border_color
+        : paramsMain.background_color;
       ctx.fillStyle = clrBg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -609,7 +658,13 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       if (paramsMain.border) {
         ctx.fillStyle = paramsMain.background_color;
         ctx.beginPath();
-        ctx.arc(xCenter, yCenter, paramsMain.aperture_width / 2, 0, 2 * Math.PI);
+        ctx.arc(
+          xCenter,
+          yCenter,
+          paramsMain.aperture_width / 2,
+          0,
+          2 * Math.PI,
+        );
         ctx.fill();
       }
 
@@ -658,7 +713,10 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       // eslint-disable-next-line no-param-reassign
       trial.post_trial_gap = 0;
       // eslint-disable-next-line no-param-reassign
-      trial.trial_duration = Math.max(helperAudioCustom?.durationAudio() ?? 0, paramsMain.trial_duration);
+      trial.trial_duration = Math.max(
+        helperAudioCustom?.durationAudio() ?? 0,
+        paramsMain.trial_duration,
+      );
     },
     on_load: () => {
       if (helperOrient?.rotationDetected()) {
@@ -672,7 +730,8 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       helperMouseMoveRecord.startRecord();
 
       if (info.animateFade) {
-        const timeStartAnimateFade = paramsMain.trial_duration - info.durationAnimateFade;
+        const timeStartAnimateFade =
+          paramsMain.trial_duration - info.durationAnimateFade;
         if (timeStartAnimateFade > 0) {
           if (timeoutDivOverlayFade !== null) {
             window.clearTimeout(timeoutDivOverlayFade);
@@ -693,13 +752,14 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       helperAudioCustom?.stopAndClearAudioCustom();
 
       responded = true;
-      const timeOut = (data.response === '' || data.rt === -1) && !rotationDetected;
+      const timeOut =
+        (data.response === "" || data.rt === -1) && !rotationDetected;
       const correct = data.correct && !timeOut && !rotationDetected;
       /* eslint-disable no-param-reassign */
       data.correct = correct;
       if (rotationDetected) {
         data.rt = -1;
-        data.response = '';
+        data.response = "";
       }
       /* eslint-enable no-param-reassign */
 
@@ -724,10 +784,10 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       const quest_int_quantile = quest ? quest.quantile() : 0;
       const quest_int_mean = quest ? quest.mean() : 0;
 
-      if (summary && typeof summary.addInfo === 'function') {
+      if (summary && typeof summary.addInfo === "function") {
         const infoSummary = {
           ...responseRdk,
-          type_trial: 'rdk',
+          type_trial: "rdk",
           id_trial: info.idTrial,
           subtype_trial: paramsMain._subtype_trial,
           coherent_direction: data.coherent_direction,
@@ -758,7 +818,11 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       if (validityEvaluator) {
         const rtEvaluator = data.rt > 0 ? data.rt : paramsMain.trial_duration;
         if (info.evaluateValidity) {
-          validityEvaluator.addResponseData(rtEvaluator, data.response ?? '', correct ? 1 : 0);
+          validityEvaluator.addResponseData(
+            rtEvaluator,
+            data.response ?? "",
+            correct ? 1 : 0,
+          );
         }
       }
       // eslint-disable-next-line no-param-reassign
@@ -769,7 +833,7 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
         correct: correct,
         mode_game: sessionGet(SK.MODE_GAME),
         assessment_stage: `${info.stageAssessment}_response`,
-        type_trial: 'rdk',
+        type_trial: "rdk",
         id_trial: info.idTrial,
         ind_trial: info.indTrial,
         name_corpus: info.nameCorpus,
@@ -790,7 +854,7 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
         quest_int_quantile: quest_int_quantile,
         quest_int_mean: quest_int_mean,
         quest_int_sd: quest_int_sd,
-        quest_alerts: quest ? quest.getAlerts() : '',
+        quest_alerts: quest ? quest.getAlerts() : "",
         quest_val_sample: data.coherence,
         quest_val_mean: 10 ** quest_int_mean / 100.0,
         quest_val_quantile: 10 ** quest_int_quantile / 100.0,
@@ -818,7 +882,9 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
     },
     choices: [TypeKey.DUMMY],
     trial_duration: () =>
-      info.playFeedbackTone ? Math.max(DURATIONS.FEEDBACK_MAX, paramsMain.post_trial_gap) : paramsMain.post_trial_gap,
+      info.playFeedbackTone
+        ? Math.max(DURATIONS.FEEDBACK_MAX, paramsMain.post_trial_gap)
+        : paramsMain.post_trial_gap,
     response_allowed_while_playing: false,
     trial_ends_after_audio: false,
     on_start: (/* trial */) => {
@@ -826,7 +892,7 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       if (paramsMain.post_trial_gap > 0) {
         const modeGame = sessionGet(SK.MODE_GAME);
         const container = jsPsych.getDisplayElement();
-        container.classList.add('roav-mp-rdk-container-trial-gap');
+        container.classList.add("roav-mp-rdk-container-trial-gap");
         if (paramsMain.border && info.gapColorSameAsBorder) {
           container.classList.add(`border-${modeGame}`);
         }
@@ -843,7 +909,11 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       removeLayout();
       if (paramsMain.post_trial_gap > 0) {
         const container = jsPsych.getDisplayElement();
-        container.classList.remove('roav-mp-rdk-container-trial-gap', 'border-game', 'border-stand');
+        container.classList.remove(
+          "roav-mp-rdk-container-trial-gap",
+          "border-game",
+          "border-stand",
+        );
       }
     },
   });
@@ -855,11 +925,14 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       trialPrepareAll(),
       {
         timeline: [helperAudioCustom.t_startAudioCustom()],
-        conditional_function: () => info.playAudio && !helperOrient?.rotationDetected(),
+        conditional_function: () =>
+          info.playAudio && !helperOrient?.rotationDetected(),
       },
       {
         timeline: [trialFixation()],
-        conditional_function: () => metaparams._fixation_duration_pre > 0 && !helperOrient?.rotationDetected(),
+        conditional_function: () =>
+          metaparams._fixation_duration_pre > 0 &&
+          !helperOrient?.rotationDetected(),
       },
       t_trialEnterFullscreenConditional(),
       trialMain(),
@@ -868,7 +941,8 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       {
         timeline: [trialGapAndFeedback()],
         conditional_function: () =>
-          (metaparams.post_trial_gap > 0 || info.playFeedbackTone) && !helperOrient?.rotationDetected(),
+          (metaparams.post_trial_gap > 0 || info.playFeedbackTone) &&
+          !helperOrient?.rotationDetected(),
       },
     ],
     on_timeline_start: () => {
@@ -887,7 +961,7 @@ export const t_rdk = (paramsTrialIn = {}, tagReq = 'def') => {
       const dotlifeConfigMs = sessionGet(SK.CONFIG).dotlife;
       const metaparamsConfig = {
         _dot_life: dotlifeConfigMs,
-        _dot_life_unit: 'ms',
+        _dot_life_unit: "ms",
       };
 
       metaparams = {

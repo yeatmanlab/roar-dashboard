@@ -1,4 +1,4 @@
-import store from 'store2';
+import store from "store2";
 
 export const sessionSet = (key, val) => {
   store.session.set(key, val);

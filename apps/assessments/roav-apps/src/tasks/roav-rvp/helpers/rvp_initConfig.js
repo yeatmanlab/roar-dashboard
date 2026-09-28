@@ -6,18 +6,21 @@
 5. Initialises the timeline, entering into fullscreen, getting consent/information from participant. Pid is generated randomly if not provided in form.
 */
 
-import _omitBy from 'lodash/omitBy'; // returns object if predicate does not return true
-import _isNull from 'lodash/isNull'; // checks if value of object is null
-import _isUndefined from 'lodash/isUndefined'; // check if value of object is undefined
-import { getAgeData, getGrade } from '@bdelab/roar-utils'; // restructures age information
-import i18next from 'i18next'; // for language info
-import { ModeGame } from '../../shared/helpers/namingHelpers';
-import { NAME_CORPUS_DEF } from '../../shared/helpers/loadCorpus';
-import { NAME_CONFIG_BLOCK_DEF, NAME_CONFIG_STIM_DEF } from './rvp_loadCorpus';
-import { createFirekitShim } from '../../shared/helpers/firekitShim';
+import _omitBy from "lodash/omitBy"; // returns object if predicate does not return true
+import _isNull from "lodash/isNull"; // checks if value of object is null
+import _isUndefined from "lodash/isUndefined"; // check if value of object is undefined
+import { getAgeData, getGrade } from "@bdelab/roar-utils"; // restructures age information
+import i18next from "i18next"; // for language info
+import { ModeGame } from "../../shared/helpers/namingHelpers";
+import { NAME_CORPUS_DEF } from "../../shared/helpers/loadCorpus";
+import { NAME_CONFIG_BLOCK_DEF, NAME_CONFIG_STIM_DEF } from "./rvp_loadCorpus";
+import { createFirekitShim } from "../../shared/helpers/firekitShim";
 
 export const rvp_initConfig = async (gameParams, userParams) => {
-  const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
+  const cleanParams = _omitBy(
+    _omitBy({ ...gameParams, ...userParams }, _isNull),
+    _isUndefined,
+  );
 
   const selectModeGame = (modeGameIn, userMetadataIn) => {
     const gradeIn = getGrade(userMetadataIn.grade);
@@ -27,7 +30,10 @@ export const rvp_initConfig = async (gameParams, userParams) => {
     } else if (modeGameIn === ModeGame.STANDARD) {
       modeGameRes = ModeGame.STANDARD;
     } else {
-      modeGameRes = gradeIn <= 5 || gradeIn === undefined ? ModeGame.GAME : ModeGame.STANDARD;
+      modeGameRes =
+        gradeIn <= 5 || gradeIn === undefined
+          ? ModeGame.GAME
+          : ModeGame.STANDARD;
     }
     return modeGameRes;
   };
@@ -51,7 +57,7 @@ export const rvp_initConfig = async (gameParams, userParams) => {
   } = cleanParams;
 
   const ageData = getAgeData(birthMonth, birthYear, age, ageMonths);
-  if (language !== 'en') {
+  if (language !== "en") {
     await i18next.changeLanguage(language);
   }
 
@@ -65,15 +71,18 @@ export const rvp_initConfig = async (gameParams, userParams) => {
     firekit: createFirekitShim(),
     taskName: taskName,
     corpusName: corpusName || NAME_CORPUS_DEF,
-    modeGame: modeGame || 'all',
+    modeGame: modeGame || "all",
     modeGameRes: cleanParams.modeGameRes,
     nameConfigStim: nameConfigStim ?? NAME_CONFIG_STIM_DEF,
     nameConfigBlock: nameConfigBlock ?? NAME_CONFIG_BLOCK_DEF,
-    recruitment: recruitment || 'school',
+    recruitment: recruitment || "school",
   };
 
   const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
+    Object.entries(gameParams).map(([key, value]) => [
+      key,
+      config[key] ?? value,
+    ]),
   );
   await config.firekit.updateTaskParams(updatedGameParams);
 

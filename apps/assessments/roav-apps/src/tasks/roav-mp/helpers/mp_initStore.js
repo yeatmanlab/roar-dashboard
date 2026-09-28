@@ -1,6 +1,10 @@
-import { sessionSet } from '../../shared/helpers/sessionHelpers';
-import { MP_SESSION_KEYS as SK } from './mp_sessionKeys';
-import { clearStoreOnAppStartDef, clearStoreOnTimelineStartDef, initStore } from '../../shared/helpers/initStore';
+import { sessionSet } from "../../shared/helpers/sessionHelpers";
+import { MP_SESSION_KEYS as SK } from "./mp_sessionKeys";
+import {
+  clearStoreOnAppStartDef,
+  clearStoreOnTimelineStartDef,
+  initStore,
+} from "../../shared/helpers/initStore";
 
 export const mp_clearStoreOnTimelineStart = () => {
   clearStoreOnTimelineStartDef();
@@ -15,4 +19,5 @@ const mp_clearStoreOnAppStart = () => {
   sessionSet(SK.RDK_CONFIG_QUEST, {});
 };
 
-export const mp_initStore = () => initStore(mp_clearStoreOnAppStart, mp_clearStoreOnTimelineStart);
+export const mp_initStore = () =>
+  initStore(mp_clearStoreOnAppStart, mp_clearStoreOnTimelineStart);
