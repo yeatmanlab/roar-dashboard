@@ -1,5 +1,5 @@
 {
-  "name": "@roar-platform/assessment-cli",
+  "name": "@roar-platform/assessment-dev-cli",
   "version": "0.0.0",
   "private": true,
   "type": "module",

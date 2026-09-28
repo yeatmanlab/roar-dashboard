@@ -5,7 +5,7 @@ name: roar-assessment
 #
 # Start (run from an assessment directory, e.g. apps/assessments/roar-pa):
 #   npm start
-#   (runs the assessment CLI: packages/assessment-cli)
+#   (runs the assessment CLI: packages/assessment-dev-cli)
 #
 # Stop and delete data (run from an assessment directory):
 #   npm stop
@@ -33,7 +33,7 @@ services:
   # Published on host port ${ASSESSMENT_PG_PORT:-5433} — deliberately NOT the
   # standard 5432 — so this ephemeral stack can run alongside a persistent
   # platform-dev Postgres on 5432 (see docker-compose.yml, ROAR_PG_PORT).
-  # The assessment CLI exports the same variable (packages/assessment-cli),
+  # The assessment CLI exports the same variable (packages/assessment-dev-cli),
   # so the port the scripts connect to and the port Compose publishes always match.
   # ────────────────────────────────────────────────────────────────────────────
   assessment-db:
