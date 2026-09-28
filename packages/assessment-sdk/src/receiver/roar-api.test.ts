@@ -23,8 +23,8 @@ function jsonResponse(status: number, body: unknown): Response {
 const okBody = {
   data: { id: 'user-1', userType: 'student', isSuperAdmin: false, unsignedAgreements: [], families: [] },
 };
-const expiredBody = { error: { code: 'auth/token-expired' } };
-const invalidBody = { error: { code: 'auth/token-invalid' } };
+const expiredBody = { error: { message: 'Unauthorized', code: 'auth/token-expired' } };
+const invalidBody = { error: { message: 'Unauthorized', code: 'auth/token-invalid' } };
 
 function buildClient(
   authOverrides: Partial<ApiClientConfig['auth']> = {},
@@ -121,7 +121,7 @@ describe('createApiClient', () => {
     });
 
     it('does not retry a 401 with a non-token error code', async () => {
-      fetchMock.mockResolvedValue(jsonResponse(401, { error: { code: 'auth/required' } }));
+      fetchMock.mockResolvedValue(jsonResponse(401, { error: { message: 'Unauthorized', code: 'auth/required' } }));
       const refreshToken = vi.fn();
       const client = buildClient({ refreshToken });
 

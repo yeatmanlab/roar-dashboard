@@ -1,5 +1,5 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
-import { ApiContractV1, RefreshableAuthErrorCode, getErrorEnvelopeCode } from '@roar-platform/api-contract';
+import { ApiContractV1, ErrorEnvelopeSchema } from '@roar-platform/api-contract';
 import type { CommandContext, Logger } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';
@@ -28,10 +28,23 @@ export interface ApiClientConfig {
 
 /**
  * Backend auth error codes that a single forced token refresh can repair.
- * Shared via the api-contract so the SDK, the dashboard client, and the
- * backend enum cannot drift apart (the backend pins them with a parity test).
+ * Which codes are refreshable is client retry POLICY, so it is pinned here,
+ * not in the contract; the literals mirror the backend's `ApiErrorCode`
+ * enum (`auth/token-expired`, `auth/token-invalid`) — the same values the
+ * dashboard client pins in `utils/api-errors.js`.
  */
-const REFRESHABLE_AUTH_ERROR_CODES = new Set<string>(Object.values(RefreshableAuthErrorCode));
+const REFRESHABLE_AUTH_ERROR_CODES = new Set(['auth/token-expired', 'auth/token-invalid']);
+
+/**
+ * Extracts the error code from a parsed 401 body by validating it against
+ * the contract's own envelope schema — the single source of the wire shape.
+ * Non-envelope bodies (a string, a blob, an HTML error page from an
+ * intermediary) yield undefined and fall through to the original response.
+ */
+function getAuthErrorCode(body: unknown): string | undefined {
+  const parsed = ErrorEnvelopeSchema.safeParse(body);
+  return parsed.success ? parsed.data.error.code : undefined;
+}
 
 /**
  * Creates a ts-rest client configured with the ROAR API contract and authentication.
@@ -98,7 +111,7 @@ export function createApiClient(config: ApiClientConfig) {
         return response;
       }
 
-      const errorCode = getErrorEnvelopeCode(response.body);
+      const errorCode = getAuthErrorCode(response.body);
       if (errorCode === undefined || !REFRESHABLE_AUTH_ERROR_CODES.has(errorCode)) {
         return response;
       }

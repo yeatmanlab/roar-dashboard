@@ -1,5 +1,3 @@
-import { RefreshableAuthErrorCode, getErrorEnvelopeCode } from '@roar-platform/api-contract';
-
 /**
  * Utilities for extracting error information from ts-rest API responses.
  */
@@ -12,12 +10,13 @@ import { RefreshableAuthErrorCode, getErrorEnvelopeCode } from '@roar-platform/a
  * @returns {string | null} The error code, or null if not present
  */
 export function getApiErrorCode(response) {
-  // ts-rest error envelope shape ({ status, body: { error: { code } } }) or a
-  // direct envelope ({ error: { code } }) — parsed by the shared contract
-  // helper so every client reads the envelope the same way.
-  const envelopeCode = getErrorEnvelopeCode(response?.body) ?? getErrorEnvelopeCode(response);
-  if (envelopeCode) {
-    return envelopeCode;
+  // ts-rest error envelope shape: { status, body: { error: { code, message } } }
+  if (response?.body?.error?.code && typeof response.body.error.code === 'string') {
+    return response.body.error.code;
+  }
+  // Direct error object shape: { error: { code } }
+  if (response?.error?.code && typeof response.error.code === 'string') {
+    return response.error.code;
   }
   // Plain code
   if (response?.code && typeof response.code === 'string') {
@@ -52,17 +51,13 @@ export function getApiErrorMessage(response) {
  * is reserved for build-configuration failures raised in the browser before a
  * request is sent, so it can never collide with a server-sent code.
  */
-// NOTE: this module dereferences a runtime value from @roar-platform/api-contract
-// at load time. Tests that mock the contract module must include
-// RefreshableAuthErrorCode in the mock factory, or any transitive import of
-// this file crashes at module evaluation.
 export const API_ERROR_CODES = Object.freeze({
   AUTH_REQUIRED: 'auth/required',
-  // The refreshable token codes come from the api-contract so the dashboard,
-  // the assessment SDK, and the backend enum (parity-tested there) agree on
-  // the wire values the 401 refresh-and-retry keys on.
-  AUTH_TOKEN_EXPIRED: RefreshableAuthErrorCode.TOKEN_EXPIRED,
-  AUTH_TOKEN_INVALID: RefreshableAuthErrorCode.TOKEN_INVALID,
+  // Mirror the backend's ApiErrorCode enum values. The SDK receiver pins the
+  // same two token codes for its 401 refresh-and-retry — a backend rename
+  // must update all three places.
+  AUTH_TOKEN_EXPIRED: 'auth/token-expired',
+  AUTH_TOKEN_INVALID: 'auth/token-invalid',
   AUTH_ROSTERING_ENDED: 'auth/rostering-ended',
   AUTH_USER_NOT_FOUND: 'auth/user-not-found',
   /**
