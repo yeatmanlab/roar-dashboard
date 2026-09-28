@@ -198,6 +198,12 @@ export async function loadUi() {
     note: (body, title, kind = 'info') => noteBox(body, title, kind),
     task: (title) => makeTask(emphasizeStepPrefix(title)),
     /**
+     * A raw line inside the gutter — for long-running child output (the dev
+     * server) that should stay visible, unlike a task's collapsing tail. The
+     * text may carry its own ANSI colors.
+     */
+    stream: (text) => console.log(`${BAR()}  ${text}`),
+    /**
      * Yes/no prompt. Non-interactive runs (CI, pipes) get `nonTtyValue` so
      * automation is never blocked — the same contract the bash scripts had.
      */

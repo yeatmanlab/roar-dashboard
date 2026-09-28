@@ -117,22 +117,39 @@ export async function start(ui) {
   // npm's --silent drops the lifecycle banners; --no-deprecation silences
   // third-party DeprecationWarnings from the dev server's dependencies, which
   // researchers can neither act on nor need to see.
+  // Output is piped through the gutter so the whole session reads as one
+  // piece; FORCE_COLOR keeps webpack's own colors alive across the pipe.
   const [cmd, ...args] = [...npmCli(), 'run', '--silent', 'dev'];
   const child = spawn(cmd, args, {
-    stdio: 'inherit',
+    stdio: ['inherit', 'pipe', 'pipe'],
     env: {
       ...process.env,
       BACKEND_URL: ASSESSMENT_BACKEND_URL,
+      FORCE_COLOR: process.env.FORCE_COLOR ?? '1',
       NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --no-deprecation`.trim(),
     },
   });
+  let buffer = '';
+  const consume = (chunk) => {
+    buffer += chunk.toString();
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
+    for (const line of lines) ui.stream(line);
+  };
+  child.stdout.on('data', consume);
+  child.stderr.on('data', consume);
   // Ctrl+C goes to the whole foreground process group; let the dev server
-  // handle it and mirror its exit code instead of dying first.
+  // handle it and mirror its exit instead of dying first.
   process.on('SIGINT', () => {});
   process.on('SIGTERM', () => {});
   await new Promise((resolve) => {
     child.on('exit', (code, signal) => {
-      process.exitCode = signal ? 0 : (code ?? 1);
+      if (buffer) ui.stream(buffer);
+      if (signal || code === 0) {
+        ui.outro('Dev server stopped — the environment keeps running until npm stop.');
+      } else {
+        process.exitCode = code ?? 1;
+      }
       resolve();
     });
   });
