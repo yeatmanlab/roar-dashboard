@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
 import { existsSync, readFileSync } from 'fs';
-import { FIREBASE_EMULATOR_AUTH_HOST } from '../shared/devEmulatorHost.cjs';
+import { FIREBASE_EMULATOR_AUTH_HOST, FIREBASE_EMULATOR_STORAGE_HOST } from '../shared/devEmulatorHost.cjs';
 
 const BUILD_MODES = new Set(['lib', 'staging', 'production']);
 
@@ -56,6 +56,9 @@ export default defineConfig(({ mode }) => ({
           // /__/firebase/init.json instead.
           'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(
             mode === 'development' ? process.env.FIREBASE_AUTH_EMULATOR_HOST || FIREBASE_EMULATOR_AUTH_HOST : '',
+          ),
+          'process.env.FIREBASE_STORAGE_EMULATOR_HOST': JSON.stringify(
+            mode === 'development' ? process.env.FIREBASE_STORAGE_EMULATOR_HOST || FIREBASE_EMULATOR_STORAGE_HOST : '',
           ),
         }
       : {},

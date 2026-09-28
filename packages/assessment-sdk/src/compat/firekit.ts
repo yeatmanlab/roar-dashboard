@@ -47,11 +47,13 @@ type CompatTaskInfo = {
 };
 
 /**
- * Firebase Storage emulator port. Must match `docker/firebase-emulator/firebase.json`
- * (`emulators.storage.port`). The Emulator UI that surfaces uploaded recordings runs
- * separately on :9000 (:4000 is the ROAR backend).
+ * Fallback Storage emulator port when only FIREBASE_AUTH_EMULATOR_HOST is set —
+ * the canonical port from `docker/firebase-emulator/firebase.json`
+ * (`emulators.storage.port`). Stacks that publish the Storage emulator on a
+ * different host port (the assessment stack uses 9197 so it can run alongside
+ * the platform stack) inject FIREBASE_STORAGE_EMULATOR_HOST instead.
  */
-const STORAGE_EMULATOR_PORT = 9199;
+const DEFAULT_STORAGE_EMULATOR_PORT = 9199;
 
 /**
  * Firebase project id for the production admin recordings project. Anything else
@@ -66,10 +68,10 @@ let storageEmulatorConnected = false;
  * Resolves the Firebase Storage bucket for recording uploads.
  *
  * - **Dev (Auth emulator running):** returns the default app's storage connected to the
- *   local Storage emulator, so recordings land in the emulator (viewable in the Emulator
- *   UI on :9000) instead of a real cloud bucket. The emulator host is derived from
- *   `FIREBASE_AUTH_EMULATOR_HOST` (same host, storage port), reusing the signal every
- *   assessment already injects — no new build-time env var required.
+ *   local Storage emulator, so recordings land in the emulator (viewable in the
+ *   Emulator UI) instead of a real cloud bucket. The emulator address comes from
+ *   `FIREBASE_STORAGE_EMULATOR_HOST` when injected, and otherwise falls back to the
+ *   auth emulator's host with the canonical storage port.
  * - **Prod / staging:** returns the admin recordings bucket for the resolved environment
  *   (`gse-roar-admin` → prod, otherwise staging).
  *
@@ -84,8 +86,11 @@ function resolveStorageBucket(): FirebaseStorage {
   if (authEmulatorHost) {
     const storage = getStorage(getApp());
     if (!storageEmulatorConnected) {
-      const host = authEmulatorHost.split(':')[0] || '127.0.0.1';
-      connectStorageEmulator(storage, host, STORAGE_EMULATOR_PORT);
+      const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+      const [host = '127.0.0.1', port] = storageEmulatorHost
+        ? storageEmulatorHost.split(':')
+        : [authEmulatorHost.split(':')[0]];
+      connectStorageEmulator(storage, host || '127.0.0.1', port ? Number(port) : DEFAULT_STORAGE_EMULATOR_PORT);
       storageEmulatorConnected = true;
     }
     return storage;

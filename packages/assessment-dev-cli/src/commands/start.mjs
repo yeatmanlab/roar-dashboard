@@ -8,7 +8,7 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { ASSESSMENT_NAME, PARAMS_FILE, resolvePgPort, stackPorts } from '../context.mjs';
+import { ASSESSMENT_BACKEND_URL, ASSESSMENT_NAME, PARAMS_FILE, resolvePgPort, stackPorts } from '../context.mjs';
 import {
   compose,
   composeAvailable,
@@ -107,17 +107,17 @@ export async function start(ui) {
   }
 
   // Each package's `dev` script is the single source of truth for its bundler
-  // invocation (webpack or vite). FIREBASE_AUTH_EMULATOR_HOST needs no explicit
-  // value — dev-mode bundler configs default it to the local emulator.
-  // BACKEND_URL points the /v1 proxy at the containerized backend (plain HTTP)
-  // instead of the host-run TLS default.
+  // invocation (webpack or vite). The emulator hosts need no explicit values —
+  // dev-mode bundler configs default them to this stack's emulators.
+  // BACKEND_URL points the /v1 proxy at the containerized backend (plain HTTP
+  // on 4002) instead of the host-run TLS default on 4000.
   ui.info(
     'The assessment opens at http://localhost:8000 — Ctrl+C stops the dev server; the environment keeps running until npm stop.',
   );
   const [cmd, ...args] = [...npmCli(), 'run', 'dev'];
   const child = spawn(cmd, args, {
     stdio: 'inherit',
-    env: { ...process.env, BACKEND_URL: 'http://localhost:4000' },
+    env: { ...process.env, BACKEND_URL: ASSESSMENT_BACKEND_URL },
   });
   // Ctrl+C goes to the whole foreground process group; let the dev server
   // handle it and mirror its exit code instead of dying first.

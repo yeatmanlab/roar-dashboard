@@ -97,11 +97,14 @@ services:
 
   # ────────────────────────────────────────────────────────────────────────────
   # Firebase Auth + Storage emulators.
-  # Uses the shared emulator image (docker/firebase-emulator) — the platform stack
-  # starts auth only from the same image and config; this stack adds storage.
-  # Assessments connect via FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 (auth) and
-  # upload recordings to the Storage emulator on 127.0.0.1:9199, viewable in the
-  # Emulator UI on :9000.
+  # Uses the shared emulator image (docker/firebase-emulator). The HOST ports are
+  # deliberately shifted from the canonical ones (9097/9197/9002 instead of
+  # 9099/9199/9999) so this stack runs in parallel with the platform dev stack;
+  # the container-internal ports stay canonical. The host values must match
+  # apps/assessments/shared/devEmulatorHost.cjs, which dev bundles default to.
+  # Assessments connect via FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9097 (auth) and
+  # upload recordings to the Storage emulator on 127.0.0.1:9197, viewable in the
+  # Emulator UI on :9002.
   # ────────────────────────────────────────────────────────────────────────────
   firebase-emulator:
     container_name: firebase-emulator
@@ -121,11 +124,11 @@ services:
         --project demo-roar
         --config /firebase.json
     ports:
-      - "9099:9099"
-      # Storage emulator (recording uploads) and the Emulator UI (view recordings at :9000,
-      # clear of the backend on :4000).
-      - "9199:9199"
-      - "9000:9000"
+      - "9097:9099"
+      # Storage emulator (recording uploads) and the Emulator UI (view recordings
+      # at :9002).
+      - "9197:9199"
+      - "9002:9000"
     healthcheck:
       # curl returns 0 on any HTTP response — checks that both the auth (9099) and storage
       # (9199) emulators are accepting connections so `--wait` doesn't proceed before uploads work.
@@ -142,7 +145,7 @@ services:
 
   # ────────────────────────────────────────────────────────────────────────────
   # Backend API server.
-  # Runs in production mode (HTTP, no TLS) on port 4000.
+  # Runs in production mode (HTTP, no TLS) on container port 4000, published on host 4002.
   # FGA vars are set to placeholder values — anonymous assessment runs do not
   # trigger FGA calls (same-user access check short-circuits before any FGA call).
   # ────────────────────────────────────────────────────────────────────────────
@@ -174,7 +177,10 @@ services:
       FGA_STORE_ID: "00000000000000000000000000"
       FGA_MODEL_ID: "00000000000000000000000000"
     ports:
-      - "4000:4000"
+      # Host 4002 — the platform dev backend owns 4000, and the stacks run in
+      # parallel. Must match the BACKEND_URL the assessment CLI exports
+      # (packages/assessment-dev-cli).
+      - "4002:4000"
     depends_on:
       assessment-db-migrate:
         condition: service_completed_successfully

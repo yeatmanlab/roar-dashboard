@@ -30,10 +30,10 @@ After that, `npm start` is all you need for day-to-day work. Everything else is 
 - **Docker** with Compose v2 (`docker compose version` should work). If you don't have it:
   - macOS: `brew install --cask docker`, then launch Docker Desktop (Compose v2 is bundled). Or download from https://www.docker.com/products/docker-desktop/.
   - Ubuntu/Debian: `curl -fsSL https://get.docker.com | sh`, then `sudo usermod -aG docker $USER` and log out/in so you can run Docker without `sudo`. See https://docs.docker.com/engine/install/ubuntu/ for the manual apt steps.
-- **Stack host ports free** — the stack binds five host ports, and `npm start` refuses to launch while any of them is taken (it names the holder and how to free it):
-  - **5433** — the ephemeral database (deliberately not the standard 5432, so it can run alongside a persistent platform-dev Postgres on 5432). The only overridable port: `ASSESSMENT_PG_PORT=<port> npm start`.
-  - **9099 / 9199 / 9000** — the Firebase Auth emulator, Storage emulator, and Emulator UI. Note the platform dev stack also binds 9099 and 9199, so the two stacks can't run at the same time.
-  - **4000** — the backend API.
+- **Stack host ports free** — the stack binds five host ports, and `npm start` refuses to launch while any of them is taken (it names the holder and how to free it). Every port is deliberately different from the ones the ROAR platform dev stack uses, so the two environments run in parallel:
+  - **5433** — the ephemeral database (the platform Postgres owns 5432). The only overridable port: `ASSESSMENT_PG_PORT=<port> npm start`.
+  - **9097 / 9197 / 9002** — the Firebase Auth emulator, Storage emulator, and Emulator UI (the platform stack owns the canonical 9099/9199).
+  - **4002** — the backend API (the platform backend owns 4000).
   - Find a holder yourself: `lsof -i :<port>` (macOS) / `ss -tlnp | grep :<port>` (Linux)
 
 ---
@@ -51,7 +51,7 @@ It walks through five steps and finishes by pointing you at the next command:
 
 1. **Checks the Node.js version** (22+). npm alone only warns and continues on old Node, and the eventual failure looks unrelated.
 2. **Checks Docker** (Compose v2, and that the daemon is actually running). If missing or stopped, prints install/launch options and flags it as a blocker — but keeps going, since the remaining steps don't need Docker.
-3. **Checks every host port the stack binds is free** — the database port (`ASSESSMENT_PG_PORT`, default 5433), the Firebase emulators (9099/9199/9000), and the backend (4000). Each taken port gets a diagnosis naming the holder and is flagged as a blocker.
+3. **Checks every host port the stack binds is free** — the database port (`ASSESSMENT_PG_PORT`, default 5433), the Firebase emulators (9097/9197/9002), and the backend (4002). Each taken port gets a diagnosis naming the holder and is flagged as a blocker.
 4. **Installs dependencies and builds the platform libraries** from the repo root (`api-contract`, `assessment-schema`, `scoring-tables`, `assessment-sdk`). The assessment dev server bundles these from their built output, so they must exist before the first start. This step can take a few minutes.
 5. **Creates `taskVariantParameters.json`** from the committed example (never overwrites an existing one — see [Configuring task variants](#configuring-task-variants)).
 
@@ -117,10 +117,10 @@ Run all of these from the assessment's directory. This is the whole surface — 
 
 | Process                                         | URL                   |
 | ----------------------------------------------- | --------------------- |
-| Firebase emulator — Auth                        | http://localhost:9099 |
-| Firebase emulator — Storage (recording uploads) | http://localhost:9199 |
-| Firebase emulator — UI (browse recordings)      | http://localhost:9000 |
-| ROAR backend (HTTP)                             | http://localhost:4000 |
+| Firebase emulator — Auth                        | http://localhost:9097 |
+| Firebase emulator — Storage (recording uploads) | http://localhost:9197 |
+| Firebase emulator — UI (browse recordings)      | http://localhost:9002 |
+| ROAR backend (HTTP)                             | http://localhost:4002 |
 | Assessment dev server                           | http://localhost:8000 |
 | PostgreSQL                                      | localhost:5433        |
 
@@ -276,11 +276,23 @@ The environment doesn't need to be stopped first: when the stack is running, `re
 
 ---
 
+## Running alongside the platform dev environment
+
+The assessment environment and the ROAR platform dev stack bind disjoint host ports, so they run in parallel — no need to stop one to use the other. Engineers who want to serve an assessment against the **platform** stack (host-run backend on 4000, canonical emulator on 9099) instead of this environment opt in explicitly:
+
+```bash
+FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npm run dev
+```
+
+The preflight detects the common mistakes (missing opt-in, missing `FIREBASE_AUTH_EMULATOR_HOST` in `apps/backend/.env`) and prints the fix.
+
+---
+
 ## Troubleshooting
 
 **"Port 5433 is already in use."** Something is holding the ephemeral database's host port — the error names the holder. Stop it, or run with a different port: `ASSESSMENT_PG_PORT=<port> npm start`.
 
-**"Port 9099 / 9199 / 9000 / 4000 is already in use."** Another service is holding a Firebase emulator, Emulator UI, or backend port — most commonly the ROAR platform dev stack, which also binds 9099 and 9199. These ports aren't overridable: stop the holder (the error names it; for the platform stack, `docker compose down` from the repo root), then `npm start`.
+**"Port 9097 / 9197 / 9002 / 4002 is already in use."** Another program on your machine is holding a Firebase emulator, Emulator UI, or backend port. These ports aren't overridable: stop the holder (the error names it), then `npm start`. The ROAR platform dev stack is never the culprit — the two environments use disjoint ports and run in parallel.
 
 **"Port 8000 is already in use."** A previous dev server (or another assessment) is still running. Stop that process, then `npm start`.
 
@@ -300,7 +312,7 @@ The environment doesn't need to be stopped first: when the stack is running, `re
 
 **A code change isn't taking effect.** Host library change → `npm run update`; backend/migration/Dockerfile change → `npm run rebuild`. See [Updating after a pull](#updating-after-a-pull).
 
-**"Failed to bind host port 9000/9099/9199" — or the Firebase emulator container never starts.** Another Firebase emulator already holds those ports. The usual culprit is a persistent platform-dev stack (its auth emulator publishes 9099) or a hand-started `firebase emulators:start`; this stack publishes all three on the host, so the two cannot run at once. Stop the other emulator, then `npm start`. One wrinkle if the first attempt already created the container: starting it again can leave it running with no published ports (`docker port firebase-emulator` prints nothing, and the emulator is unreachable from the host even though the container reports healthy). Recreate it rather than restarting it — `docker compose -f docker-compose.assessment.yml up -d --force-recreate firebase-emulator`.
+**"Failed to bind host port 9002/9097/9197" — or the Firebase emulator container never starts.** Another program already holds those ports (a hand-started `firebase emulators:start`, or an unrelated service). Stop it, then `npm start`. One wrinkle if the first attempt already created the container: starting it again can leave it running with no published ports (`docker port firebase-emulator` prints nothing, and the emulator is unreachable from the host even though the container reports healthy). Recreate it rather than restarting it — `docker compose -f docker-compose.assessment.yml up -d --force-recreate firebase-emulator`.
 
 **Stale containers / name or port conflicts on start.** `npm start` force-removes known stale containers before bringing the stack up, but if it's still wedged, `npm stop` (deletes data) then `npm start` gives a clean slate.
 

@@ -5,7 +5,7 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FIREBASE_EMULATOR_AUTH_HOST } from './devEmulatorHost.cjs';
+import { FIREBASE_EMULATOR_AUTH_HOST, FIREBASE_EMULATOR_STORAGE_HOST } from './devEmulatorHost.cjs';
 
 /**
  * Static-shape checks on every assessment's bundler config: which plugins carry
@@ -46,14 +46,19 @@ async function loadWebpackConfig(name, dbmode, mode) {
   return configFactory({ dbmode }, { mode });
 }
 
-function environmentPluginDefault(config) {
+function environmentPluginDefault(config, variable) {
   const plugin = (config.plugins ?? []).find(
     (p) =>
       p?.constructor?.name === 'EnvironmentPlugin' &&
-      Object.prototype.hasOwnProperty.call(p.defaultValues ?? {}, 'FIREBASE_AUTH_EMULATOR_HOST'),
+      Object.prototype.hasOwnProperty.call(p.defaultValues ?? {}, variable),
   );
-  return plugin?.defaultValues.FIREBASE_AUTH_EMULATOR_HOST;
+  return plugin?.defaultValues[variable];
 }
+
+const EMULATOR_VARIABLES = [
+  ['FIREBASE_AUTH_EMULATOR_HOST', FIREBASE_EMULATOR_AUTH_HOST],
+  ['FIREBASE_STORAGE_EMULATOR_HOST', FIREBASE_EMULATOR_STORAGE_HOST],
+];
 
 // EnvironmentPlugin is not the only way to bake the value in: webpack's
 // DefinePlugin (and Vite's `define`) substitute it just as effectively. Assert
@@ -63,34 +68,41 @@ function definesEmulatorHost(config) {
   return (config.plugins ?? []).some(
     (p) =>
       p?.constructor?.name === 'DefinePlugin' &&
-      Object.keys(p.definitions ?? {}).some((key) => key.includes('FIREBASE_AUTH_EMULATOR_HOST')),
+      Object.keys(p.definitions ?? {}).some((key) => /FIREBASE_\w*_?EMULATOR_HOST/.test(key)),
   );
 }
 
 beforeEach(() => {
-  // The dev-mode assertions read the config's literal default; an ambient env
-  // var would mask it.
+  // The dev-mode assertions read the config's literal defaults; ambient env
+  // vars would mask them.
   vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '');
+  vi.stubEnv('FIREBASE_STORAGE_EMULATOR_HOST', '');
 });
 
 describe.each(webpackAssessments)('%s webpack config — Auth emulator host', (name) => {
-  it('does not inline the emulator host into a production build', async () => {
+  it('does not inline the emulator hosts into a production build', async () => {
     const config = await loadWebpackConfig(name, 'production', 'production');
-    expect(environmentPluginDefault(config)).toBeUndefined();
+    for (const [variable] of EMULATOR_VARIABLES) {
+      expect(environmentPluginDefault(config, variable)).toBeUndefined();
+    }
     expect(definesEmulatorHost(config)).toBe(false);
   });
 
   // dbmode and webpack mode are independent inputs; a mismatched invocation
-  // must not resurrect the value through a dbmode-gated code path either.
-  it('does not inline the emulator host when only dbmode says development', async () => {
+  // must not resurrect the values through a dbmode-gated code path either.
+  it('does not inline the emulator hosts when only dbmode says development', async () => {
     const config = await loadWebpackConfig(name, 'development', 'production');
-    expect(environmentPluginDefault(config)).toBeUndefined();
+    for (const [variable] of EMULATOR_VARIABLES) {
+      expect(environmentPluginDefault(config, variable)).toBeUndefined();
+    }
     expect(definesEmulatorHost(config)).toBe(false);
   });
 
-  it('defaults the emulator host to the shared constant for local development', async () => {
+  it('defaults the emulator hosts to the shared constants for local development', async () => {
     const config = await loadWebpackConfig(name, 'development', 'development');
-    expect(environmentPluginDefault(config)).toBe(FIREBASE_EMULATOR_AUTH_HOST);
+    for (const [variable, expected] of EMULATOR_VARIABLES) {
+      expect(environmentPluginDefault(config, variable)).toBe(expected);
+    }
   });
 });
 
@@ -102,14 +114,18 @@ describe.each(viteAssessments)('%s vite config — Auth emulator host', (name) =
     return typeof configFactory === 'function' ? configFactory({ mode }) : configFactory;
   }
 
-  it.each(['production', 'staging'])('defines no truthy emulator host for a %s build', async (mode) => {
+  it.each(['production', 'staging'])('defines no truthy emulator hosts for a %s build', async (mode) => {
     const config = await loadViteConfig(mode);
-    // Absent is as safe as empty — only a truthy value is a leak.
-    expect(config.define?.['process.env.FIREBASE_AUTH_EMULATOR_HOST'] ?? '""').toBe('""');
+    for (const [variable] of EMULATOR_VARIABLES) {
+      // Absent is as safe as empty — only a truthy value is a leak.
+      expect(config.define?.[`process.env.${variable}`] ?? '""').toBe('""');
+    }
   });
 
-  it('defaults the emulator host to the shared constant for local development', async () => {
+  it('defaults the emulator hosts to the shared constants for local development', async () => {
     const config = await loadViteConfig('development');
-    expect(config.define['process.env.FIREBASE_AUTH_EMULATOR_HOST']).toBe(JSON.stringify(FIREBASE_EMULATOR_AUTH_HOST));
+    for (const [variable, expected] of EMULATOR_VARIABLES) {
+      expect(config.define[`process.env.${variable}`]).toBe(JSON.stringify(expected));
+    }
   });
 });

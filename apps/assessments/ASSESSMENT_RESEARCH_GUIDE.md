@@ -367,7 +367,7 @@ For a complete reset (tasks and variants too), use `npm restart` — but that de
 
 Assessments that capture audio or video — e.g. Read Aloud (`roar-readaloud`) — upload recordings through the SDK to the local **Firebase Storage emulator**, so dev needs no cloud credentials and touches no real bucket. Browse them in the **Emulator UI** — nothing extra to install.
 
-**Open the Emulator UI:** http://localhost:9000 → **Storage** tab.
+**Open the Emulator UI:** http://localhost:9002 → **Storage** tab.
 
 The Storage tab lists the emulated **`demo-roar.appspot.com`** bucket — project `demo-roar`, so the full reference root is **`gs://demo-roar.appspot.com/`** — created on the first upload. It lets you browse and download blobs. Recordings are written under a deterministic path within it:
 

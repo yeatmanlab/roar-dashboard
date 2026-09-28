@@ -63,8 +63,10 @@ export async function composeStreamed(args, pgPort, onLine) {
  * Diagnoses what is occupying a host port and how to free it. Returns the
  * diagnosis lines — no headline and no exit — so the caller decides whether
  * the conflict is a hard error (start) or an advisory warning (setup). The
- * most common culprits, in order: the platform dev stack, a local process, or
- * another Docker container. Every probe is failure-tolerant: a dead Docker
+ * most common culprits: a stale container from a previous assessment run, a
+ * local process, or another Docker container. (The platform dev stack binds
+ * disjoint host ports, so the two stacks never collide with each other.)
+ * Every probe is failure-tolerant: a dead Docker
  * daemon or a missing lsof degrades the diagnosis, it doesn't throw.
  *
  * @param {string} port - The occupied host port.
@@ -86,13 +88,7 @@ export function diagnosePortConflict(port, pgPort) {
       '{{index .Config.Labels "com.docker.compose.project"}}',
       container,
     ]).stdout.trim();
-    if (project === 'roar-platform') {
-      lines.push(
-        `The ROAR platform dev stack is running (container: ${container}).`,
-        'Stop it first, from the repository root:',
-        '  docker compose down',
-      );
-    } else if (project === 'roar-assessment') {
+    if (project === 'roar-assessment') {
       lines.push(
         `A previous assessment environment is still partially running (container: ${container}).`,
         'Reset it first:',

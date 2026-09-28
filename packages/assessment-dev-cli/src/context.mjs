@@ -3,6 +3,7 @@
  * caller's working directory (an assessment directory — the npm scripts run
  * with cwd set to their package).
  */
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { capture } from './proc.mjs';
@@ -17,6 +18,14 @@ export const PARAMS_FILE = path.join(ASSESSMENT_DIR, 'taskVariantParameters.json
 export const PARAMS_EXAMPLE_FILE = path.join(ASSESSMENT_DIR, 'taskVariantParameters.example.json');
 
 export const DEFAULT_PG_PORT = '5433';
+
+/**
+ * The auth-emulator host dev bundles default to — read from the same file the
+ * bundler configs use, so the CLI's probes can never drift from the bundles.
+ */
+export const { FIREBASE_EMULATOR_AUTH_HOST: ASSESSMENT_AUTH_EMULATOR_HOST } = createRequire(import.meta.url)(
+  path.join(REPO_ROOT, 'apps', 'assessments', 'shared', 'devEmulatorHost.cjs'),
+);
 
 /**
  * Host port the ephemeral assessment Postgres publishes. Defaults to 5433 so
@@ -52,8 +61,15 @@ export function resolvePgPort(captureFn = capture) {
  * @returns {string[]}
  */
 export function stackPorts(pgPort) {
-  return [pgPort, '9099', '9199', '9000', '4000'];
+  return [pgPort, '9097', '9197', '9002', '4002'];
 }
+
+/**
+ * Where the containerized assessment backend answers on the host. 4002 —
+ * deliberately not 4000, which the platform dev backend owns, so both stacks
+ * run in parallel. Must match the port mapping in docker-compose.assessment.yml.
+ */
+export const ASSESSMENT_BACKEND_URL = 'http://localhost:4002';
 
 /**
  * Environment for docker compose invocations — the compose file substitutes

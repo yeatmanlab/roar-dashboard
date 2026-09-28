@@ -2,14 +2,15 @@
  * `predev` hook — preflight for an assessment's `npm run dev`.
  *
  * `npm run dev` serves an assessment against whatever backend and Firebase
- * Auth emulator are already running. Two contexts satisfy that:
- *   - the assessment environment (`npm start` brings its Docker stack up, then
- *     runs `npm run dev`, which triggers this preflight), or
- *   - platform-context dev: the platform Docker stack (repo root
- *     `docker compose up -d --wait`) plus a host-run backend
- *     (`NODE_ENV=development npm run dev -w apps/backend`).
+ * Auth emulator are already running. Two contexts satisfy that, and since the
+ * two stacks bind disjoint host ports they can both be up at once:
+ *   - the assessment environment (`npm start` brings its Docker stack up on
+ *     9097/9197/4002, then runs `npm run dev`, which triggers this preflight), or
+ *   - platform-context dev: the platform Docker stack on the canonical
+ *     9099/9199 plus a host-run backend on 4000, opted into explicitly with
+ *     FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npm run dev.
  *
- * Dev bundles default FIREBASE_AUTH_EMULATOR_HOST to the local emulator
+ * Dev bundles default the emulator hosts to the assessment stack
  * (apps/assessments/shared/devEmulatorHost.cjs), so when a prerequisite is
  * missing the failures are otherwise silent — sign-in network errors, or 401s
  * on every /v1 request. Fail fast here and name the exact fix instead.
@@ -18,8 +19,12 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { REPO_ROOT } from '../context.mjs';
+import { ASSESSMENT_AUTH_EMULATOR_HOST, ASSESSMENT_BACKEND_URL, REPO_ROOT } from '../context.mjs';
 import { portInUse, probe } from '../net.mjs';
+
+/** The platform stack's canonical emulator host and host-run backend. */
+const PLATFORM_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+const PLATFORM_BACKEND_URL = 'https://localhost:4000';
 
 function fail(ui, headline, lines) {
   if (lines.length > 0) ui.note(lines.join('\n'), headline, 'error');
@@ -39,45 +44,51 @@ export async function predev(ui) {
   // 2. The Firebase Auth emulator. An exported FIREBASE_AUTH_EMULATOR_HOST
   // overrides the bundler default, so probe the host the dev bundle will
   // actually use.
-  const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
+  const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST || ASSESSMENT_AUTH_EMULATOR_HOST;
   if (!(await probe(`http://${emulatorHost}/`))) {
+    // A platform emulator on the canonical port usually means platform-context
+    // dev that forgot the explicit opt-in.
+    if (await probe(`http://${PLATFORM_AUTH_EMULATOR_HOST}/`)) {
+      fail(ui, `No Firebase Auth emulator on ${emulatorHost}, but the platform stack's emulator is running`, [
+        'Platform-context dev must opt in explicitly:',
+        `  FIREBASE_AUTH_EMULATOR_HOST=${PLATFORM_AUTH_EMULATOR_HOST} npm run dev`,
+        'Or start the assessment environment instead: npm start',
+      ]);
+      return;
+    }
     fail(ui, `No Firebase Auth emulator on ${emulatorHost}`, [
       'Assessment environment: npm start',
-      'Platform context:       docker compose up -d --wait   (from the repo root)',
+      'Platform stack:         docker compose up -d --wait   (from the repo root)',
     ]);
     return;
   }
 
   // 3. The backend API. An exported BACKEND_URL (set by `npm start`, or by
   // hand) is authoritative for where the /v1 proxy points — probe exactly
-  // that. Without it, probe the default localhost:4000; there the scheme
-  // identifies the context: the containerized assessment-env backend serves
-  // plain HTTP, a host-run dev backend serves TLS (mkcert) unconditionally.
+  // that. Without it, the bundler default targets the platform's host-run TLS
+  // backend on 4000.
   let backendScheme;
   const backendUrl = process.env.BACKEND_URL;
   if (backendUrl) {
     if (!(await probe(`${backendUrl.replace(/\/$/, '')}/health/live`))) {
-      fail(ui, `No backend responds at BACKEND_URL (${backendUrl}).`, [
-        'Start it, or unset BACKEND_URL to use the default localhost:4000.',
+      fail(ui, `No backend responds at BACKEND_URL (${backendUrl})`, [
+        'Start it, or unset BACKEND_URL to use the platform default (https://localhost:4000).',
       ]);
       return;
     }
     backendScheme = backendUrl.split(':')[0];
-  } else if (await probe('http://localhost:4000/health/live')) {
-    // The bundler configs default the /v1 proxy to https://localhost:4000
-    // (the host-run backend). Against this containerized HTTP backend that
-    // default fails the TLS handshake on every request; `npm start` exports
-    // BACKEND_URL, a direct `npm run dev` must do the same.
-    fail(ui, 'The backend on localhost:4000 serves plain HTTP, but BACKEND_URL is not set.', [
-      'The dev-server proxy would default to https:// and fail every /v1 request.',
+  } else if (await probe(`${PLATFORM_BACKEND_URL}/health/live`)) {
+    backendScheme = 'https';
+  } else if (await probe(`${ASSESSMENT_BACKEND_URL}/health/live`)) {
+    // The assessment stack is up, but without BACKEND_URL the proxy would
+    // target the (absent) platform backend and fail every /v1 request.
+    fail(ui, 'The assessment environment is running, but BACKEND_URL is not set', [
       'Use:  npm start   (sets BACKEND_URL for you)',
-      'or:   BACKEND_URL=http://localhost:4000 npm run dev',
+      `or:   BACKEND_URL=${ASSESSMENT_BACKEND_URL} npm run dev`,
     ]);
     return;
-  } else if (await probe('https://localhost:4000/health/live')) {
-    backendScheme = 'https';
   } else {
-    fail(ui, 'No backend on localhost:4000', [
+    fail(ui, 'No backend is running', [
       'Assessment environment: npm start',
       'Platform context:       NODE_ENV=development npm run dev -w apps/backend',
     ]);
@@ -102,7 +113,7 @@ export async function predev(ui) {
       fail(ui, 'The host-run backend is not configured for the Auth emulator', [
         'Add this line to apps/backend/.env, then restart the backend:',
         '',
-        `  FIREBASE_AUTH_EMULATOR_HOST=${emulatorHost}`,
+        `  FIREBASE_AUTH_EMULATOR_HOST=${PLATFORM_AUTH_EMULATOR_HOST}`,
       ]);
     }
   }

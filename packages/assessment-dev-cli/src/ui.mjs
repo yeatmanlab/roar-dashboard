@@ -74,7 +74,12 @@ function wrapLine(line, max) {
 function noteBox(body, title, kind) {
   const lines = body.split('\n').flatMap((l) => wrapLine(l, BOX_MAX_WIDTH - 2));
   const heading = title ?? '';
-  const width = Math.min(Math.max(...lines.map((l) => l.length), heading.length + 2) + 2, BOX_MAX_WIDTH);
+  // Body lines wrap at the cap, but the title is one line by construction —
+  // the box grows to fit it rather than letting it overflow the frame.
+  const width = Math.max(
+    Math.min(Math.max(...lines.map((l) => l.length)) + 2, BOX_MAX_WIDTH),
+    Math.min(heading.length + 3, 100),
+  );
   console.log(BAR());
   console.log(
     `${GLYPH[kind]()}  ${paint('bold', heading)} ${paint('gray', '─'.repeat(Math.max(width - heading.length, 1)))}${paint('gray', '╮')}`,
