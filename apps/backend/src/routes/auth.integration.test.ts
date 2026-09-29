@@ -128,9 +128,10 @@ describe('GET /v1/auth/registration/agreements', () => {
       content: '# Registration agreement',
     });
     expect(response.body.data.items).not.toContainEqual(expect.objectContaining({ agreementId: assent.id }));
+    expect(response.headers['cache-control']).toBe('public, max-age=86400, immutable');
   });
 
-  it('returns 500 instead of a partial set when the requested locale is incomplete', async () => {
+  it('falls back to en-US per agreement when the requested locale is incomplete', async () => {
     const consent = await AgreementFactory.create({
       name: 'Spanish registration consent',
       agreementType: AgreementType.CONSENT,
@@ -140,8 +141,14 @@ describe('GET /v1/auth/registration/agreements', () => {
       { transient: { agreementId: consent.id } },
     );
 
-    await expectRoute('GET', '/v1/auth/registration/agreements?locale=es-MX').unauthenticated().toReturn(500);
-    expect(fetch).not.toHaveBeenCalled();
+    const response = await expectRoute('GET', '/v1/auth/registration/agreements?locale=es-MX')
+      .unauthenticated()
+      .toReturn(200);
+
+    expect(response.body.data.items).toContainEqual(
+      expect.objectContaining({ agreementId: consent.id, locale: 'es-MX' }),
+    );
+    expect(response.body.data.items).toContainEqual(expect.objectContaining({ locale: 'en-US' }));
   });
 
   it('returns 400 for an invalid locale', async () => {
@@ -158,6 +165,7 @@ describe('POST /v1/auth/registration', () => {
     expect(response.body).toEqual({});
     const [caretaker] = await CoreDbClient.select().from(users).where(eq(users.email, body.email));
     expect(caretaker).toBeDefined();
+    expect(caretaker!.optinResearchContact).toBe(body.optIns.researchContact);
 
     const [family] = await CoreDbClient.select().from(families).where(eq(families.createdBy, caretaker!.id));
     expect(family).toBeDefined();

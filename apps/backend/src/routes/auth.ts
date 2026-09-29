@@ -2,6 +2,7 @@ import type { Router } from 'express';
 import { createExpressEndpoints, initServer } from '@ts-rest/express';
 import { AuthContract } from '@roar-platform/api-contract';
 import { AuthController } from '../controllers/auth.controller';
+import { ImmutablePublicCacheControlMiddleware } from '../middleware/cache-control/immutable-public-cache-control.middleware';
 
 const s = initServer();
 
@@ -15,6 +16,7 @@ const s = initServer();
 export function registerAuthRoutes(routerInstance: Router) {
   const AuthRoutes = s.router(AuthContract, {
     getRegistrationAgreements: {
+      middleware: [ImmutablePublicCacheControlMiddleware],
       handler: async ({ query }) => AuthController.getRegistrationAgreements(query),
     },
     register: {

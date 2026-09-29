@@ -214,6 +214,7 @@ describe('FamiliesController', () => {
       email: 'parent@example.com',
       password: 'password123',
       name: { first: 'Pat', last: 'Parent' },
+      optIns: { researchContact: true },
     };
 
     it('returns 201 with the new family id on success', async () => {
@@ -227,6 +228,7 @@ describe('FamiliesController', () => {
       const data = (result.body as { data: { id: string } }).data;
       expect(data).toEqual({ id: 'family-new-1' });
       expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ email: validBody.email }));
+      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ optIns: validBody.optIns }));
     });
 
     it('passes the location through to the service', async () => {

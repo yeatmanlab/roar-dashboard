@@ -96,6 +96,7 @@ async function handleParentSubmit(data) {
       password: data.password,
       firstName: data.firstName,
       lastName: data.lastName,
+      canContactForFutureStudies: data.canContactForFutureStudies,
     });
 
     spinner.value = false;

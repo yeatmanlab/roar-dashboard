@@ -6,21 +6,13 @@ import { AgreementVersionRepository } from '../../repositories/agreement-version
 import { logger } from '../../logger';
 import { AgreementService, REGISTRATION_AGREEMENT_TYPES } from '../agreement/agreement.service';
 import { FamilyService } from '../family/family.service';
+import type { CreateFamilyServiceInput } from '../family/family.service';
 
-interface RegistrationName {
-  first: string;
-  middle?: string | undefined;
-  last: string;
-}
+const DEFAULT_REGISTRATION_LOCALE = 'en-US';
 
-interface RegistrationLocation {
-  addressLine1?: string | undefined;
-  addressLine2?: string | undefined;
-  city?: string | undefined;
-  stateProvince?: string | undefined;
-  postalCode?: string | undefined;
-  country?: string | undefined;
-}
+type RegistrationName = CreateFamilyServiceInput['name'];
+type RegistrationLocation = CreateFamilyServiceInput['location'];
+type RegistrationOptIns = NonNullable<CreateFamilyServiceInput['optIns']>;
 
 export interface RegistrationServiceInput {
   email: string;
@@ -28,9 +20,7 @@ export interface RegistrationServiceInput {
   name: RegistrationName;
   location?: RegistrationLocation | undefined;
   agreementVersionIds: string[];
-  optIns: {
-    researchContact: boolean;
-  };
+  optIns: RegistrationOptIns;
 }
 
 type AgreementServiceInstance = Pick<ReturnType<typeof AgreementService>, 'getRegistrationAgreements'>;
@@ -67,12 +57,19 @@ export function RegistrationService({
         agreementVersionRepository.listRequiredRegistrationAgreementIds(REGISTRATION_AGREEMENT_TYPES),
       ]);
 
-      if (submittedVersions.length !== agreementVersionIds.length || requiredAgreementIds.length === 0) {
+      if (requiredAgreementIds.length === 0) {
+        logger.error('No registration agreements are configured');
+        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.INTERNAL,
+        });
+      }
+
+      if (submittedVersions.length !== agreementVersionIds.length) {
         throwInvalidAgreementSet({
-          reason: 'missing submitted or configured agreement version',
+          reason: 'unknown submitted agreement version',
           submittedCount: agreementVersionIds.length,
           resolvedCount: submittedVersions.length,
-          requiredCount: requiredAgreementIds.length,
         });
       }
 
@@ -97,6 +94,8 @@ export function RegistrationService({
       if (requiredAgreementIds.some((agreementId) => !submittedAgreementIds.has(agreementId))) {
         throwInvalidAgreementSet({ reason: 'required agreement missing' });
       }
+
+      await validateLocaleSelection(submittedVersions);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -108,16 +107,48 @@ export function RegistrationService({
       });
     }
 
-    // optIns.researchContact follows the API opt-in envelope convention. Its
-    // relational persistence is intentionally deferred to the opt-in domain;
-    // it must never be represented as a legal agreement acceptance.
+    // Mutable opt-ins are persisted on the caretaker separately from versioned
+    // legal agreement acceptances.
     await familyService.create({
       email: input.email,
       password: input.password,
       name: input.name,
       location: input.location,
       agreementVersionIds,
+      optIns: input.optIns,
     });
+  }
+
+  async function validateLocaleSelection(
+    submittedVersions: Awaited<ReturnType<AgreementVersionRepository['getRegistrationCandidatesByIds']>>,
+  ): Promise<void> {
+    const submittedLocales = new Set(submittedVersions.map(({ locale }) => locale));
+    if (submittedLocales.size <= 1) return;
+
+    const nonDefaultLocales = [...submittedLocales].filter((locale) => locale !== DEFAULT_REGISTRATION_LOCALE);
+    if (nonDefaultLocales.length !== 1 || !submittedLocales.has(DEFAULT_REGISTRATION_LOCALE)) {
+      throwInvalidAgreementSet({ reason: 'agreement versions use incompatible locales' });
+    }
+
+    const requestedLocale = nonDefaultLocales[0]!;
+    const localizedVersions = await agreementVersionRepository.listCurrentForRegistration(
+      requestedLocale,
+      REGISTRATION_AGREEMENT_TYPES,
+    );
+    const localizedByAgreementId = new Map(
+      localizedVersions.map((version) => [version.agreementId, version.agreementVersionId]),
+    );
+
+    const matchesLocalizedSelection = submittedVersions.every((version) => {
+      const localizedVersionId = localizedByAgreementId.get(version.agreementId);
+      return localizedVersionId
+        ? version.agreementVersionId === localizedVersionId
+        : version.locale === DEFAULT_REGISTRATION_LOCALE;
+    });
+
+    if (!matchesLocalizedSelection) {
+      throwInvalidAgreementSet({ reason: 'agreement versions do not match one localized registration set' });
+    }
   }
 
   function throwInvalidAgreementSet(context: Record<string, unknown>): never {

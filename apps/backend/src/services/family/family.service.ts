@@ -76,6 +76,11 @@ export interface CreateFamilyServiceInput {
   location?: CreateFamilyLocation | undefined;
   /** Agreement versions already validated by RegistrationService. */
   agreementVersionIds?: string[] | undefined;
+  optIns?:
+    | {
+        researchContact: boolean;
+      }
+    | undefined;
 }
 
 /**
@@ -298,12 +303,13 @@ export function FamilyService({
    *      unique index `families_created_by_uniq_idx` fires, surface 422.
    *    - Insert `user_families` (`caretakerId`, `familyId`, role=parent)
    *    - Insert `rostering_provider_ids` (provider=dashboard, partnerId=familyId, entityId=caretakerId)
+   *    - Insert `user_agreements` for versions already validated by `RegistrationService`
    * 4. On any DB failure: delete the Firebase Auth account (compensation).
    * 5. FGA tuple write for the caretaker's parent relation to the family. On FGA failure:
    *    delete the tuple, delete DB rows (rostering_provider_ids → user_families → families →
    *    users), then delete the Firebase account.
    *
-   * @param input Caretaker credentials + name + optional family location
+   * @param input Caretaker credentials, name, opt-ins, and optional family location
    * @returns The newly created family id
    * @throws {ApiError} 409 if the email is already in use (in `users` or in Firebase Auth)
    * @throws {ApiError} 422 if the caretaker already created a family (DB constraint)
@@ -311,7 +317,7 @@ export function FamilyService({
    * @throws {ApiError} 500 on unexpected failures or unrecoverable compensation
    */
   async function create(input: CreateFamilyServiceInput): Promise<{ id: string }> {
-    const { email, password, name, location, agreementVersionIds = [] } = input;
+    const { email, password, name, location, agreementVersionIds = [], optIns } = input;
 
     // ── Step 1: Pre-flight email uniqueness ───────────────────────────────────
     //
@@ -394,8 +400,8 @@ export function FamilyService({
 
     // ── Step 3: DB transaction ────────────────────────────────────────────────
     //
-    // All four DB writes (users, families, user_families, rostering_provider_ids) run in one
-    // transaction so any failure rolls back atomically — only Firebase needs compensation.
+    // All DB writes (users, families, user_families, rostering_provider_ids, and user_agreements)
+    // run in one transaction so any failure rolls back atomically — only Firebase needs compensation.
 
     let caretakerId!: string;
     let familyId!: string;
@@ -413,6 +419,7 @@ export function FamilyService({
               userType: UserType.CAREGIVER,
               assessmentPid: generateAssessmentPid({ userId: email }),
               isSuperAdmin: false,
+              optinResearchContact: optIns?.researchContact ?? null,
             },
             {
               locationAddressLine1: location?.addressLine1 ?? null,
@@ -438,7 +445,7 @@ export function FamilyService({
 
           if (agreementVersionIds.length > 0) {
             const agreementTimestamp = new Date();
-            const createdAgreements = await userAgreementRepository.createMany({
+            await userAgreementRepository.createMany({
               data: agreementVersionIds.map((agreementVersionId) => ({
                 userId: created.caretakerId,
                 agreementVersionId,
@@ -446,10 +453,6 @@ export function FamilyService({
               })),
               transaction: tx,
             });
-
-            if (createdAgreements.length !== agreementVersionIds.length) {
-              throw new Error('User agreement bulk insert returned an unexpected row count');
-            }
           }
 
           return created;

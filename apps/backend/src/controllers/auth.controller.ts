@@ -41,7 +41,6 @@ export const AuthController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
-          StatusCodes.BAD_REQUEST,
           StatusCodes.CONFLICT,
           StatusCodes.UNPROCESSABLE_ENTITY,
           StatusCodes.TOO_MANY_REQUESTS,

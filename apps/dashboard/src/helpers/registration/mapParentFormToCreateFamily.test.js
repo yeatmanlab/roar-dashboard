@@ -8,16 +8,18 @@ describe('mapParentFormToCreateFamily', () => {
       password: 'super-secret',
       firstName: '  Pat ',
       lastName: ' Guardian ',
+      canContactForFutureStudies: false,
     });
 
     expect(result).toEqual({
       email: 'parent@example.com',
       password: 'super-secret',
       name: { first: 'Pat', last: 'Guardian' },
+      optIns: { researchContact: false },
     });
   });
 
-  it('drops legacy fields the strict create-family body rejects', () => {
+  it('maps the research-contact checkbox and drops unrelated legacy fields', () => {
     const result = mapParentFormToCreateFamily({
       email: 'parent@example.com',
       password: 'super-secret',
@@ -27,14 +29,20 @@ describe('mapParentFormToCreateFamily', () => {
       invitationCodes: ['ABC'],
     });
 
-    expect(result).not.toHaveProperty('canContactForFutureStudies');
+    expect(result.optIns).toEqual({ researchContact: true });
     expect(result).not.toHaveProperty('invitationCodes');
-    expect(Object.keys(result).sort()).toEqual(['email', 'name', 'password']);
+    expect(Object.keys(result).sort()).toEqual(['email', 'name', 'optIns', 'password']);
   });
 
   it('throws when email is missing', () => {
     expect(() =>
-      mapParentFormToCreateFamily({ email: '', password: 'super-secret', firstName: 'Pat', lastName: 'Guardian' }),
+      mapParentFormToCreateFamily({
+        email: '',
+        password: 'super-secret',
+        firstName: 'Pat',
+        lastName: 'Guardian',
+        canContactForFutureStudies: false,
+      }),
     ).toThrow(/email/i);
   });
 
@@ -45,6 +53,7 @@ describe('mapParentFormToCreateFamily', () => {
         password: '',
         firstName: 'Pat',
         lastName: 'Guardian',
+        canContactForFutureStudies: false,
       }),
     ).toThrow(/password/i);
   });
@@ -56,7 +65,19 @@ describe('mapParentFormToCreateFamily', () => {
         password: 'super-secret',
         firstName: '',
         lastName: 'Guardian',
+        canContactForFutureStudies: false,
       }),
     ).toThrow(/first and last name/i);
+  });
+
+  it('throws when the research-contact preference is not a boolean', () => {
+    expect(() =>
+      mapParentFormToCreateFamily({
+        email: 'parent@example.com',
+        password: 'super-secret',
+        firstName: 'Pat',
+        lastName: 'Guardian',
+      }),
+    ).toThrow('Research contact preference must be a boolean.');
   });
 });

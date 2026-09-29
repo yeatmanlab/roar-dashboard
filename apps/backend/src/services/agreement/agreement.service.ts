@@ -10,8 +10,10 @@ import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { AgreementEmbedOption } from '../../enums/agreement-embed-option.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
-import { AgreementRepository, type AgreementWithCurrentVersion } from '../../repositories/agreement.repository';
+import { AgreementRepository } from '../../repositories/agreement.repository';
+import type { AgreementWithCurrentVersion } from '../../repositories/agreement.repository';
 import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
+import type { RegistrationAgreementVersion } from '../../repositories/agreement-version.repository';
 
 export const REGISTRATION_AGREEMENT_TYPES = [AgreementType.CONSENT, AgreementType.TOS] as const;
 
@@ -62,6 +64,11 @@ const GITHUB_USER_CONTENT_BASE_URL = 'https://raw.githubusercontent.com';
 /** GitHub raw content URL timeout in milliseconds */
 const GITHUB_FETCH_TIMEOUT_MS = 10_000;
 
+const DEFAULT_REGISTRATION_LOCALE = 'en-US';
+
+/** Successful and in-flight fetches keyed by immutable GitHub content URL. */
+const githubContentCache = new Map<string, Promise<string>>();
+
 /**
  * Fetches raw file content from GitHub using the raw.githubusercontent.com URL.
  *
@@ -73,29 +80,42 @@ const GITHUB_FETCH_TIMEOUT_MS = 10_000;
  */
 async function fetchGithubContent(orgRepo: string, commitSha: string, filename: string): Promise<string> {
   const url = `${GITHUB_USER_CONTENT_BASE_URL}/${orgRepo}/${commitSha}/${filename}`;
+  const cachedContent = githubContentCache.get(url);
+  if (cachedContent) return cachedContent;
 
-  const response = await fetch(url, {
-    signal: AbortSignal.timeout(GITHUB_FETCH_TIMEOUT_MS),
-  });
-
-  if (!response.ok) {
-    throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-      code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-      context: { url, status: response.status, message: 'Failed to fetch agreement content from GitHub' },
+  const contentPromise = (async () => {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(GITHUB_FETCH_TIMEOUT_MS),
     });
-  }
 
-  const content = await response.text();
-  if (!content) {
-    throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-      statusCode: StatusCodes.NOT_FOUND,
-      code: ApiErrorCode.RESOURCE_NOT_FOUND,
-      context: { url, message: 'Agreement content file is empty or missing' },
-    });
-  }
+    if (!response.ok) {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        context: { url, status: response.status, message: 'Failed to fetch agreement content from GitHub' },
+      });
+    }
 
-  return content;
+    const content = await response.text();
+    if (!content) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { url, message: 'Agreement content file is empty or missing' },
+      });
+    }
+
+    return content;
+  })();
+
+  githubContentCache.set(url, contentPromise);
+
+  try {
+    return await contentPromise;
+  } catch (error) {
+    githubContentCache.delete(url);
+    throw error;
+  }
 }
 
 /**
@@ -118,27 +138,62 @@ export function AgreementService({
 } = {}) {
   /** Resolves the current adult-signable agreement documents for public registration. */
   async function getRegistrationAgreements(locale: string): Promise<RegistrationAgreementResult[]> {
+    let localizedVersions: RegistrationAgreementVersion[];
+    let fallbackVersions: RegistrationAgreementVersion[];
+    let requiredAgreementIds: string[];
+
     try {
-      const [versions, requiredAgreementIds] = await Promise.all([
+      [localizedVersions, fallbackVersions, requiredAgreementIds] = await Promise.all([
         agreementVersionRepository.listCurrentForRegistration(locale, REGISTRATION_AGREEMENT_TYPES),
+        locale === DEFAULT_REGISTRATION_LOCALE
+          ? Promise.resolve([])
+          : agreementVersionRepository.listCurrentForRegistration(
+              DEFAULT_REGISTRATION_LOCALE,
+              REGISTRATION_AGREEMENT_TYPES,
+            ),
         agreementVersionRepository.listRequiredRegistrationAgreementIds(REGISTRATION_AGREEMENT_TYPES),
       ]);
+    } catch (error) {
+      logger.error({ err: error, context: { locale } }, 'Failed to query registration agreements');
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { locale },
+        cause: error,
+      });
+    }
 
-      const localizedAgreementIds = new Set(versions.map(({ agreementId }) => agreementId));
-      const missingAgreementIds = requiredAgreementIds.filter((agreementId) => !localizedAgreementIds.has(agreementId));
+    if (requiredAgreementIds.length === 0) {
+      logger.error({ context: { locale } }, 'No registration agreements are configured');
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.INTERNAL,
+        context: { locale },
+      });
+    }
 
-      if (missingAgreementIds.length > 0) {
-        logger.error(
-          { context: { locale, missingAgreementIds } },
-          'Registration locale is missing current required agreement versions',
-        );
-        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
-          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-          code: ApiErrorCode.INTERNAL,
-          context: { locale, missingAgreementIds },
-        });
-      }
+    const versionsByAgreementId = new Map(fallbackVersions.map((version) => [version.agreementId, version]));
+    for (const version of localizedVersions) versionsByAgreementId.set(version.agreementId, version);
 
+    const missingAgreementIds = requiredAgreementIds.filter((agreementId) => !versionsByAgreementId.has(agreementId));
+    if (missingAgreementIds.length > 0) {
+      logger.error(
+        { context: { locale, fallbackLocale: DEFAULT_REGISTRATION_LOCALE, missingAgreementIds } },
+        'Registration agreements are missing current localized and fallback versions',
+      );
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.INTERNAL,
+        context: { locale, missingAgreementIds },
+      });
+    }
+
+    const requiredAgreementIdSet = new Set(requiredAgreementIds);
+    const versions = [...versionsByAgreementId.values()]
+      .filter(({ agreementId }) => requiredAgreementIdSet.has(agreementId))
+      .sort((left, right) => left.name.localeCompare(right.name) || left.agreementId.localeCompare(right.agreementId));
+
+    try {
       return await Promise.all(
         versions.map(async (version) => ({
           agreementId: version.agreementId,
@@ -150,9 +205,7 @@ export function AgreementService({
         })),
       );
     } catch (error) {
-      if (error instanceof ApiError && error.statusCode === StatusCodes.INTERNAL_SERVER_ERROR) throw error;
-
-      logger.error({ err: error, context: { locale } }, 'Failed to list registration agreements');
+      logger.error({ err: error, context: { locale } }, 'Failed to resolve registration agreement content');
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,

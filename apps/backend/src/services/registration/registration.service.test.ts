@@ -3,12 +3,15 @@ import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { createMockAgreementVersionRepository } from '../../test-support/repositories/agreement-version.repository';
+import { createMockAgreementService } from '../../test-support/services/agreement.service';
+import { createMockFamilyService } from '../../test-support/services/family.service';
 import { RegistrationService } from './registration.service';
 
 const CONSENT_ID = '00000000-0000-4000-8000-000000000001';
 const CONSENT_VERSION_ID = '00000000-0000-4000-8000-000000000002';
 const TOS_ID = '00000000-0000-4000-8000-000000000003';
 const TOS_VERSION_ID = '00000000-0000-4000-8000-000000000004';
+const UNKNOWN_VERSION_ID = '00000000-0000-4000-8000-000000000099';
 
 const validInput = {
   email: 'parent@example.com',
@@ -44,13 +47,15 @@ const registrationVersions = [
 ];
 
 describe('RegistrationService', () => {
-  const mockAgreementService = { getRegistrationAgreements: vi.fn() };
-  const mockFamilyService = { create: vi.fn() };
+  let mockAgreementService: ReturnType<typeof createMockAgreementService>;
+  let mockFamilyService: ReturnType<typeof createMockFamilyService>;
   let mockVersionRepository: ReturnType<typeof createMockAgreementVersionRepository>;
   let service: ReturnType<typeof RegistrationService>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAgreementService = createMockAgreementService();
+    mockFamilyService = createMockFamilyService();
     mockVersionRepository = createMockAgreementVersionRepository();
     mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue(registrationVersions);
     mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([CONSENT_ID, TOS_ID]);
@@ -79,23 +84,41 @@ describe('RegistrationService', () => {
       name: validInput.name,
       location: undefined,
       agreementVersionIds: validInput.agreementVersionIds,
+      optIns: validInput.optIns,
     });
     expect(mockVersionRepository.getRegistrationCandidatesByIds.mock.invocationCallOrder[0]).toBeLessThan(
       mockFamilyService.create.mock.invocationCallOrder[0]!,
     );
   });
 
-  it.each([
-    ['unknown version', registrationVersions.slice(0, 1), [CONSENT_ID, TOS_ID]],
-    ['missing required agreement', registrationVersions.slice(0, 1), [CONSENT_ID, TOS_ID]],
-    ['no configured agreements', registrationVersions, []],
-  ])('rejects an invalid agreement set: %s', async (_label, submitted, required) => {
-    mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue(submitted);
-    mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue(required);
+  it('rejects an unknown agreement version', async () => {
+    mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue(registrationVersions.slice(0, 1));
 
-    await expect(service.register(validInput)).rejects.toMatchObject({
+    await expect(
+      service.register({ ...validInput, agreementVersionIds: [CONSENT_VERSION_ID, UNKNOWN_VERSION_ID] }),
+    ).rejects.toMatchObject({
       statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
       code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+    });
+    expect(mockFamilyService.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a missing required agreement', async () => {
+    mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue(registrationVersions.slice(0, 1));
+
+    await expect(service.register({ ...validInput, agreementVersionIds: [CONSENT_VERSION_ID] })).rejects.toMatchObject({
+      statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+    });
+    expect(mockFamilyService.create).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 when no registration agreements are configured', async () => {
+    mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([]);
+
+    await expect(service.register(validInput)).rejects.toMatchObject({
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      code: ApiErrorCode.INTERNAL,
     });
     expect(mockFamilyService.create).not.toHaveBeenCalled();
   });
@@ -125,6 +148,36 @@ describe('RegistrationService', () => {
       service.register({ ...validInput, agreementVersionIds: [CONSENT_VERSION_ID, CONSENT_VERSION_ID] }),
     ).rejects.toMatchObject({ statusCode: StatusCodes.UNPROCESSABLE_ENTITY });
     expect(mockVersionRepository.getRegistrationCandidatesByIds).not.toHaveBeenCalled();
+    expect(mockFamilyService.create).not.toHaveBeenCalled();
+  });
+
+  it('accepts one requested locale with an en-US fallback version', async () => {
+    const localizedConsent = { ...registrationVersions[0]!, locale: 'es-MX' };
+    mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue([
+      localizedConsent,
+      registrationVersions[1]!,
+    ]);
+    mockVersionRepository.listCurrentForRegistration.mockResolvedValue([localizedConsent]);
+
+    await service.register(validInput);
+
+    expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenCalledWith('es-MX', [
+      AgreementType.CONSENT,
+      AgreementType.TOS,
+    ]);
+    expect(mockFamilyService.create).toHaveBeenCalledOnce();
+  });
+
+  it('rejects agreement versions from incompatible locales', async () => {
+    mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue([
+      { ...registrationVersions[0]!, locale: 'es-MX' },
+      { ...registrationVersions[1]!, locale: 'fr-FR' },
+    ]);
+
+    await expect(service.register(validInput)).rejects.toMatchObject({
+      statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+    });
     expect(mockFamilyService.create).not.toHaveBeenCalled();
   });
 

@@ -65,7 +65,6 @@ describe('AuthController', () => {
   });
 
   it.each([
-    StatusCodes.BAD_REQUEST,
     StatusCodes.CONFLICT,
     StatusCodes.UNPROCESSABLE_ENTITY,
     StatusCodes.TOO_MANY_REQUESTS,

@@ -11,6 +11,7 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import type { AgreementEmbedOptionType } from '../../enums/agreement-embed-option.enum';
+import { logger } from '../../logger';
 
 describe('AgreementService', () => {
   let mockRepository: ReturnType<typeof createMockAgreementRepository>;
@@ -81,10 +82,10 @@ describe('AgreementService', () => {
       ]);
     });
 
-    it('rejects a locale that does not contain every required registration agreement', async () => {
+    it('fills gaps in the requested locale with current en-US versions', async () => {
       const localizedAgreementId = '00000000-0000-4000-8000-000000000001';
-      const missingAgreementId = '00000000-0000-4000-8000-000000000003';
-      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([
+      const fallbackAgreementId = '00000000-0000-4000-8000-000000000003';
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValueOnce([
         {
           agreementId: localizedAgreementId,
           agreementVersionId: '00000000-0000-4000-8000-000000000002',
@@ -97,12 +98,46 @@ describe('AgreementService', () => {
           githubCommitSha: 'abc123',
         },
       ]);
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValueOnce([
+        {
+          agreementId: fallbackAgreementId,
+          agreementVersionId: '00000000-0000-4000-8000-000000000004',
+          agreementType: AgreementType.TOS,
+          name: 'Terms of service',
+          locale: 'en-US',
+          isCurrent: true,
+          githubFilename: 'tos.md',
+          githubOrgRepo: 'yeatmanlab/roar-legal',
+          githubCommitSha: 'def456',
+        },
+      ]);
       mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([
         localizedAgreementId,
-        missingAgreementId,
+        fallbackAgreementId,
       ]);
+      mockFetchContent.mockResolvedValueOnce('# Research consent').mockResolvedValueOnce('# Terms of service');
 
-      await expect(service.getRegistrationAgreements('es-MX')).rejects.toMatchObject({
+      const result = await service.getRegistrationAgreements('es-MX');
+
+      expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenNthCalledWith(1, 'es-MX', [
+        AgreementType.CONSENT,
+        AgreementType.TOS,
+      ]);
+      expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenNthCalledWith(2, 'en-US', [
+        AgreementType.CONSENT,
+        AgreementType.TOS,
+      ]);
+      expect(result).toEqual([
+        expect.objectContaining({ agreementId: localizedAgreementId, locale: 'es-MX' }),
+        expect.objectContaining({ agreementId: fallbackAgreementId, locale: 'en-US' }),
+      ]);
+    });
+
+    it('returns 500 when no registration agreements are configured', async () => {
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([]);
+      mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([]);
+
+      await expect(service.getRegistrationAgreements('en-US')).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.INTERNAL,
       });
@@ -114,7 +149,7 @@ describe('AgreementService', () => {
 
       await expect(service.getRegistrationAgreements('en-US')).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
     });
 
@@ -142,6 +177,10 @@ describe('AgreementService', () => {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
       });
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(ApiError), context: { locale: 'en-US' } }),
+        'Failed to resolve registration agreement content',
+      );
     });
   });
 

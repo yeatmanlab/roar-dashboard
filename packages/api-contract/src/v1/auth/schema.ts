@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CreateUserNameSchema } from '../common/user';
 import { AgreementTypeSchema, LocaleSchema } from '../agreements/schema';
-import { FamilyLocationSchema } from '../families/schema';
+import { FamilyLocationSchema, RegistrationOptInsSchema } from '../families/schema';
 
 export const RegistrationAgreementsQuerySchema = z.object({
   locale: LocaleSchema.default('en-US'),
@@ -41,11 +41,7 @@ export const RegistrationRequestSchema = z
           .strict(),
       )
       .min(1),
-    optIns: z
-      .object({
-        researchContact: z.boolean(),
-      })
-      .strict(),
+    optIns: RegistrationOptInsSchema,
   })
   .strict();
 
