@@ -9,6 +9,7 @@ import { AgreementFactory } from '../../test-support/factories/agreement.factory
 import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import type { AgreementEmbedOptionType } from '../../enums/agreement-embed-option.enum';
 import { logger } from '../../logger';
@@ -134,16 +135,21 @@ describe('AgreementService', () => {
       expect(mockFetchContent).not.toHaveBeenCalled();
     });
 
-    it('wraps unexpected content-resolution errors', async () => {
-      mockVersionRepository.listCurrentForRegistration.mockRejectedValue(new Error('database unavailable'));
+    it('logs and wraps repository failures as database errors', async () => {
+      const databaseError = new Error('database unavailable');
+      mockVersionRepository.listCurrentForRegistration.mockRejectedValue(databaseError);
 
       await expect(service.getRegistrationAgreements('en-US')).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
+      expect(logger.error).toHaveBeenCalledWith(
+        { err: databaseError, context: { locale: 'en-US' } },
+        'Failed to query registration agreements',
+      );
     });
 
-    it("maps missing external content to the endpoint's generic 500 response", async () => {
+    it('logs and wraps 500-coded external content errors', async () => {
       const agreementId = '00000000-0000-4000-8000-000000000001';
       mockVersionRepository.listCurrentForRegistration.mockResolvedValue([
         {
@@ -158,16 +164,19 @@ describe('AgreementService', () => {
           githubCommitSha: 'abc123',
         },
       ]);
-      mockFetchContent.mockRejectedValue(
-        new ApiError('Missing content', { statusCode: StatusCodes.NOT_FOUND, code: ApiErrorCode.RESOURCE_NOT_FOUND }),
-      );
+      const githubError = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+      mockFetchContent.mockRejectedValue(githubError);
 
       await expect(service.getRegistrationAgreements('en-US')).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        cause: githubError,
       });
       expect(logger.error).toHaveBeenCalledWith(
-        expect.objectContaining({ err: expect.any(ApiError), context: { locale: 'en-US' } }),
+        { err: githubError, context: { locale: 'en-US' } },
         'Failed to resolve registration agreement content',
       );
     });
