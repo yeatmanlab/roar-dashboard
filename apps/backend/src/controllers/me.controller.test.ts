@@ -41,7 +41,7 @@ describe('MeController', () => {
       const result = await MeController.get(authContext);
 
       expect(mockGetById).toHaveBeenCalledWith(authContext, authContext.userId);
-      expect(mockGetUnsignedTosAgreements).toHaveBeenCalledWith(authContext.userId);
+      expect(mockGetUnsignedTosAgreements).toHaveBeenCalledWith(mockUser, []);
       expect(mockGetFamilies).toHaveBeenCalledWith(authContext.userId);
       expect(result).toEqual({
         status: StatusCodes.OK,
@@ -169,6 +169,9 @@ describe('MeController', () => {
       const result = await MeController.get(authContext);
 
       expect(mockGetFamilies).toHaveBeenCalledWith(authContext.userId);
+      // The TOS requirement for caregivers depends on the family roles, so the
+      // controller must forward the fetched memberships — not a fresh [].
+      expect(mockGetUnsignedTosAgreements).toHaveBeenCalledWith(mockUser, families);
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toEqual({
         data: {
