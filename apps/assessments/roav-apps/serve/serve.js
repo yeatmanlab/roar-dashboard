@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
-import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID } from '@roar-platform/assessment-schema/roav-apps';
 import { TaskLauncher } from '../src';
@@ -80,11 +79,11 @@ onAuthStateChanged(auth, async (user) => {
         participant: { participantId },
       };
 
-      initFirekitCompat(ctx, {
+      const taskInfo = {
         variantId: resolvedVariantId,
         taskVersion,
         isAnonymous: true,
-      });
+      };
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between published
       // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
@@ -96,16 +95,6 @@ onAuthStateChanged(auth, async (user) => {
           currentVariantId: resolvedVariantId,
         });
       }
-
-      const { variantParams } = await getVariantById(resolvedVariantId);
-
-      // Game params come entirely from the seeded variant — the run is linked to its
-      // variantId, so what was presented must match what the variant declares.
-      // Load-bearing: every seeded roav-apps variant's params MUST include `taskName` —
-      // TaskLauncher (src/index.js) reads it off gameParams to route to
-      // taskConfig[camelize(taskName)]. getVariantById round-trips the seeded params verbatim,
-      // so a variant missing taskName would fail task resolution here.
-      const gameParams = { ...variantParams };
 
       // User/participant params come from the launch URL. The dev locale override is a
       // per-participant concern and is layered here; it wins over any variant `language`
@@ -120,7 +109,11 @@ onAuthStateChanged(auth, async (user) => {
         ...(languageOverride ? { language: languageOverride } : {}),
       };
 
-      const task = new TaskLauncher(gameParams, userParams);
+      // Game params come entirely from the seeded variant, which TaskLauncher resolves itself
+      // from `taskInfo.variantId` — so none are passed here. Load-bearing: every seeded variant's
+      // params MUST include `taskName`, which TaskLauncher reads off gameParams to route to
+      // taskConfig[camelize(taskName)]; a variant missing it fails task resolution.
+      const task = new TaskLauncher({}, userParams, undefined, { ctx, taskInfo });
       task.run();
     } catch (err) {
       console.error('[roav-apps] Failed to initialize assessment:', err);

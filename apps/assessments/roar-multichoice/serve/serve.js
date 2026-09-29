@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
-import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import {
   CVA_TASK_ID,
@@ -81,11 +80,11 @@ onAuthStateChanged(auth, async (user) => {
         participant: { participantId },
       };
 
-      initFirekitCompat(ctx, {
+      const taskInfo = {
         variantId: resolvedVariantId,
         taskVersion,
         isAnonymous: true,
-      });
+      };
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between published
       // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
@@ -97,8 +96,6 @@ onAuthStateChanged(auth, async (user) => {
           currentVariantId: resolvedVariantId,
         });
       }
-
-      const { variantParams } = await getVariantById(resolvedVariantId);
 
       const userParams = {
         assessmentPid,
@@ -112,7 +109,7 @@ onAuthStateChanged(auth, async (user) => {
 
       // task URL param is the fallback for standalone play without a stored variantId;
       // variantParams.task is authoritative when the variant carries it explicitly.
-      const roarApp = new RoarMultichoice({ task, ...variantParams }, userParams, null);
+      const roarApp = new RoarMultichoice({ task }, userParams, null, { ctx, taskInfo });
       roarApp.run();
     } catch (err) {
       console.error('Failed to initialize assessment:', err);

@@ -1,13 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
-import { initFirekitCompat, getVariantById } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { pa } from '@roar-platform/assessment-schema';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
 import { ROAR_DB_MODE, unresolvedDefaultVariantPolicy } from '../../shared/roarDbMode.js';
-import { wireScoreAdapter } from '../src/sdk/pa-firekit-facade';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
@@ -70,11 +68,11 @@ onAuthStateChanged(auth, async (user) => {
         participant: { participantId },
       };
 
-      initFirekitCompat(ctx, {
+      const taskInfo = {
         variantId: resolvedVariantId,
         taskVersion,
         isAnonymous: true,
-      });
+      };
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between published
       // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
@@ -87,11 +85,6 @@ onAuthStateChanged(auth, async (user) => {
         });
       }
 
-      // Wire PA score computation pipeline
-      wireScoreAdapter();
-
-      const { variantParams } = await getVariantById(resolvedVariantId);
-
       const userParams = {
         assessmentPid,
         labId,
@@ -102,7 +95,9 @@ onAuthStateChanged(auth, async (user) => {
         ageMonths,
       };
 
-      const roarApp = new RoarPA(variantParams, userParams);
+      // Game params come from the variant, which the assessment resolves through the SDK using
+      // the taskInfo below — so none are passed here.
+      const roarApp = new RoarPA({}, userParams, undefined, { ctx, taskInfo });
       roarApp.run();
     } catch (err) {
       console.error('Failed to initialize assessment:', err);
