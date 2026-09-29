@@ -149,7 +149,7 @@ export type RoarApiClient = ReturnType<typeof createApiClient>;
 /**
  * Creates a ts-rest client for command execution, enforcing that a participantId is present.
  *
- * @param ctx - CommandContext with baseUrl, auth callbacks, participant context, optional logger, and optional custom fetch
+ * @param ctx - CommandContext with baseUrl, auth callbacks, participant context, and optional logger
  * @returns Initialized ts-rest client for ApiContractV1
  */
 function createClient(ctx: CommandContext): RoarApiClient {
