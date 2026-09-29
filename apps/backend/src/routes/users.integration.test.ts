@@ -69,6 +69,10 @@ import { AdministrationAgreementFactory } from '../test-support/factories/admini
 import { UserAgreementFactory } from '../test-support/factories/user-agreement.factory';
 import { AgreementType } from '../enums/agreement-type.enum';
 import { UserRole } from '../enums/user-role.enum';
+import { UserType } from '../enums/user-type.enum';
+import { UserFamilyRole } from '../enums/user-family-role.enum';
+import { FamilyFactory } from '../test-support/factories/family.factory';
+import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 import { UserRepository } from '../repositories/user.repository';
 import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
 import { EntityType } from '../types/entity-type';
@@ -892,7 +896,10 @@ describe('POST /v1/users/:userId/agreements', () => {
 
     // Create test users
     adultUser = await UserFactory.create({ dob: '1990-01-01', grade: null });
-    minorUser = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+    // userType pinned: the TOS role override (#2244) exempts admin, educator,
+    // and caregiver-parent users from the age gate, so the rejection tests
+    // below must run against a student.
+    minorUser = await UserFactory.create({ dob: '2015-01-01', grade: '3', userType: UserType.STUDENT });
   });
 
   describe('self-consent - adult', () => {
@@ -947,6 +954,44 @@ describe('POST /v1/users/:userId/agreements', () => {
       const res = await expectRoute('POST', `/v1/users/${minorUser.id}/agreements`)
         .as({ id: minorUser.id, authId: minorUser.authId! })
         .withBody({ agreementVersionId: consentAgreementVersion.id })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('should allow a minor-classified educator to consent to TOS agreement (#2244)', async () => {
+      // The /me gate requires the TOS from educators regardless of age
+      // classification, so recording it must succeed for a mis-rostered
+      // educator carrying a student-like dob/grade.
+      const minorEducator = await UserFactory.create({ dob: '2015-01-01', grade: '3', userType: UserType.EDUCATOR });
+
+      const res = await expectRoute('POST', `/v1/users/${minorEducator.id}/agreements`)
+        .as({ id: minorEducator.id, authId: minorEducator.authId! })
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(res.body.data.id).toBeDefined();
+    });
+
+    it('should allow a minor-classified caregiver with a parent family role to consent to TOS agreement (#2244)', async () => {
+      const teenParent = await UserFactory.create({ dob: '2010-01-01', grade: null, userType: UserType.CAREGIVER });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: teenParent.id, familyId: family.id, role: UserFamilyRole.PARENT });
+
+      const res = await expectRoute('POST', `/v1/users/${teenParent.id}/agreements`)
+        .as({ id: teenParent.id, authId: teenParent.authId! })
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(res.body.data.id).toBeDefined();
+    });
+
+    it('should reject a minor-classified caregiver without a parent family role attempting to consent to TOS agreement', async () => {
+      const minorCaregiver = await UserFactory.create({ dob: '2010-01-01', grade: null, userType: UserType.CAREGIVER });
+
+      const res = await expectRoute('POST', `/v1/users/${minorCaregiver.id}/agreements`)
+        .as({ id: minorCaregiver.id, authId: minorCaregiver.authId! })
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
         .toReturn(StatusCodes.FORBIDDEN);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
