@@ -46,9 +46,15 @@ import {
 } from './utils/enrollment.utils';
 import { alias } from 'drizzle-orm/pg-core';
 
-const DYNAMIC_SORT_ALIAS = '_sort_expr';
+// Sort expressions are projected once under these aliases and ordered by alias;
+// re-emitting one with bind parameters fails "ORDER BY expressions must appear
+// in select list" under SELECT DISTINCT.
+// Leading underscore = query-internal, never mapped into a row type.
+/** Score sort in `getStudentScores`. */
+const SCORE_SORT_ALIAS = '_score_sort';
 
-const PROGRESS_STATUS_SORT_ALIAS = 'status_sort_order';
+/** Progress status CASE in `getProgressStudents`. */
+const PROGRESS_STATUS_SORT_ALIAS = '_progress_status_sort';
 
 /**
  * Scope parameters for report queries.
@@ -850,8 +856,6 @@ export class ReportRepository {
       homeLanguage: users.homeLanguage,
     };
 
-    // SELECT DISTINCT requires what you sort by to also be selected, and Postgres checks
-    // that before filling in values. Compares only parameter placeholders.
     const selectFields = statusSortExpr
       ? { ...baseSelectFields, [PROGRESS_STATUS_SORT_ALIAS]: statusSortExpr.as(PROGRESS_STATUS_SORT_ALIAS) }
       : baseSelectFields;
@@ -2335,12 +2339,10 @@ export class ReportRepository {
       schoolName: schoolNameSql,
     };
 
-    // SELECT DISTINCT requires what you sort by to also be selected, and Postgres checks
-    // that before filling in values. Compares only parameter placeholders.
     const selectFields = dynamicSortExpr
-      ? { ...baseSelect, [DYNAMIC_SORT_ALIAS]: dynamicSortExpr.as(DYNAMIC_SORT_ALIAS) }
+      ? { ...baseSelect, [SCORE_SORT_ALIAS]: dynamicSortExpr.as(SCORE_SORT_ALIAS) }
       : baseSelect;
-    const primarySort = dynamicSortExpr ? sql.identifier(DYNAMIC_SORT_ALIAS) : (options.sortColumn ?? users.nameLast);
+    const primarySort = dynamicSortExpr ? sql.identifier(SCORE_SORT_ALIAS) : (options.sortColumn ?? users.nameLast);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle dynamic chain
     let dataQuery: any = this.db
