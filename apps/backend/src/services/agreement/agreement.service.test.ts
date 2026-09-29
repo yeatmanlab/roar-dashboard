@@ -56,16 +56,11 @@ describe('AgreementService', () => {
           githubCommitSha: 'abc123',
         },
       ]);
-      mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([agreementId]);
       mockFetchContent.mockResolvedValue('# Research consent');
 
       const result = await service.getRegistrationAgreements('en-US');
 
       expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenCalledWith('en-US', [
-        AgreementType.CONSENT,
-        AgreementType.TOS,
-      ]);
-      expect(mockVersionRepository.listRequiredRegistrationAgreementIds).toHaveBeenCalledWith([
         AgreementType.CONSENT,
         AgreementType.TOS,
       ]);
@@ -111,10 +106,6 @@ describe('AgreementService', () => {
           githubCommitSha: 'def456',
         },
       ]);
-      mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([
-        localizedAgreementId,
-        fallbackAgreementId,
-      ]);
       mockFetchContent.mockResolvedValueOnce('# Research consent').mockResolvedValueOnce('# Terms of service');
 
       const result = await service.getRegistrationAgreements('es-MX');
@@ -135,7 +126,6 @@ describe('AgreementService', () => {
 
     it('returns 500 when no registration agreements are configured', async () => {
       mockVersionRepository.listCurrentForRegistration.mockResolvedValue([]);
-      mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([]);
 
       await expect(service.getRegistrationAgreements('en-US')).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -168,7 +158,6 @@ describe('AgreementService', () => {
           githubCommitSha: 'abc123',
         },
       ]);
-      mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([agreementId]);
       mockFetchContent.mockRejectedValue(
         new ApiError('Missing content', { statusCode: StatusCodes.NOT_FOUND, code: ApiErrorCode.RESOURCE_NOT_FOUND }),
       );

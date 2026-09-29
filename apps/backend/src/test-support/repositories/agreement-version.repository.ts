@@ -13,7 +13,6 @@ export function createMockAgreementVersionRepository(): MockedObject<AgreementVe
     ...createMockBaseRepositoryMethods(),
     getRegistrationCandidatesByIds: vi.fn(),
     listCurrentForRegistration: vi.fn(),
-    listRequiredRegistrationAgreementIds: vi.fn(),
   } as MockedObject<AgreementVersionRepository>;
 }
 

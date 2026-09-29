@@ -83,17 +83,4 @@ export class AgreementVersionRepository extends BaseRepository<AgreementVersion,
       .innerJoin(agreements, eq(agreementVersions.agreementId, agreements.id))
       .where(inArray(agreementVersions.id, versionIds));
   }
-
-  /** Returns every agreement that has a current adult-signable version. */
-  async listRequiredRegistrationAgreementIds(agreementTypes: readonly AgreementType[]): Promise<string[]> {
-    if (agreementTypes.length === 0) return [];
-
-    const rows = await this.db
-      .selectDistinct({ agreementId: agreements.id })
-      .from(agreementVersions)
-      .innerJoin(agreements, eq(agreementVersions.agreementId, agreements.id))
-      .where(and(eq(agreementVersions.isCurrent, true), inArray(agreements.agreementType, agreementTypes)));
-
-    return rows.map(({ agreementId }) => agreementId);
-  }
 }

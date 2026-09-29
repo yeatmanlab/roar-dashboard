@@ -58,7 +58,9 @@ describe('RegistrationService', () => {
     mockFamilyService = createMockFamilyService();
     mockVersionRepository = createMockAgreementVersionRepository();
     mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue(registrationVersions);
-    mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([CONSENT_ID, TOS_ID]);
+    mockVersionRepository.listCurrentForRegistration.mockImplementation(async (locale) =>
+      locale === 'en-US' ? registrationVersions : [],
+    );
     mockFamilyService.create.mockResolvedValue({ id: '00000000-0000-4000-8000-000000000005' });
     service = RegistrationService({
       agreementService: mockAgreementService,
@@ -114,7 +116,7 @@ describe('RegistrationService', () => {
   });
 
   it('returns 500 when no registration agreements are configured', async () => {
-    mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([]);
+    mockVersionRepository.listCurrentForRegistration.mockResolvedValue([]);
 
     await expect(service.register(validInput)).rejects.toMatchObject({
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -157,11 +159,17 @@ describe('RegistrationService', () => {
       localizedConsent,
       registrationVersions[1]!,
     ]);
-    mockVersionRepository.listCurrentForRegistration.mockResolvedValue([localizedConsent]);
+    mockVersionRepository.listCurrentForRegistration.mockImplementation(async (locale) =>
+      locale === 'es-MX' ? [localizedConsent] : registrationVersions,
+    );
 
     await service.register(validInput);
 
-    expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenCalledWith('es-MX', [
+    expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenNthCalledWith(1, 'es-MX', [
+      AgreementType.CONSENT,
+      AgreementType.TOS,
+    ]);
+    expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenNthCalledWith(2, 'en-US', [
       AgreementType.CONSENT,
       AgreementType.TOS,
     ]);

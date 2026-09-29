@@ -75,6 +75,7 @@ async function getRequiredAgreementVersionIds(): Promise<string[]> {
     .where(
       and(
         eq(agreementVersions.isCurrent, true),
+        eq(agreementVersions.locale, 'en-US'),
         inArray(agreements.agreementType, [AgreementType.CONSENT, AgreementType.TOS]),
       ),
     );
@@ -149,6 +150,25 @@ describe('GET /v1/auth/registration/agreements', () => {
       expect.objectContaining({ agreementId: consent.id, locale: 'es-MX' }),
     );
     expect(response.body.data.items).toContainEqual(expect.objectContaining({ locale: 'en-US' }));
+  });
+
+  it('does not make an agreement required outside its available locale or en-US fallback', async () => {
+    const spanishOnlyAgreement = await AgreementFactory.create({
+      name: 'Spanish-only registration consent',
+      agreementType: AgreementType.CONSENT,
+    });
+    await AgreementVersionFactory.create(
+      { isCurrent: true, locale: 'es-MX' },
+      { transient: { agreementId: spanishOnlyAgreement.id } },
+    );
+
+    const response = await expectRoute('GET', '/v1/auth/registration/agreements?locale=en-US')
+      .unauthenticated()
+      .toReturn(200);
+
+    expect(response.body.data.items).not.toContainEqual(
+      expect.objectContaining({ agreementId: spanishOnlyAgreement.id }),
+    );
   });
 
   it('returns 400 for an invalid locale', async () => {

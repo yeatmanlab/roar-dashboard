@@ -58,6 +58,19 @@ export interface RegistrationAgreementResult {
   content: string;
 }
 
+/** Prefer requested-locale versions and fill per-agreement gaps from the fallback locale. */
+export function selectRegistrationAgreementVersions(
+  localizedVersions: RegistrationAgreementVersion[],
+  fallbackVersions: RegistrationAgreementVersion[],
+): RegistrationAgreementVersion[] {
+  const versionsByAgreementId = new Map(fallbackVersions.map((version) => [version.agreementId, version]));
+  for (const version of localizedVersions) versionsByAgreementId.set(version.agreementId, version);
+
+  return [...versionsByAgreementId.values()].sort(
+    (left, right) => left.name.localeCompare(right.name) || left.agreementId.localeCompare(right.agreementId),
+  );
+}
+
 /** Base URL for fetching raw content from GitHub */
 const GITHUB_USER_CONTENT_BASE_URL = 'https://raw.githubusercontent.com';
 
@@ -140,10 +153,9 @@ export function AgreementService({
   async function getRegistrationAgreements(locale: string): Promise<RegistrationAgreementResult[]> {
     let localizedVersions: RegistrationAgreementVersion[];
     let fallbackVersions: RegistrationAgreementVersion[];
-    let requiredAgreementIds: string[];
 
     try {
-      [localizedVersions, fallbackVersions, requiredAgreementIds] = await Promise.all([
+      [localizedVersions, fallbackVersions] = await Promise.all([
         agreementVersionRepository.listCurrentForRegistration(locale, REGISTRATION_AGREEMENT_TYPES),
         locale === DEFAULT_REGISTRATION_LOCALE
           ? Promise.resolve([])
@@ -151,7 +163,6 @@ export function AgreementService({
               DEFAULT_REGISTRATION_LOCALE,
               REGISTRATION_AGREEMENT_TYPES,
             ),
-        agreementVersionRepository.listRequiredRegistrationAgreementIds(REGISTRATION_AGREEMENT_TYPES),
       ]);
     } catch (error) {
       logger.error({ err: error, context: { locale } }, 'Failed to query registration agreements');
@@ -163,7 +174,8 @@ export function AgreementService({
       });
     }
 
-    if (requiredAgreementIds.length === 0) {
+    const versions = selectRegistrationAgreementVersions(localizedVersions, fallbackVersions);
+    if (versions.length === 0) {
       logger.error({ context: { locale } }, 'No registration agreements are configured');
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -171,27 +183,6 @@ export function AgreementService({
         context: { locale },
       });
     }
-
-    const versionsByAgreementId = new Map(fallbackVersions.map((version) => [version.agreementId, version]));
-    for (const version of localizedVersions) versionsByAgreementId.set(version.agreementId, version);
-
-    const missingAgreementIds = requiredAgreementIds.filter((agreementId) => !versionsByAgreementId.has(agreementId));
-    if (missingAgreementIds.length > 0) {
-      logger.error(
-        { context: { locale, fallbackLocale: DEFAULT_REGISTRATION_LOCALE, missingAgreementIds } },
-        'Registration agreements are missing current localized and fallback versions',
-      );
-      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.INTERNAL,
-        context: { locale, missingAgreementIds },
-      });
-    }
-
-    const requiredAgreementIdSet = new Set(requiredAgreementIds);
-    const versions = [...versionsByAgreementId.values()]
-      .filter(({ agreementId }) => requiredAgreementIdSet.has(agreementId))
-      .sort((left, right) => left.name.localeCompare(right.name) || left.agreementId.localeCompare(right.agreementId));
 
     try {
       return await Promise.all(

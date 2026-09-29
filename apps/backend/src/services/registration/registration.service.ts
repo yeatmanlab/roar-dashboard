@@ -4,7 +4,12 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
 import { logger } from '../../logger';
-import { AgreementService, REGISTRATION_AGREEMENT_TYPES } from '../agreement/agreement.service';
+import {
+  AgreementService,
+  REGISTRATION_AGREEMENT_TYPES,
+  selectRegistrationAgreementVersions,
+} from '../agreement/agreement.service';
+import type { RegistrationAgreementVersion } from '../../repositories/agreement-version.repository';
 import { FamilyService } from '../family/family.service';
 import type { CreateFamilyServiceInput } from '../family/family.service';
 
@@ -52,18 +57,7 @@ export function RegistrationService({
         throwInvalidAgreementSet({ reason: 'duplicate agreement version' });
       }
 
-      const [submittedVersions, requiredAgreementIds] = await Promise.all([
-        agreementVersionRepository.getRegistrationCandidatesByIds(agreementVersionIds),
-        agreementVersionRepository.listRequiredRegistrationAgreementIds(REGISTRATION_AGREEMENT_TYPES),
-      ]);
-
-      if (requiredAgreementIds.length === 0) {
-        logger.error('No registration agreements are configured');
-        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
-          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-          code: ApiErrorCode.INTERNAL,
-        });
-      }
+      const submittedVersions = await agreementVersionRepository.getRegistrationCandidatesByIds(agreementVersionIds);
 
       if (submittedVersions.length !== agreementVersionIds.length) {
         throwInvalidAgreementSet({
@@ -73,14 +67,12 @@ export function RegistrationService({
         });
       }
 
-      const requiredSet = new Set(requiredAgreementIds);
       const submittedAgreementIds = new Set<string>();
 
       for (const version of submittedVersions) {
         if (
           !version.isCurrent ||
           !REGISTRATION_AGREEMENT_TYPES.some((agreementType) => agreementType === version.agreementType) ||
-          !requiredSet.has(version.agreementId) ||
           submittedAgreementIds.has(version.agreementId)
         ) {
           throwInvalidAgreementSet({
@@ -91,11 +83,27 @@ export function RegistrationService({
         submittedAgreementIds.add(version.agreementId);
       }
 
-      if (requiredAgreementIds.some((agreementId) => !submittedAgreementIds.has(agreementId))) {
-        throwInvalidAgreementSet({ reason: 'required agreement missing' });
+      const expectedVersions = await getExpectedRegistrationVersions(submittedVersions);
+      if (expectedVersions.length === 0) {
+        logger.error('No registration agreements are configured');
+        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.INTERNAL,
+        });
       }
 
-      await validateLocaleSelection(submittedVersions);
+      const submittedByAgreementId = new Map(
+        submittedVersions.map((version) => [version.agreementId, version.agreementVersionId]),
+      );
+      const matchesExpectedSelection =
+        submittedVersions.length === expectedVersions.length &&
+        expectedVersions.every(
+          (version) => submittedByAgreementId.get(version.agreementId) === version.agreementVersionId,
+        );
+
+      if (!matchesExpectedSelection) {
+        throwInvalidAgreementSet({ reason: 'submitted versions do not match a localized registration set' });
+      }
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -119,36 +127,28 @@ export function RegistrationService({
     });
   }
 
-  async function validateLocaleSelection(
-    submittedVersions: Awaited<ReturnType<AgreementVersionRepository['getRegistrationCandidatesByIds']>>,
-  ): Promise<void> {
-    const submittedLocales = new Set(submittedVersions.map(({ locale }) => locale));
-    if (submittedLocales.size <= 1) return;
-
-    const nonDefaultLocales = [...submittedLocales].filter((locale) => locale !== DEFAULT_REGISTRATION_LOCALE);
-    if (nonDefaultLocales.length !== 1 || !submittedLocales.has(DEFAULT_REGISTRATION_LOCALE)) {
+  async function getExpectedRegistrationVersions(
+    submittedVersions: RegistrationAgreementVersion[],
+  ): Promise<RegistrationAgreementVersion[]> {
+    const nonDefaultLocales = new Set(
+      submittedVersions.map(({ locale }) => locale).filter((locale) => locale !== DEFAULT_REGISTRATION_LOCALE),
+    );
+    if (nonDefaultLocales.size > 1) {
       throwInvalidAgreementSet({ reason: 'agreement versions use incompatible locales' });
     }
 
-    const requestedLocale = nonDefaultLocales[0]!;
-    const localizedVersions = await agreementVersionRepository.listCurrentForRegistration(
-      requestedLocale,
-      REGISTRATION_AGREEMENT_TYPES,
-    );
-    const localizedByAgreementId = new Map(
-      localizedVersions.map((version) => [version.agreementId, version.agreementVersionId]),
-    );
+    const requestedLocale = [...nonDefaultLocales][0] ?? DEFAULT_REGISTRATION_LOCALE;
+    const [localizedVersions, fallbackVersions] = await Promise.all([
+      agreementVersionRepository.listCurrentForRegistration(requestedLocale, REGISTRATION_AGREEMENT_TYPES),
+      requestedLocale === DEFAULT_REGISTRATION_LOCALE
+        ? Promise.resolve([])
+        : agreementVersionRepository.listCurrentForRegistration(
+            DEFAULT_REGISTRATION_LOCALE,
+            REGISTRATION_AGREEMENT_TYPES,
+          ),
+    ]);
 
-    const matchesLocalizedSelection = submittedVersions.every((version) => {
-      const localizedVersionId = localizedByAgreementId.get(version.agreementId);
-      return localizedVersionId
-        ? version.agreementVersionId === localizedVersionId
-        : version.locale === DEFAULT_REGISTRATION_LOCALE;
-    });
-
-    if (!matchesLocalizedSelection) {
-      throwInvalidAgreementSet({ reason: 'agreement versions do not match one localized registration set' });
-    }
+    return selectRegistrationAgreementVersions(localizedVersions, fallbackVersions);
   }
 
   function throwInvalidAgreementSet(context: Record<string, unknown>): never {
