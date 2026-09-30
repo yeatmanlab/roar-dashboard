@@ -94,13 +94,12 @@ describe('RegistrationService', () => {
   });
 
   it('rejects an unknown agreement version', async () => {
-    mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue(registrationVersions.slice(0, 1));
+    mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue([]);
 
-    await expect(
-      service.register({ ...validInput, agreementVersionIds: [CONSENT_VERSION_ID, UNKNOWN_VERSION_ID] }),
-    ).rejects.toMatchObject({
+    await expect(service.register({ ...validInput, agreementVersionIds: [UNKNOWN_VERSION_ID] })).rejects.toMatchObject({
       statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
       code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      context: { reason: 'unknown submitted agreement version', submittedCount: 1, resolvedCount: 0 },
     });
     expect(mockFamilyService.create).not.toHaveBeenCalled();
   });
@@ -111,6 +110,7 @@ describe('RegistrationService', () => {
     await expect(service.register({ ...validInput, agreementVersionIds: [CONSENT_VERSION_ID] })).rejects.toMatchObject({
       statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
       code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      context: { reason: 'submitted versions do not match a localized registration set' },
     });
     expect(mockFamilyService.create).not.toHaveBeenCalled();
   });
