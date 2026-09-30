@@ -12,6 +12,12 @@ import { healthRouter } from './health/health-routes';
 
 const app = express();
 
+// Production has exactly one ingress hop (the Cloud Run / NGINX TLS-terminating
+// proxy) between the public client and Express. This makes req.ip use that
+// proxy's sanitized X-Forwarded-For client address without trusting arbitrary
+// values farther to the left.
+app.set('trust proxy', 1);
+
 // requestLogger is registered first so every request is logged — including CORS preflight
 // (OPTIONS), which corsMiddleware short-circuits with a 204 before later middleware run.
 app.use(requestLogger);

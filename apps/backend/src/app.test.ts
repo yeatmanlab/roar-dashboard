@@ -45,6 +45,10 @@ describe('app middleware wiring', () => {
     expect(res.headers['cross-origin-embedder-policy']).toBeUndefined();
   });
 
+  it('trusts exactly one ingress proxy hop', () => {
+    expect(app.get('trust proxy')).toBe(1);
+  });
+
   it('returns CORS headers for an allowed origin', async () => {
     const res = await request(app).get('/no-such-route').set('Origin', ALLOWED_ORIGIN);
 

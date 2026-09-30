@@ -19,8 +19,9 @@ const DEFAULT_MAX_TRACKED_IPS = 10_000;
 
 /**
  * Creates a fixed-window per-IP limiter for small public endpoint surfaces.
- * State is process-local and memory-bounded; deployments with many replicas should
- * replace this with a shared store if globally consistent limits become necessary.
+ * State is process-local and memory-bounded, so the effective aggregate ceiling
+ * scales with the number of active replicas. Replace this with a shared store
+ * before treating it as a platform-wide security boundary.
  */
 export function createIpRateLimitMiddleware({
   windowMs,
@@ -36,31 +37,52 @@ export function createIpRateLimitMiddleware({
     let entry = entries.get(ip);
 
     if (!entry || entry.resetAt <= currentTime) {
-      if (!entry && entries.size >= maxTrackedIps) {
-        const oldestIp = entries.keys().next().value;
-        if (oldestIp !== undefined) entries.delete(oldestIp);
+      // Reclaim expired windows before considering the map full. Active entries
+      // are never evicted: otherwise rotating source IPs could reset a limited
+      // client's counter by forcing its entry out of the map.
+      for (const [trackedIp, trackedEntry] of entries) {
+        if (trackedEntry.resetAt <= currentTime) entries.delete(trackedIp);
       }
-      entry = { count: 0, resetAt: currentTime + windowMs };
-      entries.set(ip, entry);
+      entry = entries.get(ip);
+
+      if (!entry && entries.size >= maxTrackedIps) {
+        const earliestResetAt = Math.min(...[...entries.values()].map(({ resetAt }) => resetAt));
+        setRateLimitHeaders(res, maxRequests, 0, earliestResetAt);
+        sendRateLimitedResponse(res, earliestResetAt, currentTime);
+        return;
+      }
+
+      if (!entry) {
+        entry = { count: 0, resetAt: currentTime + windowMs };
+        entries.set(ip, entry);
+      }
     }
 
     const remaining = Math.max(0, maxRequests - entry.count - 1);
-    res.set('RateLimit-Limit', String(maxRequests));
-    res.set('RateLimit-Remaining', String(remaining));
-    res.set('RateLimit-Reset', String(Math.ceil(entry.resetAt / 1000)));
+    setRateLimitHeaders(res, maxRequests, remaining, entry.resetAt);
 
     if (entry.count >= maxRequests) {
-      res.set('Retry-After', String(Math.max(1, Math.ceil((entry.resetAt - currentTime) / 1000))));
-      res.status(StatusCodes.TOO_MANY_REQUESTS).json({
-        error: {
-          message: ApiErrorMessage.RATE_LIMITED,
-          code: ApiErrorCode.RATE_LIMITED,
-        },
-      });
+      sendRateLimitedResponse(res, entry.resetAt, currentTime);
       return;
     }
 
     entry.count += 1;
     next();
   };
+}
+
+function setRateLimitHeaders(res: Response, limit: number, remaining: number, resetAt: number): void {
+  res.set('RateLimit-Limit', String(limit));
+  res.set('RateLimit-Remaining', String(remaining));
+  res.set('RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
+}
+
+function sendRateLimitedResponse(res: Response, resetAt: number, currentTime: number): void {
+  res.set('Retry-After', String(Math.max(1, Math.ceil((resetAt - currentTime) / 1000))));
+  res.status(StatusCodes.TOO_MANY_REQUESTS).json({
+    error: {
+      message: ApiErrorMessage.RATE_LIMITED,
+      code: ApiErrorCode.RATE_LIMITED,
+    },
+  });
 }
