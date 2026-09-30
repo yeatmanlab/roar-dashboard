@@ -151,6 +151,69 @@ describe('AgreementService', () => {
       }
     });
 
+    it('does not evict an in-flight GitHub fetch when the cache reaches capacity', async () => {
+      const inFlightVersion = {
+        agreementId: '00000000-0000-4000-8000-000000000014',
+        agreementVersionId: '00000000-0000-4000-8000-000000000015',
+        agreementType: AgreementType.CONSENT,
+        name: 'In-flight research consent',
+        locale: 'en-US',
+        isCurrent: true,
+        githubFilename: 'in-flight-consent.md',
+        githubOrgRepo: 'yeatmanlab/roar-legal',
+        githubCommitSha: 'cache-in-flight-test-sha',
+      };
+      let currentVersion = inFlightVersion;
+      mockVersionRepository.listCurrentForRegistration.mockImplementation(async () => [currentVersion]);
+
+      let releaseInFlightFetch!: () => void;
+      const inFlightGate = new Promise<void>((resolve) => {
+        releaseInFlightFetch = resolve;
+      });
+      let markInFlightFetchStarted!: () => void;
+      const inFlightFetchStarted = new Promise<void>((resolve) => {
+        markInFlightFetchStarted = resolve;
+      });
+      const inFlightUrl =
+        'https://raw.githubusercontent.com/yeatmanlab/roar-legal/cache-in-flight-test-sha/in-flight-consent.md';
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        if (input === inFlightUrl) {
+          markInFlightFetchStarted();
+          await inFlightGate;
+        }
+        return new Response('# Agreement content', { status: StatusCodes.OK });
+      });
+      const cachedService = AgreementService({
+        agreementRepository: mockRepository,
+        agreementVersionRepository: mockVersionRepository,
+      });
+
+      try {
+        const firstRequest = cachedService.getRegistrationAgreements('en-US');
+        await inFlightFetchStarted;
+
+        for (let index = 0; index < 256; index += 1) {
+          currentVersion = {
+            ...inFlightVersion,
+            agreementId: `00000000-0000-4000-8001-${index.toString().padStart(12, '0')}`,
+            agreementVersionId: `00000000-0000-4000-8002-${index.toString().padStart(12, '0')}`,
+            githubCommitSha: `cache-fill-${index}`,
+          };
+          await cachedService.getRegistrationAgreements('en-US');
+        }
+
+        currentVersion = inFlightVersion;
+        const coalescedRequest = cachedService.getRegistrationAgreements('en-US');
+        expect(fetchSpy.mock.calls.filter(([url]) => url === inFlightUrl)).toHaveLength(1);
+
+        releaseInFlightFetch();
+        await expect(Promise.all([firstRequest, coalescedRequest])).resolves.toHaveLength(2);
+      } finally {
+        releaseInFlightFetch();
+        fetchSpy.mockRestore();
+      }
+    });
+
     it('fills gaps in the requested locale with current en-US versions', async () => {
       const localizedAgreementId = '00000000-0000-4000-8000-000000000001';
       const fallbackAgreementId = '00000000-0000-4000-8000-000000000003';

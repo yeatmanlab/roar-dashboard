@@ -72,7 +72,21 @@ const GITHUB_CONTENT_CACHE_MAX_ENTRIES = 256;
  * A process-wide cache is safe because every URL includes an immutable commit
  * SHA. The entry cap bounds memory even as new agreement versions are added.
  */
-const githubContentCache = new Map<string, Promise<string>>();
+interface GithubContentCacheEntry {
+  promise: Promise<string>;
+  settled: boolean;
+}
+
+const githubContentCache = new Map<string, GithubContentCacheEntry>();
+
+/** Evict oldest settled entries while preserving request coalescing for in-flight fetches. */
+function trimGithubContentCache(maxEntries: number): void {
+  while (githubContentCache.size > maxEntries) {
+    const settledEntry = [...githubContentCache].find(([, entry]) => entry.settled);
+    if (!settledEntry) return;
+    githubContentCache.delete(settledEntry[0]);
+  }
+}
 
 /**
  * Fetches raw file content from GitHub using the raw.githubusercontent.com URL.
@@ -86,7 +100,7 @@ const githubContentCache = new Map<string, Promise<string>>();
 async function fetchGithubContent(orgRepo: string, commitSha: string, filename: string): Promise<string> {
   const url = `${GITHUB_USER_CONTENT_BASE_URL}/${orgRepo}/${commitSha}/${filename}`;
   const cachedContent = githubContentCache.get(url);
-  if (cachedContent) return cachedContent;
+  if (cachedContent) return cachedContent.promise;
 
   const contentPromise = (async () => {
     const response = await fetch(url, {
@@ -113,16 +127,17 @@ async function fetchGithubContent(orgRepo: string, commitSha: string, filename: 
     return content;
   })();
 
-  if (githubContentCache.size >= GITHUB_CONTENT_CACHE_MAX_ENTRIES) {
-    const oldestUrl = githubContentCache.keys().next().value;
-    if (oldestUrl) githubContentCache.delete(oldestUrl);
-  }
-  githubContentCache.set(url, contentPromise);
+  trimGithubContentCache(GITHUB_CONTENT_CACHE_MAX_ENTRIES - 1);
+  const cacheEntry = { promise: contentPromise, settled: false };
+  githubContentCache.set(url, cacheEntry);
 
   try {
-    return await contentPromise;
+    const content = await contentPromise;
+    cacheEntry.settled = true;
+    trimGithubContentCache(GITHUB_CONTENT_CACHE_MAX_ENTRIES);
+    return content;
   } catch (error) {
-    if (githubContentCache.get(url) === contentPromise) githubContentCache.delete(url);
+    if (githubContentCache.get(url) === cacheEntry) githubContentCache.delete(url);
     throw error;
   }
 }
