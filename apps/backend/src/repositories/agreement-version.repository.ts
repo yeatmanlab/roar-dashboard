@@ -2,9 +2,22 @@ import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { AgreementType } from '../enums/agreement-type.enum';
 import type * as CoreDbSchema from '../db/schema/core';
+import type { AgreementVersion } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
-import { agreements, agreementVersions, type AgreementVersion } from '../db/schema';
+import { agreements, agreementVersions } from '../db/schema';
 import { BaseRepository } from './base.repository';
+
+const registrationAgreementVersionSelection = {
+  agreementId: agreements.id,
+  agreementVersionId: agreementVersions.id,
+  agreementType: agreements.agreementType,
+  name: agreements.name,
+  locale: agreementVersions.locale,
+  isCurrent: agreementVersions.isCurrent,
+  githubFilename: agreementVersions.githubFilename,
+  githubOrgRepo: agreementVersions.githubOrgRepo,
+  githubCommitSha: agreementVersions.githubCommitSha,
+};
 
 export interface RegistrationAgreementVersion {
   agreementId: string;
@@ -40,17 +53,7 @@ export class AgreementVersionRepository extends BaseRepository<AgreementVersion,
     if (agreementTypes.length === 0) return [];
 
     return this.db
-      .select({
-        agreementId: agreements.id,
-        agreementVersionId: agreementVersions.id,
-        agreementType: agreements.agreementType,
-        name: agreements.name,
-        locale: agreementVersions.locale,
-        isCurrent: agreementVersions.isCurrent,
-        githubFilename: agreementVersions.githubFilename,
-        githubOrgRepo: agreementVersions.githubOrgRepo,
-        githubCommitSha: agreementVersions.githubCommitSha,
-      })
+      .select(registrationAgreementVersionSelection)
       .from(agreementVersions)
       .innerJoin(agreements, eq(agreementVersions.agreementId, agreements.id))
       .where(
@@ -68,17 +71,7 @@ export class AgreementVersionRepository extends BaseRepository<AgreementVersion,
     if (versionIds.length === 0) return [];
 
     return this.db
-      .select({
-        agreementId: agreements.id,
-        agreementVersionId: agreementVersions.id,
-        agreementType: agreements.agreementType,
-        name: agreements.name,
-        locale: agreementVersions.locale,
-        isCurrent: agreementVersions.isCurrent,
-        githubFilename: agreementVersions.githubFilename,
-        githubOrgRepo: agreementVersions.githubOrgRepo,
-        githubCommitSha: agreementVersions.githubCommitSha,
-      })
+      .select(registrationAgreementVersionSelection)
       .from(agreementVersions)
       .innerJoin(agreements, eq(agreementVersions.agreementId, agreements.id))
       .where(inArray(agreementVersions.id, versionIds));
