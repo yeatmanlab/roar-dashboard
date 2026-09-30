@@ -129,7 +129,7 @@ describe('GET /v1/auth/registration/agreements', () => {
       content: '# Registration agreement',
     });
     expect(response.body.data.items).not.toContainEqual(expect.objectContaining({ agreementId: assent.id }));
-    expect(response.headers['cache-control']).toBe('public, max-age=86400, immutable');
+    expect(response.headers['cache-control']).toBe('public, no-cache');
   });
 
   it('falls back to en-US per agreement when the requested locale is incomplete', async () => {
@@ -172,7 +172,11 @@ describe('GET /v1/auth/registration/agreements', () => {
   });
 
   it('returns 400 for an invalid locale', async () => {
-    await expectRoute('GET', '/v1/auth/registration/agreements?locale=invalid').unauthenticated().toReturn(400);
+    const response = await expectRoute('GET', '/v1/auth/registration/agreements?locale=invalid')
+      .unauthenticated()
+      .toReturn(400);
+
+    expect(response.headers['cache-control']).toBeUndefined();
   });
 });
 
