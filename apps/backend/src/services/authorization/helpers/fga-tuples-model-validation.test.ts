@@ -30,7 +30,7 @@ import { UserFamilyRole } from '../../../enums/user-family-role.enum';
  * Returns a Set of strings in the format "objectType:relation" (e.g., "district:teacher").
  */
 function extractWritableTuplePairsFromModel(): Set<string> {
-  const testsDir = resolve(__dirname, '../../../../../../packages/authz/tests');
+  const testsDir = resolve(__dirname, '../../../../../../packages/authz');
   const pairs = new Set<string>();
 
   const files = readdirSync(testsDir).filter((f) => f.endsWith('.fga.yaml'));

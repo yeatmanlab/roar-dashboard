@@ -35,24 +35,15 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-
-          # Optional: Customize the trigger phrase (default: @claude)
-          # trigger_phrase: "/claude"
-
-          # Optional: Trigger when specific user is assigned to an issue
-          # assignee_trigger: "claude-bot"
-
-          # Optional: Configure Claude's behavior with CLI arguments
-          # claude_args: |
-          #   --model claude-opus-4-1-20250805
-          #   --max-turns 10
-          #   --allowedTools "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*)"
-          #   --system-prompt "Follow our coding standards. Ensure all new code has tests. Use TypeScript for new files."
-
-          # Optional: Advanced settings configuration
-          # settings: |
-          #   {
-          #     "env": {
-          #       "NODE_ENV": "test"
-          #     }
-          #   }
+          # Tag-mode defaults omit Task/Skill/gh, so "@claude /review-pr"
+          # could never expand the command, spawn the reviewer subagents, or
+          # read the PR diff. The inline-comment MCP server is only installed
+          # when its tool is named here; without it, inline review comments
+          # are impossible.
+          # --append-system-prompt: subagents default to running in the
+          # background, and headless runs exit at turn end — killing them
+          # before they report.
+          claude_args: >-
+            --max-turns 60
+            --allowedTools 'Skill,Task,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),mcp__github_inline_comment__create_inline_comment'
+            --append-system-prompt 'This is a headless CI run: the process exits the moment you end your turn, killing any background tasks. Launch subagents in a single message with run_in_background: false (they still run in parallel) and do not end your turn until every subagent has returned and all requested output is posted.'

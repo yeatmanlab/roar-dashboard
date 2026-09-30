@@ -22,11 +22,15 @@ export const MeController = {
    */
   get: async (authContext: AuthContext) => {
     try {
-      const [user, unsignedAgreements, families] = await Promise.all([
+      const [user, families] = await Promise.all([
         userService.getById(authContext, authContext.userId),
-        userService.getUnsignedTosAgreements(authContext.userId),
         userService.getFamilies(authContext.userId),
       ]);
+
+      // Depends on the user's type and family roles (the TOS requirement is
+      // role-scoped, #2244), so it consumes the rows fetched above instead of
+      // re-querying them.
+      const unsignedAgreements = await userService.getUnsignedTosAgreements(user, families);
 
       return {
         status: StatusCodes.OK as const,
