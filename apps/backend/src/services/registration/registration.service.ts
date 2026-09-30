@@ -136,10 +136,12 @@ export function RegistrationService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error }, 'Failed to validate registration agreements');
+      const context = { agreementVersionCount: agreementVersionIds.length };
+      logger.error({ err: error, context }, 'Failed to validate registration agreements');
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context,
         cause: error,
       });
     }

@@ -6,6 +6,7 @@ import { ApiError } from '../../errors/api-error';
 import { createMockAgreementVersionRepository } from '../../test-support/repositories/agreement-version.repository';
 import { createMockAgreementService } from '../../test-support/services/agreement.service';
 import { createMockFamilyService } from '../../test-support/services/family.service';
+import { logger } from '../../logger';
 import { RegistrationService } from './registration.service';
 
 const CONSENT_ID = '00000000-0000-4000-8000-000000000001';
@@ -241,12 +242,18 @@ describe('RegistrationService', () => {
   });
 
   it('wraps unexpected repository failures without writing', async () => {
-    mockVersionRepository.getRegistrationCandidatesByIds.mockRejectedValue(new Error('database unavailable'));
+    const databaseError = new Error('database unavailable');
+    mockVersionRepository.getRegistrationCandidatesByIds.mockRejectedValue(databaseError);
 
     await expect(service.register(validInput)).rejects.toMatchObject({
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      context: { agreementVersionCount: 2 },
     });
+    expect(logger.error).toHaveBeenCalledWith(
+      { err: databaseError, context: { agreementVersionCount: 2 } },
+      'Failed to validate registration agreements',
+    );
     expect(mockFamilyService.create).not.toHaveBeenCalled();
   });
 });
