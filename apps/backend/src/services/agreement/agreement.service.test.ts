@@ -115,6 +115,42 @@ describe('AgreementService', () => {
       }
     });
 
+    it('evicts a failed GitHub fetch so a later request can retry', async () => {
+      const version = {
+        agreementId: '00000000-0000-4000-8000-000000000012',
+        agreementVersionId: '00000000-0000-4000-8000-000000000013',
+        agreementType: AgreementType.CONSENT,
+        name: 'Retryable research consent',
+        locale: 'en-US',
+        isCurrent: true,
+        githubFilename: 'retry-consent.md',
+        githubOrgRepo: 'yeatmanlab/roar-legal',
+        githubCommitSha: 'cache-retry-test-sha',
+      };
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([version]);
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(new Response('unavailable', { status: StatusCodes.SERVICE_UNAVAILABLE }))
+        .mockResolvedValueOnce(new Response('# Retried research consent', { status: StatusCodes.OK }));
+      const cachedService = AgreementService({
+        agreementRepository: mockRepository,
+        agreementVersionRepository: mockVersionRepository,
+      });
+
+      try {
+        await expect(cachedService.getRegistrationAgreements('en-US')).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        });
+        await expect(cachedService.getRegistrationAgreements('en-US')).resolves.toEqual([
+          expect.objectContaining({ content: '# Retried research consent' }),
+        ]);
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
     it('fills gaps in the requested locale with current en-US versions', async () => {
       const localizedAgreementId = '00000000-0000-4000-8000-000000000001';
       const fallbackAgreementId = '00000000-0000-4000-8000-000000000003';

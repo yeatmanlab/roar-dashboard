@@ -63,7 +63,15 @@ const GITHUB_USER_CONTENT_BASE_URL = 'https://raw.githubusercontent.com';
 /** GitHub raw content URL timeout in milliseconds */
 const GITHUB_FETCH_TIMEOUT_MS = 10_000;
 
-/** Successful and in-flight fetches keyed by immutable GitHub content URL. */
+/** Maximum immutable GitHub documents retained by one backend process. */
+const GITHUB_CONTENT_CACHE_MAX_ENTRIES = 256;
+
+/**
+ * Successful and in-flight fetches keyed by GitHub content URL.
+ *
+ * A process-wide cache is safe because every URL includes an immutable commit
+ * SHA. The entry cap bounds memory even as new agreement versions are added.
+ */
 const githubContentCache = new Map<string, Promise<string>>();
 
 /**
@@ -105,12 +113,16 @@ async function fetchGithubContent(orgRepo: string, commitSha: string, filename: 
     return content;
   })();
 
+  if (githubContentCache.size >= GITHUB_CONTENT_CACHE_MAX_ENTRIES) {
+    const oldestUrl = githubContentCache.keys().next().value;
+    if (oldestUrl) githubContentCache.delete(oldestUrl);
+  }
   githubContentCache.set(url, contentPromise);
 
   try {
     return await contentPromise;
   } catch (error) {
-    githubContentCache.delete(url);
+    if (githubContentCache.get(url) === contentPromise) githubContentCache.delete(url);
     throw error;
   }
 }
