@@ -501,7 +501,7 @@ export function FamilyService({
 
     // ── Step 4: FGA tuple writes ──────────────────────────────────────────────
     //
-    // On failure: delete the tuple (best-effort), then DB rows (rostering_provider_ids first,
+    // On failure: delete the tuple, then DB rows (rostering_provider_ids first,
     // then user_families, families, users — to satisfy the FK / trigger ordering), then
     // Firebase. Each compensation step is wrapped in its own try/catch so a downstream
     // failure doesn't mask the original error.
@@ -516,9 +516,16 @@ export function FamilyService({
         'FGA write failed during family create — beginning compensation',
       );
 
-      await authorizationService.deleteTuples([
-        { user: parentTuple.user, relation: parentTuple.relation, object: parentTuple.object },
-      ]);
+      try {
+        await authorizationService.deleteTuplesOrThrow([
+          { user: parentTuple.user, relation: parentTuple.relation, object: parentTuple.object },
+        ]);
+      } catch (tupleDeleteError) {
+        logger.error(
+          { err: tupleDeleteError, context: { caretakerId, familyId, firebaseUid } },
+          'FGA tuple delete compensation failed — stale tuple requires manual cleanup',
+        );
+      }
 
       try {
         await familyRepository.runTransaction({

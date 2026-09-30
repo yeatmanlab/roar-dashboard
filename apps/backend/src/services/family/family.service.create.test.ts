@@ -304,7 +304,7 @@ describe('FamilyService.create', () => {
       });
 
       // Tuple delete attempted
-      expect(mockAuthorizationService.deleteTuples).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.deleteTuplesOrThrow).toHaveBeenCalledTimes(1);
 
       // DB delete transaction opened
       expect(mockFamilyRepo.runTransaction).toHaveBeenCalledTimes(2);
@@ -320,6 +320,28 @@ describe('FamilyService.create', () => {
       expect(deleteSpy).toHaveBeenCalledTimes(3);
 
       // Firebase compensation
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(FIREBASE_UID);
+    });
+
+    it('logs a cleanup marker and continues rollback when tuple deletion fails', async () => {
+      const { tx } = makeMockTx();
+      mockFamilyRepo.runTransaction.mockImplementation(async ({ fn }) => fn(tx));
+      const tupleDeleteError = new Error('OpenFGA delete failed');
+      mockAuthorizationService.deleteTuplesOrThrow.mockRejectedValue(tupleDeleteError);
+
+      await expect(makeService().create(validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        {
+          err: tupleDeleteError,
+          context: { caretakerId: CARETAKER_ID, familyId: FAMILY_ID, firebaseUid: FIREBASE_UID },
+        },
+        'FGA tuple delete compensation failed — stale tuple requires manual cleanup',
+      );
+      expect(mockFamilyRepo.runTransaction).toHaveBeenCalledTimes(2);
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(FIREBASE_UID);
     });
 
