@@ -7,6 +7,9 @@ import { createIpRateLimitMiddleware } from '../middleware/rate-limit/ip-rate-li
 
 const s = initServer();
 
+const REGISTRATION_AGREEMENTS_RATE_LIMIT = { windowMs: 60_000, maxRequests: 60 } as const;
+const REGISTRATION_SUBMISSION_RATE_LIMIT = { windowMs: 15 * 60_000, maxRequests: 5 } as const;
+
 interface AuthRouteOptions {
   registrationAgreementRateLimit?: RequestHandler;
   registrationRateLimit?: RequestHandler;
@@ -22,8 +25,8 @@ interface AuthRouteOptions {
 export function registerAuthRoutes(
   routerInstance: Router,
   {
-    registrationAgreementRateLimit = createIpRateLimitMiddleware({ windowMs: 60_000, maxRequests: 60 }),
-    registrationRateLimit = createIpRateLimitMiddleware({ windowMs: 15 * 60_000, maxRequests: 5 }),
+    registrationAgreementRateLimit = createIpRateLimitMiddleware(REGISTRATION_AGREEMENTS_RATE_LIMIT),
+    registrationRateLimit = createIpRateLimitMiddleware(REGISTRATION_SUBMISSION_RATE_LIMIT),
   }: AuthRouteOptions = {},
 ) {
   const AuthRoutes = s.router(AuthContract, {

@@ -1,5 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import ipaddr from 'ipaddr.js';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 
@@ -29,33 +30,44 @@ export function createIpRateLimitMiddleware({
   maxTrackedIps = DEFAULT_MAX_TRACKED_IPS,
   now = Date.now,
 }: IpRateLimitOptions): RequestHandler {
+  if (maxTrackedIps < 1) throw new RangeError('maxTrackedIps must be at least 1');
+
   const entries = new Map<string, RateLimitEntry>();
+  let nextSweepAt = Number.NEGATIVE_INFINITY;
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const currentTime = now();
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
-    let entry = entries.get(ip);
+    const key = getRateLimitKey(ip);
+    let entry = entries.get(key);
 
-    if (!entry || entry.resetAt <= currentTime) {
-      // Reclaim expired windows before considering the map full. Active entries
-      // are never evicted: otherwise rotating source IPs could reset a limited
-      // client's counter by forcing its entry out of the map.
-      for (const [trackedIp, trackedEntry] of entries) {
-        if (trackedEntry.resetAt <= currentTime) entries.delete(trackedIp);
-      }
-      entry = entries.get(ip);
+    if (entry && entry.resetAt <= currentTime) {
+      entries.delete(key);
+      entry = undefined;
+    }
 
-      if (!entry && entries.size >= maxTrackedIps) {
-        const earliestResetAt = Math.min(...[...entries.values()].map(({ resetAt }) => resetAt));
-        setRateLimitHeaders(res, maxRequests, 0, earliestResetAt);
-        sendRateLimitedResponse(res, earliestResetAt, currentTime);
-        return;
+    if (!entry) {
+      // Bound the O(n) cleanup to once per limiter window. New addresses can still
+      // enter a full map: the least-recently-used bucket is evicted below instead
+      // of failing closed and allowing address rotation to deny every new client.
+      if (currentTime >= nextSweepAt) {
+        for (const [trackedKey, trackedEntry] of entries) {
+          if (trackedEntry.resetAt <= currentTime) entries.delete(trackedKey);
+        }
+        nextSweepAt = currentTime + windowMs;
       }
 
-      if (!entry) {
-        entry = { count: 0, resetAt: currentTime + windowMs };
-        entries.set(ip, entry);
+      if (entries.size >= maxTrackedIps) {
+        const oldestKey = entries.keys().next().value;
+        if (oldestKey !== undefined) entries.delete(oldestKey);
       }
+
+      entry = { count: 0, resetAt: currentTime + windowMs };
+      entries.set(key, entry);
+    } else {
+      // Map insertion order doubles as a bounded LRU queue.
+      entries.delete(key);
+      entries.set(key, entry);
     }
 
     const remaining = Math.max(0, maxRequests - entry.count - 1);
@@ -69,6 +81,21 @@ export function createIpRateLimitMiddleware({
     entry.count += 1;
     next();
   };
+}
+
+/** Collapse IPv6 clients to /64 while preserving one bucket per IPv4 address. */
+function getRateLimitKey(ip: string): string {
+  if (!ipaddr.isValid(ip)) return `unknown:${ip}`;
+
+  const address = ipaddr.process(ip);
+  if (address.kind() === 'ipv4') return `ipv4:${address.toString()}`;
+
+  const prefix = address
+    .toByteArray()
+    .slice(0, 8)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+  return `ipv6:${prefix}/64`;
 }
 
 function setRateLimitHeaders(res: Response, limit: number, remaining: number, resetAt: number): void {

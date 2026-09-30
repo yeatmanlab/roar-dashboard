@@ -45,6 +45,27 @@ describe('createIpRateLimitMiddleware', () => {
     expect(response.status).not.toHaveBeenCalled();
   });
 
+  it('shares one bucket across an IPv6 /64 while keeping other prefixes independent', () => {
+    const middleware = createIpRateLimitMiddleware({ windowMs: 60_000, maxRequests: 1 });
+
+    middleware({ ip: '2001:db8:abcd:1234::1', socket: {} } as Request, response, next);
+    middleware({ ip: '2001:db8:abcd:1234:ffff::2', socket: {} } as Request, response, next);
+    middleware({ ip: '2001:db8:abcd:1235::1', socket: {} } as Request, response, next);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(response.status).toHaveBeenCalledExactlyOnceWith(StatusCodes.TOO_MANY_REQUESTS);
+  });
+
+  it('treats IPv4-mapped IPv6 addresses as their IPv4 bucket', () => {
+    const middleware = createIpRateLimitMiddleware({ windowMs: 60_000, maxRequests: 1 });
+
+    middleware({ ip: '::ffff:192.0.2.1', socket: {} } as Request, response, next);
+    middleware({ ip: '192.0.2.1', socket: {} } as Request, response, next);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(response.status).toHaveBeenCalledExactlyOnceWith(StatusCodes.TOO_MANY_REQUESTS);
+  });
+
   it('allows requests again after the window expires', () => {
     let currentTime = 1_000;
     const middleware = createIpRateLimitMiddleware({
@@ -77,23 +98,19 @@ describe('createIpRateLimitMiddleware', () => {
     expect(repeatedClientResponse.status).toBe(StatusCodes.TOO_MANY_REQUESTS);
   });
 
-  it('preserves active counters when the tracking map is full', () => {
+  it('evicts the least-recently-used bucket instead of rejecting every new IP at capacity', () => {
     const middleware = createIpRateLimitMiddleware({
       windowMs: 60_000,
       maxRequests: 1,
       maxTrackedIps: 1,
       now: () => 1_000,
     });
-    const firstIp = { ip: '192.0.2.1', socket: {} } as Request;
-
-    middleware(firstIp, response, next);
+    middleware({ ip: '192.0.2.1', socket: {} } as Request, response, next);
     middleware({ ip: '192.0.2.2', socket: {} } as Request, response, next);
-    middleware(firstIp, response, next);
+    middleware({ ip: '192.0.2.2', socket: {} } as Request, response, next);
 
-    expect(next).toHaveBeenCalledOnce();
-    expect(response.status).toHaveBeenCalledTimes(2);
-    expect(response.status).toHaveBeenNthCalledWith(1, StatusCodes.TOO_MANY_REQUESTS);
-    expect(response.status).toHaveBeenNthCalledWith(2, StatusCodes.TOO_MANY_REQUESTS);
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(response.status).toHaveBeenCalledExactlyOnceWith(StatusCodes.TOO_MANY_REQUESTS);
   });
 
   it('sweeps expired entries before admitting a new IP', () => {
