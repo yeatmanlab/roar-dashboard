@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
-import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { READALOUD_TASK_ID } from '@roar-platform/assessment-schema/roar-readaloud';
 import ReadAloudTask from '../src/experiment/index';
@@ -69,11 +68,11 @@ onAuthStateChanged(auth, async (user) => {
         participant: { participantId },
       };
 
-      initFirekitCompat(ctx, {
+      const taskInfo = {
         variantId: resolvedVariantId,
         taskVersion,
         isAnonymous: true,
-      });
+      };
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between published
       // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
@@ -86,14 +85,11 @@ onAuthStateChanged(auth, async (user) => {
         });
       }
 
-      const { variantParams } = await getVariantById(resolvedVariantId);
-
       const userParams = { assessmentPid, labId, grade, birthMonth, birthYear, age, ageMonths };
 
-      const task = new ReadAloudTask(variantParams, userParams, {
-        assessmentPid,
-        assessmentUid: user.uid,
-      });
+      // Game params come from the variant, which ReadAloudTask resolves through the SDK using
+      // the taskInfo below — so none are passed here.
+      const task = new ReadAloudTask({}, userParams, { assessmentPid, assessmentUid: user.uid }, { ctx, taskInfo });
       task.run();
     } catch (err) {
       console.error('[roar-readaloud] Failed to initialize assessment:', err);

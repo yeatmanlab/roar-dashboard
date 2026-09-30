@@ -4,7 +4,6 @@ import App from './App.vue';
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
-import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { getBucketUrl } from './constants/bucketBaseUrl';
 import 'regenerator-runtime/runtime';
@@ -47,12 +46,12 @@ async function initAndMountApp() {
           { taskId },
         );
 
-        initFirekitCompat(
-          { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks, participant: { participantId } },
-          { variantId, taskVersion, isAnonymous: true },
-        );
+        const sdkContext = {
+          ctx: { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks, participant: { participantId } },
+          taskInfo: { variantId, taskVersion, isAnonymous: true },
+        };
 
-        createApp(App, { surveyData: surveyJson }).mount('#app');
+        createApp(App, { surveyData: surveyJson, sdkContext }).mount('#app');
       } catch (err) {
         console.error('Error initializing survey app:', err);
         createApp(App, { surveyData: surveyJson }).mount('#app');
