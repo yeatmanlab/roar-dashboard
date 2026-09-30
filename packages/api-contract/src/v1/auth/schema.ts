@@ -3,6 +3,9 @@ import { CreateUserNameSchema } from '../common/user';
 import { AgreementTypeSchema, LocaleSchema } from '../agreements/schema';
 import { FamilyLocationSchema, RegistrationOptInsSchema } from '../families/schema';
 
+const MAX_REGISTRATION_PASSWORD_LENGTH = 128;
+const MAX_REGISTRATION_AGREEMENTS = 2;
+
 export const RegistrationAgreementsQuerySchema = z.object({
   locale: LocaleSchema.default('en-US'),
 });
@@ -29,7 +32,7 @@ export type RegistrationAgreementsResponse = z.infer<typeof RegistrationAgreemen
 export const RegistrationRequestSchema = z
   .object({
     email: z.string().email().max(255),
-    password: z.string().min(8),
+    password: z.string().min(8).max(MAX_REGISTRATION_PASSWORD_LENGTH),
     name: CreateUserNameSchema,
     location: FamilyLocationSchema.optional(),
     agreements: z
@@ -40,7 +43,8 @@ export const RegistrationRequestSchema = z
           })
           .strict(),
       )
-      .min(1),
+      .min(1)
+      .max(MAX_REGISTRATION_AGREEMENTS),
     optIns: RegistrationOptInsSchema,
   })
   .strict();

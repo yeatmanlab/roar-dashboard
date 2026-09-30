@@ -31,6 +31,20 @@ describe('registration schemas', () => {
     expect(() => RegistrationRequestSchema.parse({ ...validRegistration, agreements: [] })).toThrow();
   });
 
+  it('bounds password and agreement-list sizes on the public request', () => {
+    expect(() => RegistrationRequestSchema.parse({ ...validRegistration, password: 'p'.repeat(129) })).toThrow();
+    expect(() =>
+      RegistrationRequestSchema.parse({
+        ...validRegistration,
+        agreements: [
+          { agreementVersionId: '00000000-0000-4000-8000-000000000001' },
+          { agreementVersionId: '00000000-0000-4000-8000-000000000002' },
+          { agreementVersionId: '00000000-0000-4000-8000-000000000003' },
+        ],
+      }),
+    ).toThrow();
+  });
+
   it('rejects unknown top-level and opt-in fields', () => {
     expect(() =>
       RegistrationRequestSchema.parse({ ...validRegistration, verificationToken: 'not-yet-supported' }),
