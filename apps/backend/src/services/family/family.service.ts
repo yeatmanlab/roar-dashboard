@@ -324,7 +324,8 @@ export function FamilyService({
    * @throws {ApiError} 500 on unexpected failures or unrecoverable compensation
    */
   async function create(input: CreateFamilyServiceInput): Promise<{ id: string }> {
-    const { email, password, name, location, agreementVersionIds = [], optIns } = input;
+    const { password, name, location, agreementVersionIds = [], optIns } = input;
+    const email = input.email.trim().toLowerCase();
 
     // ── Step 1: Pre-flight email uniqueness ───────────────────────────────────
     //
@@ -338,7 +339,6 @@ export function FamilyService({
       throw new ApiError(ApiErrorMessage.CONFLICT, {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.RESOURCE_CONFLICT,
-        context: { email },
       });
     }
 
@@ -348,17 +348,18 @@ export function FamilyService({
       throw new ApiError(ApiErrorMessage.CONFLICT, {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.RESOURCE_CONFLICT,
-        context: { email },
       });
     } catch (error) {
       if (error instanceof ApiError) throw error;
       // `auth/user-not-found` is the expected case — swallow and continue.
       if (!isFirebaseError(error) || error.code !== FIREBASE_ERROR_CODES.AUTH.USER_NOT_FOUND) {
-        logger.error({ err: error, context: { email } }, 'Firebase getUserByEmail failed during pre-flight');
+        logger.error(
+          { err: error, context: { stage: 'firebase-email-lookup' } },
+          'Firebase getUserByEmail failed during pre-flight',
+        );
         throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-          context: { email },
           cause: error,
         });
       }
@@ -383,7 +384,6 @@ export function FamilyService({
         throw new ApiError(ApiErrorMessage.CONFLICT, {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: { email },
         });
       }
 
@@ -391,16 +391,14 @@ export function FamilyService({
         throw new ApiError(ApiErrorMessage.RATE_LIMITED, {
           statusCode: StatusCodes.TOO_MANY_REQUESTS,
           code: ApiErrorCode.RATE_LIMITED,
-          context: { email },
           cause: error,
         });
       }
 
-      logger.error({ err: error, context: { email } }, 'Firebase createUser failed');
+      logger.error({ err: error, context: { stage: 'firebase-user-create' } }, 'Firebase createUser failed');
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-        context: { email },
         cause: error,
       });
     }
@@ -470,7 +468,7 @@ export function FamilyService({
       familyId = result.familyId;
     } catch (error) {
       // DB rolled back atomically — only Firebase needs compensation.
-      await compensateDeleteFirebaseUser(firebaseUid, email, 'step 3 failure');
+      await compensateDeleteFirebaseUser(firebaseUid, 'step 3 failure');
 
       if (error instanceof ApiError) throw error;
 
@@ -482,7 +480,6 @@ export function FamilyService({
         throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
           code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
-          context: { email },
           cause: error,
         });
       }
@@ -492,16 +489,15 @@ export function FamilyService({
         throw new ApiError(ApiErrorMessage.CONFLICT, {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: { email },
           cause: error,
         });
       }
 
-      logger.error({ err: error, context: { email } }, 'DB write failed during family create');
+      logger.error({ err: error, context: { firebaseUid } }, 'DB write failed during family create');
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { email, firebaseUid },
+        context: { firebaseUid },
         cause: error,
       });
     }
@@ -519,7 +515,7 @@ export function FamilyService({
       await authorizationService.writeTuplesOrThrow([parentTuple]);
     } catch (error) {
       logger.error(
-        { err: error, context: { caretakerId, familyId, email, firebaseUid } },
+        { err: error, context: { caretakerId, familyId, firebaseUid } },
         'FGA write failed during family create — beginning compensation',
       );
 
@@ -552,17 +548,17 @@ export function FamilyService({
         );
       }
 
-      await compensateDeleteFirebaseUser(firebaseUid, email, 'FGA write failure');
+      await compensateDeleteFirebaseUser(firebaseUid, 'FGA write failure');
 
       throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-        context: { caretakerId, familyId, email, firebaseUid },
+        context: { caretakerId, familyId, firebaseUid },
         cause: error,
       });
     }
 
-    logger.info({ caretakerId, familyId, email }, 'Created family via ROAR@Home registration');
+    logger.info({ caretakerId, familyId }, 'Created family via ROAR@Home registration');
     return { id: familyId };
   }
 
@@ -757,7 +753,7 @@ export function FamilyService({
         firebaseUids.push(authRecord.uid);
       } catch (error) {
         // Roll back every UID created so far in this request, then surface the error.
-        await Promise.all(firebaseUids.map((uid) => compensateDeleteFirebaseUser(uid, child.email, 'step 6 failure')));
+        await Promise.all(firebaseUids.map((uid) => compensateDeleteFirebaseUser(uid, 'step 6 failure')));
 
         if (isFirebaseError(error) && error.code === FIREBASE_ERROR_CODES.AUTH.EMAIL_ALREADY_EXISTS) {
           throw new ApiError(ApiErrorMessage.CONFLICT, {
@@ -848,9 +844,7 @@ export function FamilyService({
       });
     } catch (error) {
       // DB rolled back atomically — only Firebase needs compensation.
-      await Promise.all(
-        firebaseUids.map((uid, i) => compensateDeleteFirebaseUser(uid, children[i]!.email, 'step 7 failure')),
-      );
+      await Promise.all(firebaseUids.map((uid) => compensateDeleteFirebaseUser(uid, 'step 7 failure')));
 
       if (error instanceof ApiError) throw error;
 
@@ -918,9 +912,7 @@ export function FamilyService({
         );
       }
 
-      await Promise.all(
-        firebaseUids.map((uid, i) => compensateDeleteFirebaseUser(uid, children[i]!.email, 'FGA write failure')),
-      );
+      await Promise.all(firebaseUids.map((uid) => compensateDeleteFirebaseUser(uid, 'FGA write failure')));
 
       throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -939,12 +931,12 @@ export function FamilyService({
    * context but not re-thrown — the caller surfaces a 5xx to the client regardless. The
    * structured log gives a paper trail for manual reconciliation.
    */
-  async function compensateDeleteFirebaseUser(firebaseUid: string, email: string, reason: string): Promise<void> {
+  async function compensateDeleteFirebaseUser(firebaseUid: string, reason: string): Promise<void> {
     try {
       await FirebaseAuthClient.deleteUser(firebaseUid);
     } catch (compensationError) {
       logger.error(
-        { err: compensationError, context: { firebaseUid, email, reason } },
+        { err: compensationError, context: { firebaseUid, reason } },
         'Firebase deleteUser compensation failed — orphaned auth account requires manual cleanup',
       );
     }

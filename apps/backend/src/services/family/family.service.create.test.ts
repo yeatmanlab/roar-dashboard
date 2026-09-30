@@ -145,6 +145,16 @@ describe('FamilyService.create', () => {
       });
     });
 
+    it('normalizes the email before every lookup and write', async () => {
+      await makeService().create({ ...validInput, email: 'Parent@Example.COM' });
+
+      expect(mockUserRepo.existsByUniqueFields).toHaveBeenCalledWith({ email: 'parent@example.com' });
+      expect(mockAuth.getUserByEmail).toHaveBeenCalledWith('parent@example.com');
+      expect(mockAuth.createUser).toHaveBeenCalledWith(expect.objectContaining({ email: 'parent@example.com' }));
+      const [caretakerData] = mockFamilyRepo.createWithCaretaker.mock.calls[0]!;
+      expect(caretakerData.email).toBe('parent@example.com');
+    });
+
     it('records validated agreements in the family transaction with a server timestamp', async () => {
       const agreementVersionIds = ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002'];
       mockUserAgreementRepo.createMany.mockResolvedValue([{ id: 'agreement-1' }, { id: 'agreement-2' }]);
