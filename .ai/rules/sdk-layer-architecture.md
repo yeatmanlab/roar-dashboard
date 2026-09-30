@@ -195,10 +195,13 @@ export interface CommandContext {
     participantId: string;
   };
   requestId?: () => string;
+  /** @deprecated Never honored — the ts-rest fetcher always uses the global fetch. */
   fetchImpl?: typeof fetch;
   logger?: Logger;
 }
 ```
+
+The Receiver implements the 401 refresh-and-retry: a 401 carrying `auth/token-expired` or `auth/token-invalid` (mirroring the backend's `ApiErrorCode`) triggers one `refreshToken()` call — deduplicated per client for concurrent 401s — and one retry with the fresh token. Other 401s surface unchanged, and without a `refreshToken` callback no retry happens, so `getToken` must then always return a fresh token. Hosts that create several clients over the same callbacks must dedupe inside `refreshToken` itself (the dashboard's `forceIdTokenRefresh` does).
 
 ### Error handling
 
