@@ -111,7 +111,7 @@ async function fetchGithubContent(orgRepo: string, commitSha: string, filename: 
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-        context: { url, status: response.status, message: 'Failed to fetch agreement content from GitHub' },
+        context: { url, status: response.status },
       });
     }
 
@@ -120,7 +120,7 @@ async function fetchGithubContent(orgRepo: string, commitSha: string, filename: 
       throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { url, message: 'Agreement content file is empty or missing' },
+        context: { url },
       });
     }
 
