@@ -11,6 +11,16 @@ import type { CreateFamilyServiceInput } from '../family/family.service';
 import { DEFAULT_REGISTRATION_LOCALE } from '../../constants/registration-agreements';
 import { AgreementType } from '../../enums/agreement-type.enum';
 
+const INVALID_AGREEMENT_SET_REASON = {
+  DUPLICATE_VERSION: 'duplicate agreement version',
+  UNKNOWN_VERSION: 'unknown submitted agreement version',
+  STALE_VERSION: 'stale agreement version',
+  NON_SIGNABLE_TYPE: 'non-signable agreement type',
+  DUPLICATE_AGREEMENT: 'multiple versions submitted for one agreement',
+  INCOMPATIBLE_LOCALES: 'agreement versions use incompatible locales',
+  VERSION_SET_MISMATCH: 'submitted versions do not match a localized registration set',
+} as const;
+
 type RegistrationName = CreateFamilyServiceInput['name'];
 type RegistrationLocation = CreateFamilyServiceInput['location'];
 type RegistrationOptIns = NonNullable<CreateFamilyServiceInput['optIns']>;
@@ -43,24 +53,39 @@ export function RegistrationService({
   agreementVersionRepository?: AgreementVersionRepository;
   familyService?: FamilyServiceInstance;
 } = {}) {
+  /**
+   * Fetch the legal agreements displayed by public registration.
+   *
+   * @param locale - Preferred locale for agreement content
+   * @returns Localized current agreements, with per-agreement en-US fallback
+   * @throws {ApiError} INTERNAL_SERVER_ERROR when configuration, storage, or content fetching fails
+   */
   async function getAgreements(locale: string) {
     return agreementService.getRegistrationAgreements(locale);
   }
 
+  /**
+   * Validate accepted agreements and create a family account.
+   *
+   * @param input - Public registration details and accepted agreement version IDs
+   * @returns A promise that resolves after the account and legal acceptances are persisted
+   * @throws {ApiError} UNPROCESSABLE_ENTITY when the submitted agreement set is invalid
+   * @throws {ApiError} Propagates registration persistence and external-service failures
+   */
   async function register(input: RegistrationServiceInput): Promise<void> {
     const { agreementVersionIds } = input;
 
     try {
       const uniqueVersionIds = new Set(agreementVersionIds);
       if (uniqueVersionIds.size !== agreementVersionIds.length) {
-        throwInvalidAgreementSet({ reason: 'duplicate agreement version' });
+        throwInvalidAgreementSet({ reason: INVALID_AGREEMENT_SET_REASON.DUPLICATE_VERSION });
       }
 
       const submittedVersions = await agreementVersionRepository.getRegistrationCandidatesByIds(agreementVersionIds);
 
       if (submittedVersions.length !== agreementVersionIds.length) {
         throwInvalidAgreementSet({
-          reason: 'unknown submitted agreement version',
+          reason: INVALID_AGREEMENT_SET_REASON.UNKNOWN_VERSION,
           submittedCount: agreementVersionIds.length,
           resolvedCount: submittedVersions.length,
         });
@@ -69,16 +94,28 @@ export function RegistrationService({
       const submittedAgreementIds = new Set<string>();
 
       for (const version of submittedVersions) {
-        if (
-          !version.isCurrent ||
-          (version.agreementType !== AgreementType.CONSENT && version.agreementType !== AgreementType.TOS) ||
-          submittedAgreementIds.has(version.agreementId)
-        ) {
+        if (!version.isCurrent) {
           throwInvalidAgreementSet({
-            reason: 'stale, non-signable, unexpected, or duplicate agreement',
+            reason: INVALID_AGREEMENT_SET_REASON.STALE_VERSION,
             agreementVersionId: version.agreementVersionId,
           });
         }
+
+        if (version.agreementType !== AgreementType.CONSENT && version.agreementType !== AgreementType.TOS) {
+          throwInvalidAgreementSet({
+            reason: INVALID_AGREEMENT_SET_REASON.NON_SIGNABLE_TYPE,
+            agreementVersionId: version.agreementVersionId,
+            agreementType: version.agreementType,
+          });
+        }
+
+        if (submittedAgreementIds.has(version.agreementId)) {
+          throwInvalidAgreementSet({
+            reason: INVALID_AGREEMENT_SET_REASON.DUPLICATE_AGREEMENT,
+            agreementId: version.agreementId,
+          });
+        }
+
         submittedAgreementIds.add(version.agreementId);
       }
 
@@ -94,7 +131,7 @@ export function RegistrationService({
         );
 
       if (!matchesExpectedSelection) {
-        throwInvalidAgreementSet({ reason: 'submitted versions do not match a localized registration set' });
+        throwInvalidAgreementSet({ reason: INVALID_AGREEMENT_SET_REASON.VERSION_SET_MISMATCH });
       }
     } catch (error) {
       if (error instanceof ApiError) throw error;
@@ -126,7 +163,7 @@ export function RegistrationService({
       submittedVersions.map(({ locale }) => locale).filter((locale) => locale !== DEFAULT_REGISTRATION_LOCALE),
     );
     if (nonDefaultLocales.size > 1) {
-      throwInvalidAgreementSet({ reason: 'agreement versions use incompatible locales' });
+      throwInvalidAgreementSet({ reason: INVALID_AGREEMENT_SET_REASON.INCOMPATIBLE_LOCALES });
     }
 
     const requestedLocale = [...nonDefaultLocales][0] ?? DEFAULT_REGISTRATION_LOCALE;

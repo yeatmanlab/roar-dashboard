@@ -136,7 +136,11 @@ describe('RegistrationService', () => {
       registrationVersions[1]!,
     ]);
 
-    await expect(service.register(validInput)).rejects.toMatchObject({ statusCode: StatusCodes.UNPROCESSABLE_ENTITY });
+    await expect(service.register(validInput)).rejects.toMatchObject({
+      statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      context: { reason: 'stale agreement version', agreementVersionId: CONSENT_VERSION_ID },
+    });
     expect(mockFamilyService.create).not.toHaveBeenCalled();
   });
 
@@ -146,15 +150,41 @@ describe('RegistrationService', () => {
       registrationVersions[1]!,
     ]);
 
-    await expect(service.register(validInput)).rejects.toMatchObject({ statusCode: StatusCodes.UNPROCESSABLE_ENTITY });
+    await expect(service.register(validInput)).rejects.toMatchObject({
+      statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      context: {
+        reason: 'non-signable agreement type',
+        agreementVersionId: CONSENT_VERSION_ID,
+        agreementType: AgreementType.ASSENT,
+      },
+    });
     expect(mockFamilyService.create).not.toHaveBeenCalled();
   });
 
   it('rejects duplicate agreement versions before writing', async () => {
     await expect(
       service.register({ ...validInput, agreementVersionIds: [CONSENT_VERSION_ID, CONSENT_VERSION_ID] }),
-    ).rejects.toMatchObject({ statusCode: StatusCodes.UNPROCESSABLE_ENTITY });
+    ).rejects.toMatchObject({
+      statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      context: { reason: 'duplicate agreement version' },
+    });
     expect(mockVersionRepository.getRegistrationCandidatesByIds).not.toHaveBeenCalled();
+    expect(mockFamilyService.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects two versions of the same agreement before writing', async () => {
+    mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue([
+      registrationVersions[0]!,
+      { ...registrationVersions[1]!, agreementId: CONSENT_ID },
+    ]);
+
+    await expect(service.register(validInput)).rejects.toMatchObject({
+      statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      context: { reason: 'multiple versions submitted for one agreement', agreementId: CONSENT_ID },
+    });
     expect(mockFamilyService.create).not.toHaveBeenCalled();
   });
 
@@ -205,6 +235,7 @@ describe('RegistrationService', () => {
     await expect(service.register(validInput)).rejects.toMatchObject({
       statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
       code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      context: { reason: 'agreement versions use incompatible locales' },
     });
     expect(mockFamilyService.create).not.toHaveBeenCalled();
   });
