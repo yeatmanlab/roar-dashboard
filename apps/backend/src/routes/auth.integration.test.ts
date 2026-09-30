@@ -240,6 +240,7 @@ describe('POST /v1/auth/registration', () => {
     const response = await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(409);
 
     expect(response.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    expect(JSON.stringify(response.body)).not.toContain(body.email);
     expect(mockAuth.createUser).not.toHaveBeenCalled();
   });
 

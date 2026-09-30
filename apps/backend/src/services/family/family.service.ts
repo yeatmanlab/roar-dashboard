@@ -293,6 +293,13 @@ export function FamilyService({
    * authorization gate beyond the validators in the contract layer and the uniqueness checks
    * here.
    *
+   * Security decision: the public endpoint intentionally returns 409 when the email is already
+   * registered so the client can direct an account owner to sign-in or recovery. That status
+   * reveals account existence, so the response body stays generic and the route is IP-rate-limited.
+   * Rate limiting reduces bulk probing but does not eliminate this disclosure; changing the
+   * contract requires a product/security decision to prefer enumeration resistance over actionable
+   * registration feedback.
+   *
    * Operation sequence:
    * 1. Pre-flight email uniqueness (DB + Firebase Auth) — best-effort early failure to avoid
    *    creating an orphaned Firebase account.
