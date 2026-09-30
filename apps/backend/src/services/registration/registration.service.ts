@@ -4,16 +4,12 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
 import { logger } from '../../logger';
-import {
-  AgreementService,
-  REGISTRATION_AGREEMENT_TYPES,
-  selectRegistrationAgreementVersions,
-} from '../agreement/agreement.service';
+import { AgreementService } from '../agreement/agreement.service';
 import type { RegistrationAgreementVersion } from '../../repositories/agreement-version.repository';
 import { FamilyService } from '../family/family.service';
 import type { CreateFamilyServiceInput } from '../family/family.service';
-
-const DEFAULT_REGISTRATION_LOCALE = 'en-US';
+import { DEFAULT_REGISTRATION_LOCALE } from '../../constants/registration-agreements';
+import { AgreementType } from '../../enums/agreement-type.enum';
 
 type RegistrationName = CreateFamilyServiceInput['name'];
 type RegistrationLocation = CreateFamilyServiceInput['location'];
@@ -28,7 +24,10 @@ export interface RegistrationServiceInput {
   optIns: RegistrationOptIns;
 }
 
-type AgreementServiceInstance = Pick<ReturnType<typeof AgreementService>, 'getRegistrationAgreements'>;
+type AgreementServiceInstance = Pick<
+  ReturnType<typeof AgreementService>,
+  'getRegistrationAgreements' | 'getRegistrationAgreementVersions'
+>;
 type FamilyServiceInstance = Pick<ReturnType<typeof FamilyService>, 'create'>;
 
 /**
@@ -72,7 +71,7 @@ export function RegistrationService({
       for (const version of submittedVersions) {
         if (
           !version.isCurrent ||
-          !REGISTRATION_AGREEMENT_TYPES.some((agreementType) => agreementType === version.agreementType) ||
+          (version.agreementType !== AgreementType.CONSENT && version.agreementType !== AgreementType.TOS) ||
           submittedAgreementIds.has(version.agreementId)
         ) {
           throwInvalidAgreementSet({
@@ -84,13 +83,6 @@ export function RegistrationService({
       }
 
       const expectedVersions = await getExpectedRegistrationVersions(submittedVersions);
-      if (expectedVersions.length === 0) {
-        logger.error('No registration agreements are configured');
-        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
-          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-          code: ApiErrorCode.INTERNAL,
-        });
-      }
 
       const submittedByAgreementId = new Map(
         submittedVersions.map((version) => [version.agreementId, version.agreementVersionId]),
@@ -138,17 +130,7 @@ export function RegistrationService({
     }
 
     const requestedLocale = [...nonDefaultLocales][0] ?? DEFAULT_REGISTRATION_LOCALE;
-    const [localizedVersions, fallbackVersions] = await Promise.all([
-      agreementVersionRepository.listCurrentForRegistration(requestedLocale, REGISTRATION_AGREEMENT_TYPES),
-      requestedLocale === DEFAULT_REGISTRATION_LOCALE
-        ? Promise.resolve([])
-        : agreementVersionRepository.listCurrentForRegistration(
-            DEFAULT_REGISTRATION_LOCALE,
-            REGISTRATION_AGREEMENT_TYPES,
-          ),
-    ]);
-
-    return selectRegistrationAgreementVersions(localizedVersions, fallbackVersions);
+    return agreementService.getRegistrationAgreementVersions(requestedLocale);
   }
 
   function throwInvalidAgreementSet(context: Record<string, unknown>): never {

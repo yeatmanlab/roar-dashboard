@@ -1,0 +1,1 @@
+export const DEFAULT_REGISTRATION_LOCALE = 'en-US';

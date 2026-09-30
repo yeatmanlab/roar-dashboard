@@ -14,8 +14,7 @@ import { AgreementRepository } from '../../repositories/agreement.repository';
 import type { AgreementWithCurrentVersion } from '../../repositories/agreement.repository';
 import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
 import type { RegistrationAgreementVersion } from '../../repositories/agreement-version.repository';
-
-export const REGISTRATION_AGREEMENT_TYPES = [AgreementType.CONSENT, AgreementType.TOS] as const;
+import { DEFAULT_REGISTRATION_LOCALE } from '../../constants/registration-agreements';
 
 /**
  * Agreement with optional embedded versions array.
@@ -58,26 +57,11 @@ export interface RegistrationAgreementResult {
   content: string;
 }
 
-/** Prefer requested-locale versions and fill per-agreement gaps from the fallback locale. */
-export function selectRegistrationAgreementVersions(
-  localizedVersions: RegistrationAgreementVersion[],
-  fallbackVersions: RegistrationAgreementVersion[],
-): RegistrationAgreementVersion[] {
-  const versionsByAgreementId = new Map(fallbackVersions.map((version) => [version.agreementId, version]));
-  for (const version of localizedVersions) versionsByAgreementId.set(version.agreementId, version);
-
-  return [...versionsByAgreementId.values()].sort(
-    (left, right) => left.name.localeCompare(right.name) || left.agreementId.localeCompare(right.agreementId),
-  );
-}
-
 /** Base URL for fetching raw content from GitHub */
 const GITHUB_USER_CONTENT_BASE_URL = 'https://raw.githubusercontent.com';
 
 /** GitHub raw content URL timeout in milliseconds */
 const GITHUB_FETCH_TIMEOUT_MS = 10_000;
-
-const DEFAULT_REGISTRATION_LOCALE = 'en-US';
 
 /** Successful and in-flight fetches keyed by immutable GitHub content URL. */
 const githubContentCache = new Map<string, Promise<string>>();
@@ -149,19 +133,42 @@ export function AgreementService({
   agreementVersionRepository?: AgreementVersionRepository;
   fetchContent?: typeof fetchGithubContent;
 } = {}) {
-  /** Resolves the current adult-signable agreement documents for public registration. */
-  async function getRegistrationAgreements(locale: string): Promise<RegistrationAgreementResult[]> {
+  const registrationAgreementTypes = [AgreementType.CONSENT, AgreementType.TOS] as const;
+
+  /** Prefer requested-locale versions and fill per-agreement gaps from the fallback locale. */
+  function selectRegistrationAgreementVersions(
+    localizedVersions: RegistrationAgreementVersion[],
+    fallbackVersions: RegistrationAgreementVersion[],
+  ): RegistrationAgreementVersion[] {
+    const versionsByAgreementId = new Map(fallbackVersions.map((version) => [version.agreementId, version]));
+    for (const version of localizedVersions) versionsByAgreementId.set(version.agreementId, version);
+
+    return [...versionsByAgreementId.values()].sort(
+      (left, right) => left.name.localeCompare(right.name) || left.agreementId.localeCompare(right.agreementId),
+    );
+  }
+
+  /**
+   * Resolve the current registration agreement versions for a locale.
+   *
+   * Missing translations fall back per agreement to the current en-US version.
+   *
+   * @param locale - Requested registration locale
+   * @returns Current adult-signable agreement versions for the localized set
+   * @throws {ApiError} INTERNAL_SERVER_ERROR when configuration is missing or the query fails
+   */
+  async function getRegistrationAgreementVersions(locale: string): Promise<RegistrationAgreementVersion[]> {
     let localizedVersions: RegistrationAgreementVersion[];
     let fallbackVersions: RegistrationAgreementVersion[];
 
     try {
       [localizedVersions, fallbackVersions] = await Promise.all([
-        agreementVersionRepository.listCurrentForRegistration(locale, REGISTRATION_AGREEMENT_TYPES),
+        agreementVersionRepository.listCurrentForRegistration(locale, registrationAgreementTypes),
         locale === DEFAULT_REGISTRATION_LOCALE
           ? Promise.resolve([])
           : agreementVersionRepository.listCurrentForRegistration(
               DEFAULT_REGISTRATION_LOCALE,
-              REGISTRATION_AGREEMENT_TYPES,
+              registrationAgreementTypes,
             ),
       ]);
     } catch (error) {
@@ -183,6 +190,13 @@ export function AgreementService({
         context: { locale },
       });
     }
+
+    return versions;
+  }
+
+  /** Resolves the current adult-signable agreement documents for public registration. */
+  async function getRegistrationAgreements(locale: string): Promise<RegistrationAgreementResult[]> {
+    const versions = await getRegistrationAgreementVersions(locale);
 
     try {
       return await Promise.all(
@@ -337,5 +351,5 @@ export function AgreementService({
     }
   }
 
-  return { getRegistrationAgreements, list, getVersionContent };
+  return { getRegistrationAgreementVersions, getRegistrationAgreements, list, getVersionContent };
 }

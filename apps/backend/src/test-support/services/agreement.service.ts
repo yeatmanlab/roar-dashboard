@@ -8,6 +8,7 @@ import type { AgreementService } from '../../services/agreement/agreement.servic
  */
 export function createMockAgreementService(): MockedObject<ReturnType<typeof AgreementService>> {
   return {
+    getRegistrationAgreementVersions: vi.fn(),
     getRegistrationAgreements: vi.fn(),
     getVersionContent: vi.fn(),
     list: vi.fn(),
