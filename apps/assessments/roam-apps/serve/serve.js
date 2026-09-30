@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app'; //firebase app initialization
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth'; //firebase authorization
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
-import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { TaskLauncher } from '../src';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
@@ -96,19 +95,17 @@ onAuthStateChanged(auth, async (user) => {
         logger: console,
       };
 
-      initFirekitCompat(ctx, {
+      const taskInfo = {
         variantId: resolvedVariantId,
         taskVersion,
         isAnonymous: true,
-      });
+      };
 
       // Game parameters (taskName, language, responseMode, corpusName, userMode,
       // labId, consent, storyOption, keyboardPractice, audio, recruitment) come
       // from the resolved variant — not URL params. See
       // taskVariantParameters.example.json for the shape. initConfig merges these
       // over userParams, reads `language`, and drives i18next.changeLanguage.
-      const { variantParams } = await getVariantById(resolvedVariantId);
-
       // Dev/staging only: mount a variant switcher so reviewers can hop between
       // published variants without hand-editing the URL. No-op in production (the
       // guard is eliminated at build). roam's tasks are language-suffixed and hold
@@ -132,7 +129,9 @@ onAuthStateChanged(auth, async (user) => {
         ageMonths,
       };
 
-      const task = new TaskLauncher(variantParams, userParams);
+      // Game params come from the variant, which the assessment resolves through the SDK
+      // using the taskInfo below — so none are passed here.
+      const task = new TaskLauncher({}, userParams, undefined, undefined, { ctx, taskInfo });
       task.run();
     } catch (err) {
       console.error('Failed to initialize assessment:', err);
