@@ -78,6 +78,43 @@ describe('AgreementService', () => {
       ]);
     });
 
+    it('reuses cached GitHub content across requests for the same immutable version', async () => {
+      const agreementId = '00000000-0000-4000-8000-000000000010';
+      const version = {
+        agreementId,
+        agreementVersionId: '00000000-0000-4000-8000-000000000011',
+        agreementType: AgreementType.CONSENT,
+        name: 'Cached research consent',
+        locale: 'en-US',
+        isCurrent: true,
+        githubFilename: 'cached-consent.md',
+        githubOrgRepo: 'yeatmanlab/roar-legal',
+        githubCommitSha: 'cache-test-sha',
+      };
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([version]);
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(new Response('# Cached research consent', { status: StatusCodes.OK }));
+      const cachedService = AgreementService({
+        agreementRepository: mockRepository,
+        agreementVersionRepository: mockVersionRepository,
+      });
+
+      try {
+        const firstResult = await cachedService.getRegistrationAgreements('en-US');
+        const secondResult = await cachedService.getRegistrationAgreements('en-US');
+
+        expect(firstResult[0]?.content).toBe('# Cached research consent');
+        expect(secondResult).toEqual(firstResult);
+        expect(fetchSpy).toHaveBeenCalledExactlyOnceWith(
+          'https://raw.githubusercontent.com/yeatmanlab/roar-legal/cache-test-sha/cached-consent.md',
+          expect.objectContaining({ signal: expect.any(AbortSignal) }),
+        );
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
     it('fills gaps in the requested locale with current en-US versions', async () => {
       const localizedAgreementId = '00000000-0000-4000-8000-000000000001';
       const fallbackAgreementId = '00000000-0000-4000-8000-000000000003';
