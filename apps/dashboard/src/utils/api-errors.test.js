@@ -3,6 +3,7 @@ import {
   getApiErrorCode,
   getApiErrorMessage,
   API_ERROR_CODES,
+  isMissingBaseUrlError,
   isRosteringEndedError,
   isTerminalAuthError,
 } from './api-errors';
@@ -101,6 +102,12 @@ describe('isTerminalAuthError', () => {
     expect(isTerminalAuthError({ error: { code: API_ERROR_CODES.AUTH_TOKEN_EXPIRED } })).toBe(true);
   });
 
+  it('returns true for auth/token-invalid', () => {
+    // The API client already refresh-retried an invalid token once, so the
+    // code reaching app code means the refreshed token was rejected too.
+    expect(isTerminalAuthError({ error: { code: API_ERROR_CODES.AUTH_TOKEN_INVALID } })).toBe(true);
+  });
+
   it('returns false for rostering-ended (not a terminal auth error)', () => {
     expect(isTerminalAuthError({ error: { code: API_ERROR_CODES.AUTH_ROSTERING_ENDED } })).toBe(false);
   });
@@ -109,5 +116,30 @@ describe('isTerminalAuthError', () => {
     expect(isTerminalAuthError({ error: { code: 'some/other-error' } })).toBe(false);
     expect(isTerminalAuthError({})).toBe(false);
     expect(isTerminalAuthError(null)).toBe(false);
+  });
+
+  it('returns false for the missing-base-URL error (not an auth failure)', () => {
+    expect(isTerminalAuthError({ code: API_ERROR_CODES.CONFIG_BASE_URL_MISSING })).toBe(false);
+  });
+});
+
+describe('isMissingBaseUrlError', () => {
+  it('returns true for the code the API client tags onto the thrown Error', () => {
+    // `getRoarApiClient()` throws a plain Error with `.code` set, so the
+    // plain-code branch of `getApiErrorCode` is the one that has to match.
+    const error = new Error('VITE_ROAR_API_BASE_URL is not set.');
+    error.code = API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
+    expect(isMissingBaseUrlError(error)).toBe(true);
+  });
+
+  it('returns false for auth and rostering errors', () => {
+    expect(isMissingBaseUrlError({ error: { code: API_ERROR_CODES.AUTH_REQUIRED } })).toBe(false);
+    expect(isMissingBaseUrlError({ error: { code: API_ERROR_CODES.AUTH_ROSTERING_ENDED } })).toBe(false);
+  });
+
+  it('returns false for untagged errors', () => {
+    expect(isMissingBaseUrlError(new Error('network down'))).toBe(false);
+    expect(isMissingBaseUrlError({})).toBe(false);
+    expect(isMissingBaseUrlError(null)).toBe(false);
   });
 });
