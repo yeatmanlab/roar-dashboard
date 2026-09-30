@@ -107,4 +107,12 @@ describe('app JSON body limit', () => {
     expect(res.status).not.toBe(413);
     expect(res.status).toBe(404);
   });
+
+  it('applies a smaller JSON ceiling to the public auth surface', async () => {
+    const oversizedForAuth = { data: 'x'.repeat(20 * 1024) };
+
+    const res = await request(app).post('/v1/auth/registration').send(oversizedForAuth);
+
+    expect(res.status).toBe(413);
+  });
 });
