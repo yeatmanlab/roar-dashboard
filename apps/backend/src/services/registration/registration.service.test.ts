@@ -176,6 +176,29 @@ describe('RegistrationService', () => {
     expect(mockFamilyService.create).toHaveBeenCalledOnce();
   });
 
+  it('rejects an en-US fallback when the requested locale has a current version', async () => {
+    const localizedConsent = { ...registrationVersions[0]!, locale: 'es-MX' };
+    const localizedTos = {
+      ...registrationVersions[1]!,
+      agreementVersionId: '00000000-0000-4000-8000-000000000006',
+      locale: 'es-MX',
+    };
+    mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue([
+      localizedConsent,
+      registrationVersions[1]!,
+    ]);
+    mockVersionRepository.listCurrentForRegistration.mockImplementation(async (locale) =>
+      locale === 'es-MX' ? [localizedConsent, localizedTos] : registrationVersions,
+    );
+
+    await expect(service.register(validInput)).rejects.toMatchObject({
+      statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      context: { reason: 'submitted versions do not match a localized registration set' },
+    });
+    expect(mockFamilyService.create).not.toHaveBeenCalled();
+  });
+
   it('rejects agreement versions from incompatible locales', async () => {
     mockVersionRepository.getRegistrationCandidatesByIds.mockResolvedValue([
       { ...registrationVersions[0]!, locale: 'es-MX' },
