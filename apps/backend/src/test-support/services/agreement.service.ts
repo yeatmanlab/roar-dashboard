@@ -11,7 +11,7 @@ export function createMockAgreementService(): MockedObject<ReturnType<typeof Agr
     getRegistrationAgreements: vi.fn(),
     getVersionContent: vi.fn(),
     list: vi.fn(),
-  } as MockedObject<ReturnType<typeof AgreementService>>;
+  } satisfies MockedObject<ReturnType<typeof AgreementService>>;
 }
 
 export type MockAgreementService = ReturnType<typeof createMockAgreementService>;
