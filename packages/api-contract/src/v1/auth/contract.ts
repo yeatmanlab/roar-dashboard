@@ -25,6 +25,7 @@ export const AuthContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(RegistrationAgreementsResponseSchema),
         400: ErrorEnvelopeSchema,
+        429: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,

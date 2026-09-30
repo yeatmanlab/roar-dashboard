@@ -3,8 +3,11 @@ import { createExpressEndpoints, initServer } from '@ts-rest/express';
 import { AuthContract } from '@roar-platform/api-contract';
 import { AuthController } from '../controllers/auth.controller';
 import { RevalidatedPublicCacheControlMiddleware } from '../middleware/cache-control/immutable-public-cache-control.middleware';
+import { createIpRateLimitMiddleware } from '../middleware/rate-limit/ip-rate-limit.middleware';
 
 const s = initServer();
+const registrationAgreementRateLimit = createIpRateLimitMiddleware({ windowMs: 60_000, maxRequests: 60 });
+const registrationRateLimit = createIpRateLimitMiddleware({ windowMs: 15 * 60_000, maxRequests: 5 });
 
 /**
  * Registers the intentionally public registration routes.
@@ -16,10 +19,11 @@ const s = initServer();
 export function registerAuthRoutes(routerInstance: Router) {
   const AuthRoutes = s.router(AuthContract, {
     getRegistrationAgreements: {
-      middleware: [RevalidatedPublicCacheControlMiddleware],
+      middleware: [registrationAgreementRateLimit, RevalidatedPublicCacheControlMiddleware],
       handler: async ({ query }) => AuthController.getRegistrationAgreements(query),
     },
     register: {
+      middleware: [registrationRateLimit],
       handler: async ({ body }) => AuthController.register(body),
     },
   });
