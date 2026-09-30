@@ -8,7 +8,9 @@ import { agreements, agreementVersions, families, userAgreements, userFamilies, 
 import { CoreDbClient } from '../test-support/db';
 import { AgreementFactory } from '../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
+import { UserFactory } from '../test-support/factories/user.factory';
 import { createRouteHelper, createTestApp } from '../test-support/route-test.helper';
+import { createIpRateLimitMiddleware } from '../middleware/rate-limit/ip-rate-limit.middleware';
 
 vi.mock('../clients/firebase-auth.clients', () => ({
   FirebaseAuthClient: {
@@ -28,10 +30,18 @@ let app: express.Application;
 let expectRoute: ReturnType<typeof createRouteHelper>;
 let emailSequence = 0;
 let firebaseSequence = 0;
+let consentAgreementId: string;
+let consentVersionId: string;
+let localizedConsentVersionId: string;
+let tosVersionId: string;
 
 beforeAll(async () => {
   const { registerAuthRoutes } = await import('./auth');
-  app = createTestApp(registerAuthRoutes);
+  app = createTestApp((router) =>
+    registerAuthRoutes(router, {
+      registrationRateLimit: createIpRateLimitMiddleware({ windowMs: 15 * 60_000, maxRequests: 100 }),
+    }),
+  );
   expectRoute = createRouteHelper(app);
 
   const consent = await AgreementFactory.create({
@@ -42,13 +52,19 @@ beforeAll(async () => {
     name: 'Registration TOS fixture',
     agreementType: AgreementType.TOS,
   });
-  await Promise.all([
+  consentAgreementId = consent.id;
+  const [consentVersion, localizedConsentVersion, tosVersion] = await Promise.all([
     AgreementVersionFactory.create({ isCurrent: true, locale: 'en-US' }, { transient: { agreementId: consent.id } }),
+    AgreementVersionFactory.create({ isCurrent: true, locale: 'es-MX' }, { transient: { agreementId: consent.id } }),
     AgreementVersionFactory.create({ isCurrent: true, locale: 'en-US' }, { transient: { agreementId: tos.id } }),
   ]);
+  consentVersionId = consentVersion.id;
+  localizedConsentVersionId = localizedConsentVersion.id;
+  tosVersionId = tosVersion.id;
 });
 
 beforeEach(() => {
+  vi.clearAllMocks();
   mockAuth.getUserByEmail.mockRejectedValue(Object.assign(new Error('Not found'), { code: 'auth/user-not-found' }));
   mockAuth.createUser.mockImplementation(async () => ({ uid: `registration-firebase-${++firebaseSequence}` }));
   mockAuth.deleteUser.mockResolvedValue(undefined);
@@ -96,14 +112,6 @@ async function validRegistrationBody() {
 
 describe('GET /v1/auth/registration/agreements', () => {
   it('is public and returns current adult-signable content inline', async () => {
-    const consent = await AgreementFactory.create({
-      name: 'English registration consent',
-      agreementType: AgreementType.CONSENT,
-    });
-    const consentVersion = await AgreementVersionFactory.create(
-      { isCurrent: true, locale: 'en-US' },
-      { transient: { agreementId: consent.id } },
-    );
     const assent = await AgreementFactory.create({
       name: 'English child assent',
       agreementType: AgreementType.ASSENT,
@@ -118,13 +126,12 @@ describe('GET /v1/auth/registration/agreements', () => {
       .toReturn(200);
 
     const item = response.body.data.items.find(
-      (candidate: { agreementVersionId: string }) => candidate.agreementVersionId === consentVersion.id,
+      (candidate: { agreementVersionId: string }) => candidate.agreementVersionId === consentVersionId,
     );
     expect(item).toMatchObject({
-      agreementId: consent.id,
-      agreementVersionId: consentVersion.id,
+      agreementId: consentAgreementId,
+      agreementVersionId: consentVersionId,
       agreementType: AgreementType.CONSENT,
-      name: consent.name,
       locale: 'en-US',
       content: '# Registration agreement',
     });
@@ -133,33 +140,26 @@ describe('GET /v1/auth/registration/agreements', () => {
   });
 
   it('falls back to en-US per agreement when the requested locale is incomplete', async () => {
-    const consent = await AgreementFactory.create({
-      name: 'Spanish registration consent',
-      agreementType: AgreementType.CONSENT,
-    });
-    await AgreementVersionFactory.create(
-      { isCurrent: true, locale: 'es-MX' },
-      { transient: { agreementId: consent.id } },
-    );
-
     const response = await expectRoute('GET', '/v1/auth/registration/agreements?locale=es-MX')
       .unauthenticated()
       .toReturn(200);
 
     expect(response.body.data.items).toContainEqual(
-      expect.objectContaining({ agreementId: consent.id, locale: 'es-MX' }),
+      expect.objectContaining({ agreementId: consentAgreementId, locale: 'es-MX' }),
     );
-    expect(response.body.data.items).toContainEqual(expect.objectContaining({ locale: 'en-US' }));
+    expect(response.body.data.items).toContainEqual(
+      expect.objectContaining({ agreementVersionId: tosVersionId, locale: 'en-US' }),
+    );
   });
 
   it('does not make an agreement required outside its available locale or en-US fallback', async () => {
-    const spanishOnlyAgreement = await AgreementFactory.create({
-      name: 'Spanish-only registration consent',
+    const frenchOnlyAgreement = await AgreementFactory.create({
+      name: 'French-only registration consent',
       agreementType: AgreementType.CONSENT,
     });
     await AgreementVersionFactory.create(
-      { isCurrent: true, locale: 'es-MX' },
-      { transient: { agreementId: spanishOnlyAgreement.id } },
+      { isCurrent: true, locale: 'fr-FR' },
+      { transient: { agreementId: frenchOnlyAgreement.id } },
     );
 
     const response = await expectRoute('GET', '/v1/auth/registration/agreements?locale=en-US')
@@ -167,7 +167,7 @@ describe('GET /v1/auth/registration/agreements', () => {
       .toReturn(200);
 
     expect(response.body.data.items).not.toContainEqual(
-      expect.objectContaining({ agreementId: spanishOnlyAgreement.id }),
+      expect.objectContaining({ agreementId: frenchOnlyAgreement.id }),
     );
   });
 
@@ -226,10 +226,62 @@ describe('POST /v1/auth/registration', () => {
       { transient: { agreementId: staleAgreement.id } },
     );
     const body = await validRegistrationBody();
-    body.agreements.push({ agreementVersionId: staleVersion.id });
+    body.agreements[0] = { agreementVersionId: staleVersion.id };
 
-    await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(422);
+    const response = await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(422);
+    expect(response.body.error.code).toBe(ApiErrorCode.RESOURCE_UNPROCESSABLE);
     expect(mockAuth.createUser).not.toHaveBeenCalled();
+  });
+
+  it('returns 409 without creating Firebase state when the email already exists', async () => {
+    const body = await validRegistrationBody();
+    await UserFactory.create({ email: body.email });
+
+    const response = await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(409);
+
+    expect(response.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    expect(mockAuth.createUser).not.toHaveBeenCalled();
+  });
+
+  it('maps Firebase throttling to 429', async () => {
+    const body = await validRegistrationBody();
+    mockAuth.createUser.mockRejectedValueOnce(
+      Object.assign(new Error('Too many requests'), { code: 'auth/too-many-requests' }),
+    );
+
+    const response = await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(429);
+
+    expect(response.body.error.code).toBe(ApiErrorCode.RATE_LIMITED);
+  });
+
+  it('rejects two different versions for the same agreement', async () => {
+    const body = await validRegistrationBody();
+    body.agreements = [{ agreementVersionId: consentVersionId }, { agreementVersionId: localizedConsentVersionId }];
+
+    const response = await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(422);
+
+    expect(response.body.error.code).toBe(ApiErrorCode.RESOURCE_UNPROCESSABLE);
+    expect(mockAuth.createUser).not.toHaveBeenCalled();
+  });
+
+  it('accepts a localized agreement with an en-US fallback', async () => {
+    const body = await validRegistrationBody();
+    body.agreements = [{ agreementVersionId: localizedConsentVersionId }, { agreementVersionId: tosVersionId }];
+
+    await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(204);
+
+    expect(mockAuth.createUser).toHaveBeenCalledOnce();
+  });
+
+  it('deletes the Firebase user when the database transaction rolls back', async () => {
+    const body = await validRegistrationBody();
+    const existingUser = await UserFactory.create();
+    mockAuth.createUser.mockResolvedValueOnce({ uid: existingUser.authId });
+
+    const response = await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(409);
+
+    expect(response.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    expect(mockAuth.deleteUser).toHaveBeenCalledExactlyOnceWith(existingUser.authId);
   });
 
   it('rejects client-supplied agreement timestamps with 400', async () => {
