@@ -287,13 +287,21 @@ export const taskDisplayNames = {
     extendedName: 'RVP',
     order: 27,
   },
+  'roav-rc': {
+    name: 'RC',
+    publicName: 'ROAV - Reading Comprehension',
+    studentFacingName: 'Reading Comprehension',
+    extendedTitle: 'ROAV - RC',
+    extendedName: 'RC',
+    order: 28,
+  },
   'roar-survey': {
     name: 'Survey',
     publicName: 'ROAR - Survey',
     studentFacingName: 'Survey',
     extendedTitle: 'ROAR - Survey',
     extendedName: 'Survey',
-    order: 28,
+    order: 30,
   },
 };
 
@@ -469,6 +477,7 @@ export const excludeFromScoringTasks = [
   'roar-survey',
   'roav-mp',
   'roav-rvp',
+  'roav-rc',
   'swr-pt',
   'pa-pt',
   'sre-pt',
