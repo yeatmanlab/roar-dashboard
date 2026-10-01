@@ -9,12 +9,11 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { AgreementEmbedOption } from '../../enums/agreement-embed-option.enum';
-import { AgreementType } from '../../enums/agreement-type.enum';
 import { AgreementRepository } from '../../repositories/agreement.repository';
 import type { AgreementWithCurrentVersion } from '../../repositories/agreement.repository';
 import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
 import type { RegistrationAgreementVersion } from '../../repositories/agreement-version.repository';
-import { DEFAULT_REGISTRATION_LOCALE } from '../../constants/registration-agreements';
+import { DEFAULT_REGISTRATION_LOCALE, REGISTRATION_AGREEMENT_TYPES } from '../../constants/registration-agreements';
 
 /**
  * Agreement with optional embedded versions array.
@@ -63,6 +62,9 @@ const GITHUB_USER_CONTENT_BASE_URL = 'https://raw.githubusercontent.com';
 /** GitHub raw content URL timeout in milliseconds */
 const GITHUB_FETCH_TIMEOUT_MS = 10_000;
 
+/** Maximum raw agreement document size accepted from GitHub. */
+const GITHUB_CONTENT_MAX_BYTES = 1024 * 1024;
+
 /** Maximum immutable GitHub documents retained by one backend process. */
 const GITHUB_CONTENT_CACHE_MAX_ENTRIES = 256;
 
@@ -79,7 +81,12 @@ interface GithubContentCacheEntry {
 
 const githubContentCache = new Map<string, GithubContentCacheEntry>();
 
-/** Evict oldest settled entries while preserving request coalescing for in-flight fetches. */
+/**
+ * Evict oldest settled entries while preserving request coalescing for in-flight fetches.
+ *
+ * @param maxEntries - Target cache size
+ * @returns Nothing
+ */
 function trimGithubContentCache(maxEntries: number): void {
   while (githubContentCache.size > maxEntries) {
     const settledEntry = [...githubContentCache].find(([, entry]) => entry.settled);
@@ -115,7 +122,7 @@ async function fetchGithubContent(orgRepo: string, commitSha: string, filename: 
       });
     }
 
-    const content = await response.text();
+    const content = await readResponseTextWithLimit(response, url, GITHUB_CONTENT_MAX_BYTES);
     if (!content) {
       throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
@@ -143,6 +150,67 @@ async function fetchGithubContent(orgRepo: string, commitSha: string, filename: 
 }
 
 /**
+ * Read a fetch response without allowing unbounded external content into memory.
+ *
+ * @param response - Successful GitHub response
+ * @param url - Source URL included in internal error context
+ * @param maxBytes - Maximum encoded response size
+ * @returns Decoded UTF-8 response text
+ * @throws {ApiError} When the declared or streamed content exceeds the limit
+ */
+async function readResponseTextWithLimit(response: Response, url: string, maxBytes: number): Promise<string> {
+  const declaredLength = Number(response.headers.get('content-length'));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+    throwGithubContentTooLarge(url, maxBytes);
+  }
+
+  if (!response.body) return '';
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        throwGithubContentTooLarge(url, maxBytes);
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+/**
+ * Throw the standard external-content size error.
+ *
+ * @param url - GitHub content URL
+ * @param maxBytes - Configured response ceiling
+ * @returns Never returns
+ * @throws {ApiError} Always throws EXTERNAL_SERVICE_FAILED
+ */
+function throwGithubContentTooLarge(url: string, maxBytes: number): never {
+  throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+    statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+    context: { url, maxBytes },
+  });
+}
+
+/**
  * AgreementService
  *
  * Provides agreement-related business logic.
@@ -160,9 +228,13 @@ export function AgreementService({
   agreementVersionRepository?: AgreementVersionRepository;
   fetchContent?: typeof fetchGithubContent;
 } = {}) {
-  const registrationAgreementTypes = [AgreementType.CONSENT, AgreementType.TOS] as const;
-
-  /** Prefer requested-locale versions and fill per-agreement gaps from the fallback locale. */
+  /**
+   * Prefer requested-locale versions and fill per-agreement gaps from the fallback locale.
+   *
+   * @param localizedVersions - Current versions in the requested locale
+   * @param fallbackVersions - Current versions in the fallback locale
+   * @returns One preferred version per agreement
+   */
   function selectRegistrationAgreementVersions(
     localizedVersions: RegistrationAgreementVersion[],
     fallbackVersions: RegistrationAgreementVersion[],
@@ -190,12 +262,12 @@ export function AgreementService({
 
     try {
       [localizedVersions, fallbackVersions] = await Promise.all([
-        agreementVersionRepository.listCurrentForRegistration(locale, registrationAgreementTypes),
+        agreementVersionRepository.listCurrentForRegistration(locale, REGISTRATION_AGREEMENT_TYPES),
         locale === DEFAULT_REGISTRATION_LOCALE
           ? Promise.resolve([])
           : agreementVersionRepository.listCurrentForRegistration(
               DEFAULT_REGISTRATION_LOCALE,
-              registrationAgreementTypes,
+              REGISTRATION_AGREEMENT_TYPES,
             ),
       ]);
     } catch (error) {
@@ -221,7 +293,13 @@ export function AgreementService({
     return versions;
   }
 
-  /** Resolves the current adult-signable agreement documents for public registration. */
+  /**
+   * Resolve current adult-signable agreement documents for public registration.
+   *
+   * @param locale - Preferred locale for agreement content
+   * @returns Registration agreements with inline content
+   * @throws {ApiError} When agreement content cannot be resolved
+   */
   async function getRegistrationAgreements(locale: string): Promise<RegistrationAgreementResult[]> {
     const versions = await getRegistrationAgreementVersions(locale);
 

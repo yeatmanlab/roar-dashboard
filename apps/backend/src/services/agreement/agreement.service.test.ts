@@ -202,6 +202,45 @@ describe('AgreementService', () => {
       }
     });
 
+    it('rejects GitHub content larger than the configured byte limit', async () => {
+      const version = {
+        agreementId: '00000000-0000-4000-8000-000000000020',
+        agreementVersionId: '00000000-0000-4000-8000-000000000021',
+        agreementType: AgreementType.CONSENT,
+        name: 'Oversized research consent',
+        locale: 'en-US',
+        isCurrent: true,
+        githubFilename: 'oversized-consent.md',
+        githubOrgRepo: 'yeatmanlab/roar-legal',
+        githubCommitSha: 'content-size-test-sha',
+      };
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([version]);
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async () => new Response(new Uint8Array(1024 * 1024 + 1)));
+      const cachedService = AgreementService({
+        agreementRepository: mockRepository,
+        agreementVersionRepository: mockVersionRepository,
+      });
+
+      try {
+        await expect(cachedService.getRegistrationAgreements('en-US')).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          cause: {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+            context: {
+              url: 'https://raw.githubusercontent.com/yeatmanlab/roar-legal/content-size-test-sha/oversized-consent.md',
+              maxBytes: 1024 * 1024,
+            },
+          },
+        });
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
     it('does not evict an in-flight GitHub fetch when the cache reaches capacity', async () => {
       const inFlightVersion = {
         agreementId: '00000000-0000-4000-8000-000000000014',
