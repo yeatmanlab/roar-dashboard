@@ -44,6 +44,34 @@ describe('UserRepository', () => {
 
       expect(result).toBeNull();
     });
+
+    // `authId` is nullable and unique, so every rostered-but-unclaimed user shares
+    // `authId = NULL`. A blank lookup must throw rather than reach the WHERE clause,
+    // where a null-safe comparison would match one of them arbitrarily.
+    it.each([
+      ['null', null],
+      ['undefined', undefined],
+      ['an empty string', ''],
+    ])('throws when authId is %s', async (_label, authId) => {
+      await expect(repository.findByAuthId(authId as never)).rejects.toThrow(
+        'findByAuthId requires a non-empty authId',
+      );
+    });
+
+    it('does not return a NULL-authId user for any lookup', async () => {
+      const [unclaimedA, unclaimedB] = await Promise.all([
+        UserFactory.create({ authId: null, userType: UserType.STUDENT }),
+        UserFactory.create({ authId: null, userType: UserType.STUDENT }),
+      ]);
+
+      // Both rows coexist despite the unique index — Postgres permits many NULLs.
+      expect(unclaimedA.authId).toBeNull();
+      expect(unclaimedB.authId).toBeNull();
+
+      const result = await repository.findByAuthId('nonexistent-auth-id-for-null-check');
+
+      expect(result).toBeNull();
+    });
   });
 
   describe('getById', () => {
