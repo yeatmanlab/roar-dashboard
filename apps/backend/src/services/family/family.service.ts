@@ -73,6 +73,11 @@ export interface CreateFamilyServiceInput {
   password: string;
   name: CreateFamilyCaretakerName;
   location?: CreateFamilyLocation | undefined;
+  optIns?:
+    | {
+        researchContact: boolean;
+      }
+    | undefined;
 }
 
 /**
@@ -298,7 +303,7 @@ export function FamilyService({
    *    delete the tuple, delete DB rows (rostering_provider_ids → user_families → families →
    *    users), then delete the Firebase account.
    *
-   * @param input Caretaker credentials + name + optional family location
+   * @param input Caretaker credentials, name, opt-ins, and optional family location
    * @returns The newly created family id
    * @throws {ApiError} 409 if the email is already in use (in `users` or in Firebase Auth)
    * @throws {ApiError} 422 if the caretaker already created a family (DB constraint)
@@ -306,7 +311,7 @@ export function FamilyService({
    * @throws {ApiError} 500 on unexpected failures or unrecoverable compensation
    */
   async function create(input: CreateFamilyServiceInput): Promise<{ id: string }> {
-    const { email, password, name, location } = input;
+    const { email, password, name, location, optIns } = input;
 
     // ── Step 1: Pre-flight email uniqueness ───────────────────────────────────
     //
@@ -408,6 +413,7 @@ export function FamilyService({
               userType: UserType.CAREGIVER,
               assessmentPid: generateAssessmentPid({ userId: email }),
               isSuperAdmin: false,
+              optinResearchContact: optIns?.researchContact ?? null,
             },
             {
               locationAddressLine1: location?.addressLine1 ?? null,
