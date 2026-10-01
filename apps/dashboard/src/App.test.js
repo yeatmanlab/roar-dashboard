@@ -12,7 +12,6 @@ const authStore = {
   isAuthenticated: false,
   initAuth: vi.fn().mockResolvedValue(undefined),
   initFirekit: vi.fn().mockResolvedValue(undefined),
-  initStateFromRedirect: vi.fn().mockResolvedValue(undefined),
 };
 
 vi.mock('vue-router', () => ({
@@ -62,7 +61,6 @@ describe('App.vue bootstrap', () => {
     expect(mockCreateAuthService).toHaveBeenCalledTimes(1);
     expect(authStore.initAuth).toHaveBeenCalledTimes(1);
     expect(authStore.initFirekit).toHaveBeenCalledTimes(1);
-    expect(authStore.initStateFromRedirect).toHaveBeenCalledTimes(1);
     expect(mockSetGlobalError).not.toHaveBeenCalled();
   });
 
@@ -78,6 +76,5 @@ describe('App.vue bootstrap', () => {
 
     expect(mockSetGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
     expect(authStore.initFirekit).not.toHaveBeenCalled();
-    expect(authStore.initStateFromRedirect).not.toHaveBeenCalled();
   });
 });
