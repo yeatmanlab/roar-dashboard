@@ -101,6 +101,10 @@ describe('RegistrationService', () => {
       code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
       context: { reason: 'unknown submitted agreement version', submittedCount: 1, resolvedCount: 0 },
     });
+    expect(logger.warn).toHaveBeenCalledWith(
+      { context: { reason: 'unknown submitted agreement version', submittedCount: 1, resolvedCount: 0 } },
+      'Rejected registration agreement set',
+    );
     expect(mockFamilyService.create).not.toHaveBeenCalled();
   });
 

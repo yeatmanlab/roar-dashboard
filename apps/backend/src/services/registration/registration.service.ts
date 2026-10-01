@@ -8,8 +8,7 @@ import { AgreementService } from '../agreement/agreement.service';
 import type { RegistrationAgreementVersion } from '../../repositories/agreement-version.repository';
 import { FamilyService } from '../family/family.service';
 import type { CreateFamilyServiceInput } from '../family/family.service';
-import { DEFAULT_REGISTRATION_LOCALE } from '../../constants/registration-agreements';
-import { AgreementType } from '../../enums/agreement-type.enum';
+import { DEFAULT_REGISTRATION_LOCALE, REGISTRATION_AGREEMENT_TYPES } from '../../constants/registration-agreements';
 
 const INVALID_AGREEMENT_SET_REASON = {
   DUPLICATE_VERSION: 'duplicate agreement version',
@@ -43,6 +42,9 @@ type FamilyServiceInstance = Pick<ReturnType<typeof FamilyService>, 'create'>;
 /**
  * Coordinates public registration agreement reads and account registration.
  * Agreement validation always completes before FamilyService performs a write.
+ *
+ * @param dependencies - Optional service and repository overrides
+ * @returns Registration agreement read and account creation operations
  */
 export function RegistrationService({
   agreementService = AgreementService(),
@@ -101,7 +103,7 @@ export function RegistrationService({
           });
         }
 
-        if (version.agreementType !== AgreementType.CONSENT && version.agreementType !== AgreementType.TOS) {
+        if (!REGISTRATION_AGREEMENT_TYPES.some((agreementType) => agreementType === version.agreementType)) {
           throwInvalidAgreementSet({
             reason: INVALID_AGREEMENT_SET_REASON.NON_SIGNABLE_TYPE,
             agreementVersionId: version.agreementVersionId,
@@ -158,6 +160,13 @@ export function RegistrationService({
     });
   }
 
+  /**
+   * Resolve the exact localized agreement set expected for submitted versions.
+   *
+   * @param submittedVersions - Resolved submitted agreement versions
+   * @returns Current versions for the inferred requested locale
+   * @throws {ApiError} When submitted versions mix incompatible locales
+   */
   async function getExpectedRegistrationVersions(
     submittedVersions: RegistrationAgreementVersion[],
   ): Promise<RegistrationAgreementVersion[]> {
@@ -172,7 +181,15 @@ export function RegistrationService({
     return agreementService.getRegistrationAgreementVersions(requestedLocale);
   }
 
+  /**
+   * Log and throw the standard invalid-agreement response.
+   *
+   * @param context - Non-sensitive rejection reason and relevant ids/counts
+   * @returns Never returns
+   * @throws {ApiError} Always throws an UNPROCESSABLE_ENTITY error
+   */
   function throwInvalidAgreementSet(context: Record<string, unknown>): never {
+    logger.warn({ context }, 'Rejected registration agreement set');
     throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
       statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
       code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
