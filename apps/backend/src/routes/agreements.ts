@@ -1,26 +1,11 @@
-import type { NextFunction, Request, Response, Router } from 'express';
+import type { Router } from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { AgreementsContract } from '@roar-platform/api-contract';
 import { AgreementsController } from '../controllers/agreements.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
+import { ImmutablePublicCacheControlMiddleware } from '../middleware/cache-control/public-cache-control.middleware';
 
 const s = initServer();
-
-/**
- * Middleware that sets aggressive cache headers for immutable agreement version content.
- * Agreement version content is tied to a specific Git commit SHA and never changes.
- *
- * Uses `public` because TOS content is not user-specific — all users see the same
- * markdown for a given version. CDNs and shared caches can safely store the response.
- *
- * @param _req - The Express request object (unused)
- * @param res - The Express response object
- * @param next - The Express next function
- */
-function setCacheControlHeaderMiddleware(_req: Request, res: Response, next: NextFunction) {
-  res.set('Cache-Control', 'public, max-age=86400, immutable');
-  next();
-}
 
 /**
  * Registers /agreements routes on the provided Express router.
@@ -38,7 +23,7 @@ export function registerAgreementsRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, query }) => AgreementsController.list(user!, query),
     },
     getVersionContent: {
-      middleware: [AuthGuardMiddleware, setCacheControlHeaderMiddleware],
+      middleware: [AuthGuardMiddleware, ImmutablePublicCacheControlMiddleware],
       handler: async ({ req: { user }, params }) => AgreementsController.getVersionContent(user!, params),
     },
   });
