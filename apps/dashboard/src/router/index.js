@@ -287,6 +287,13 @@ const routes = [
     meta: { pageTitle: 'RVP-PT' },
   },
   {
+    path: GAME_ROUTES.ROAV_CR,
+    name: 'CR',
+    component: () => import('../components/tasks/TaskRoav.vue'),
+    props: { taskId: 'roav-cr', language: 'en' },
+    meta: { pageTitle: 'CR' },
+  },
+  {
     path: GAME_ROUTES.ROAR_READALOUD,
     name: 'Read Aloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
@@ -748,6 +755,20 @@ const routes = [
     }),
     meta: {
       pageTitle: 'ROAR RVP-PT',
+      permission: Permissions.Tasks.LAUNCH,
+    },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAV_CR,
+    name: 'Launch Roav - CR',
+    component: () => import('../components/tasks/TaskRoav.vue'),
+    props: (route) => ({
+      taskId: 'roav-cr',
+      language: 'en',
+      launchId: route.params.launchId,
+    }),
+    meta: {
+      pageTitle: 'ROAR CR',
       permission: Permissions.Tasks.LAUNCH,
     },
   },
