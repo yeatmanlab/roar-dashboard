@@ -37,6 +37,8 @@ const FIREBASE_APP_NAME = 'roar-dashboard-auth';
  *
  * @typedef {object} AuthReadyState
  * @property {import('firebase/auth').User | null} user - The signed-in user, or null if signed out.
+ * @property {boolean} isFromRedirect - True when the session was just established by a pending
+ *   SSO redirect result, as opposed to restored from persistence on an ordinary load.
  * @property {unknown} initError - Firebase initialization failure, if any.
  * @property {unknown} redirectError - Pending-SSO-redirect failure, if any.
  */
@@ -167,7 +169,7 @@ class AuthService {
    */
   async #doAuthReady() {
     /** @type {AuthReadyState} */
-    const state = { user: null, initError: null, redirectError: null };
+    const state = { user: null, isFromRedirect: false, initError: null, redirectError: null };
 
     try {
       await this.initialize();
@@ -181,8 +183,12 @@ class AuthService {
     // Consume the pending redirect before observing the token listener: a
     // returning SSO user is signed in by `getRedirectResult()`, so resolving
     // it first means the emission we observe below already reflects them.
+    // Record whether it produced a credential — a redirect return is
+    // mid-sign-in and needs the spinner held; a session restored from
+    // persistence on an ordinary load does not.
     try {
-      await fbGetRedirectResult(this.#auth);
+      const redirectResult = await fbGetRedirectResult(this.#auth);
+      state.isFromRedirect = redirectResult !== null;
     } catch (error) {
       // A failed redirect leaves the user signed out rather than broken —
       // the listener below still reports the (absent) session correctly, so
