@@ -3,17 +3,26 @@ import { StatusCodes } from 'http-status-codes';
 import ipaddr from 'ipaddr.js';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { ApiError } from '../../errors/api-error';
+import { formatApiError } from '../../utils/format-api-error.util';
 
 interface RateLimitEntry {
   count: number;
   resetAt: number;
 }
 
-interface IpRateLimitOptions {
+interface RateLimitOptions {
   windowMs: number;
   maxRequests: number;
-  maxTrackedIps?: number;
   now?: () => number;
+}
+
+interface IpRateLimitOptions extends RateLimitOptions {
+  maxTrackedIps?: number;
+}
+
+interface EmailRateLimitOptions extends RateLimitOptions {
+  maxTrackedEmails?: number;
 }
 
 const DEFAULT_MAX_TRACKED_IPS = 10_000;
@@ -23,6 +32,9 @@ const DEFAULT_MAX_TRACKED_IPS = 10_000;
  * State is process-local and memory-bounded, so the effective aggregate ceiling
  * scales with the number of active replicas. Replace this with a shared store
  * before treating it as a platform-wide security boundary.
+ *
+ * @param options - Fixed-window duration, request ceiling, storage bound, and optional clock
+ * @returns Express middleware that rate-limits normalized IP buckets
  */
 export function createIpRateLimitMiddleware({
   windowMs,
@@ -30,15 +42,68 @@ export function createIpRateLimitMiddleware({
   maxTrackedIps = DEFAULT_MAX_TRACKED_IPS,
   now = Date.now,
 }: IpRateLimitOptions): RequestHandler {
-  if (maxTrackedIps < 1) throw new RangeError('maxTrackedIps must be at least 1');
+  return createKeyedRateLimitMiddleware({
+    windowMs,
+    maxRequests,
+    maxTrackedKeys: maxTrackedIps,
+    now,
+    getKey: (req) => {
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      return getRateLimitIpKey(ip);
+    },
+  });
+}
+
+/**
+ * Creates a normalized per-email limiter for the parsed public registration body.
+ *
+ * @param options - Fixed-window duration, request ceiling, storage bound, and optional clock
+ * @returns Express middleware that rate-limits normalized email buckets
+ */
+export function createEmailRateLimitMiddleware({
+  windowMs,
+  maxRequests,
+  maxTrackedEmails = DEFAULT_MAX_TRACKED_IPS,
+  now = Date.now,
+}: EmailRateLimitOptions): RequestHandler {
+  return createKeyedRateLimitMiddleware({
+    windowMs,
+    maxRequests,
+    maxTrackedKeys: maxTrackedEmails,
+    now,
+    getKey: (req) => {
+      const email = (req.body as { email?: unknown } | undefined)?.email;
+      return typeof email === 'string' ? `email:${email.trim().toLowerCase()}` : 'email:unknown';
+    },
+  });
+}
+
+interface KeyedRateLimitOptions extends RateLimitOptions {
+  maxTrackedKeys: number;
+  getKey: (req: Request) => string;
+}
+
+/**
+ * Build a bounded fixed-window limiter for an arbitrary request key.
+ *
+ * @param options - Window, ceiling, storage bound, clock, and key extractor
+ * @returns Express rate-limit middleware
+ */
+function createKeyedRateLimitMiddleware({
+  windowMs,
+  maxRequests,
+  maxTrackedKeys,
+  now = Date.now,
+  getKey,
+}: KeyedRateLimitOptions): RequestHandler {
+  if (maxTrackedKeys < 1) throw new RangeError('maxTrackedKeys must be at least 1');
 
   const entries = new Map<string, RateLimitEntry>();
   let nextSweepAt = Number.NEGATIVE_INFINITY;
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const currentTime = now();
-    const ip = req.ip || req.socket.remoteAddress || 'unknown';
-    const key = getRateLimitKey(ip);
+    const key = getKey(req);
     let entry = entries.get(key);
 
     if (entry && entry.resetAt <= currentTime) {
@@ -57,7 +122,7 @@ export function createIpRateLimitMiddleware({
         nextSweepAt = currentTime + windowMs;
       }
 
-      if (entries.size >= maxTrackedIps) {
+      if (entries.size >= maxTrackedKeys) {
         const oldestKey = entries.keys().next().value;
         if (oldestKey !== undefined) entries.delete(oldestKey);
       }
@@ -83,8 +148,13 @@ export function createIpRateLimitMiddleware({
   };
 }
 
-/** Collapse IPv6 clients to /64 while preserving one bucket per IPv4 address. */
-function getRateLimitKey(ip: string): string {
+/**
+ * Collapse IPv6 clients to /64 while preserving one bucket per IPv4 address.
+ *
+ * @param ip - Express-resolved client address
+ * @returns Stable IPv4 or IPv6-prefix storage key
+ */
+function getRateLimitIpKey(ip: string): string {
   if (!ipaddr.isValid(ip)) return `unknown:${ip}`;
 
   const address = ipaddr.process(ip);
@@ -106,10 +176,9 @@ function setRateLimitHeaders(res: Response, limit: number, remaining: number, re
 
 function sendRateLimitedResponse(res: Response, resetAt: number, currentTime: number): void {
   res.set('Retry-After', String(Math.max(1, Math.ceil((resetAt - currentTime) / 1000))));
-  res.status(StatusCodes.TOO_MANY_REQUESTS).json({
-    error: {
-      message: ApiErrorMessage.RATE_LIMITED,
-      code: ApiErrorCode.RATE_LIMITED,
-    },
+  const error = new ApiError(ApiErrorMessage.RATE_LIMITED, {
+    statusCode: StatusCodes.TOO_MANY_REQUESTS,
+    code: ApiErrorCode.RATE_LIMITED,
   });
+  res.status(StatusCodes.TOO_MANY_REQUESTS).json(formatApiError(error));
 }

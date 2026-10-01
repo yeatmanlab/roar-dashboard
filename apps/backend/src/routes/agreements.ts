@@ -3,7 +3,7 @@ import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { AgreementsContract } from '@roar-platform/api-contract';
 import { AgreementsController } from '../controllers/agreements.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
-import { ImmutablePublicCacheControlMiddleware } from '../middleware/cache-control/immutable-public-cache-control.middleware';
+import { ImmutablePublicCacheControlMiddleware } from '../middleware/cache-control/public-cache-control.middleware';
 
 const s = initServer();
 

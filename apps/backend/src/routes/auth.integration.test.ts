@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type express from 'express';
+import { randomUUID } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { AgreementType } from '../enums/agreement-type.enum';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
@@ -70,10 +71,7 @@ beforeEach(() => {
   mockAuth.deleteUser.mockResolvedValue(undefined);
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue({
-      ok: true,
-      text: async () => '# Registration agreement',
-    }),
+    vi.fn().mockImplementation(async () => new Response('# Registration agreement')),
   );
 });
 
@@ -178,11 +176,41 @@ describe('GET /v1/auth/registration/agreements', () => {
 
     expect(response.headers['cache-control']).toBeUndefined();
   });
+
+  it('returns the standard 429 response when the public agreements IP limit is exceeded', async () => {
+    const { registerAuthRoutes } = await import('./auth');
+    const rateLimitedApp = createTestApp((router) =>
+      registerAuthRoutes(router, {
+        registrationAgreementRateLimit: createIpRateLimitMiddleware({ windowMs: 60_000, maxRequests: 1 }),
+      }),
+    );
+    const expectRateLimitedRoute = createRouteHelper(rateLimitedApp);
+
+    await expectRateLimitedRoute('GET', '/v1/auth/registration/agreements?locale=en-US')
+      .unauthenticated()
+      .toReturn(200);
+    const response = await expectRateLimitedRoute('GET', '/v1/auth/registration/agreements?locale=en-US')
+      .unauthenticated()
+      .toReturn(429);
+
+    expect(response.body.error.code).toBe(ApiErrorCode.RATE_LIMITED);
+    expect(response.body.error.traceId).toEqual(expect.any(String));
+  });
 });
 
 describe('POST /v1/auth/registration', () => {
   it('creates the caretaker, family, membership, and agreement rows atomically', async () => {
-    const body = await validRegistrationBody();
+    const body = {
+      ...(await validRegistrationBody()),
+      location: {
+        addressLine1: '123 Reading Way',
+        addressLine2: 'Unit 4',
+        city: 'Stanford',
+        stateProvince: 'CA',
+        postalCode: '94305',
+        country: 'US',
+      },
+    };
 
     const response = await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(204);
 
@@ -192,7 +220,14 @@ describe('POST /v1/auth/registration', () => {
     expect(caretaker!.optinResearchContact).toBe(body.optIns.researchContact);
 
     const [family] = await CoreDbClient.select().from(families).where(eq(families.createdBy, caretaker!.id));
-    expect(family).toBeDefined();
+    expect(family).toMatchObject({
+      locationAddressLine1: body.location.addressLine1,
+      locationAddressLine2: body.location.addressLine2,
+      locationCity: body.location.city,
+      locationStateProvince: body.location.stateProvince,
+      locationPostalCode: body.location.postalCode,
+      locationCountry: body.location.country,
+    });
 
     const [membership] = await CoreDbClient.select()
       .from(userFamilies)
@@ -233,6 +268,31 @@ describe('POST /v1/auth/registration', () => {
     expect(mockAuth.createUser).not.toHaveBeenCalled();
   });
 
+  it('returns 422 before Firebase creation for an assent version', async () => {
+    const assent = await AgreementFactory.create({ agreementType: AgreementType.ASSENT });
+    const assentVersion = await AgreementVersionFactory.create(
+      { isCurrent: true, locale: 'en-US' },
+      { transient: { agreementId: assent.id } },
+    );
+    const body = await validRegistrationBody();
+    body.agreements[0] = { agreementVersionId: assentVersion.id };
+
+    const response = await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(422);
+
+    expect(response.body.error.code).toBe(ApiErrorCode.RESOURCE_UNPROCESSABLE);
+    expect(mockAuth.createUser).not.toHaveBeenCalled();
+  });
+
+  it('returns 422 before Firebase creation for an unknown version UUID', async () => {
+    const body = await validRegistrationBody();
+    body.agreements[0] = { agreementVersionId: randomUUID() };
+
+    const response = await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(422);
+
+    expect(response.body.error.code).toBe(ApiErrorCode.RESOURCE_UNPROCESSABLE);
+    expect(mockAuth.createUser).not.toHaveBeenCalled();
+  });
+
   it('returns 409 without creating Firebase state when the email already exists', async () => {
     const body = await validRegistrationBody();
     await UserFactory.create({ email: body.email });
@@ -253,6 +313,30 @@ describe('POST /v1/auth/registration', () => {
     const response = await expectRoute('POST', '/v1/auth/registration').unauthenticated().withBody(body).toReturn(429);
 
     expect(response.body.error.code).toBe(ApiErrorCode.RATE_LIMITED);
+  });
+
+  it('returns 429 before Firebase creation when the registration IP limit is exceeded', async () => {
+    const { registerAuthRoutes } = await import('./auth');
+    const rateLimitedApp = createTestApp((router) =>
+      registerAuthRoutes(router, {
+        registrationRateLimit: createIpRateLimitMiddleware({ windowMs: 60_000, maxRequests: 1 }),
+      }),
+    );
+    const expectRateLimitedRoute = createRouteHelper(rateLimitedApp);
+
+    const firstBody = await validRegistrationBody();
+    await expectRateLimitedRoute('POST', '/v1/auth/registration').unauthenticated().withBody(firstBody).toReturn(204);
+    expect(mockAuth.createUser).toHaveBeenCalledOnce();
+
+    const secondBody = await validRegistrationBody();
+    const response = await expectRateLimitedRoute('POST', '/v1/auth/registration')
+      .unauthenticated()
+      .withBody(secondBody)
+      .toReturn(429);
+
+    expect(response.body.error.code).toBe(ApiErrorCode.RATE_LIMITED);
+    expect(response.body.error.traceId).toEqual(expect.any(String));
+    expect(mockAuth.createUser).toHaveBeenCalledOnce();
   });
 
   it('rejects two different versions for the same agreement', async () => {

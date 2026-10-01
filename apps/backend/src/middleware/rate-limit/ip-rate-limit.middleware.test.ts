@@ -5,7 +5,7 @@ import express from 'express';
 import request from 'supertest';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import { createIpRateLimitMiddleware } from './ip-rate-limit.middleware';
+import { createEmailRateLimitMiddleware, createIpRateLimitMiddleware } from './ip-rate-limit.middleware';
 
 describe('createIpRateLimitMiddleware', () => {
   let response: Response;
@@ -31,7 +31,11 @@ describe('createIpRateLimitMiddleware', () => {
     expect(response.status).toHaveBeenCalledWith(StatusCodes.TOO_MANY_REQUESTS);
     expect(response.set).toHaveBeenCalledWith('Retry-After', '60');
     expect(response.json).toHaveBeenCalledWith({
-      error: { message: ApiErrorMessage.RATE_LIMITED, code: ApiErrorCode.RATE_LIMITED },
+      error: {
+        message: ApiErrorMessage.RATE_LIMITED,
+        code: ApiErrorCode.RATE_LIMITED,
+        traceId: expect.any(String),
+      },
     });
   });
 
@@ -128,5 +132,15 @@ describe('createIpRateLimitMiddleware', () => {
 
     expect(next).toHaveBeenCalledTimes(2);
     expect(response.status).not.toHaveBeenCalled();
+  });
+
+  it('limits normalized email attempts across different source IPs', () => {
+    const middleware = createEmailRateLimitMiddleware({ windowMs: 60_000, maxRequests: 1 });
+
+    middleware({ ip: '192.0.2.1', body: { email: 'Parent@Example.COM' }, socket: {} } as Request, response, next);
+    middleware({ ip: '192.0.2.2', body: { email: 'parent@example.com' }, socket: {} } as Request, response, next);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(response.status).toHaveBeenCalledExactlyOnceWith(StatusCodes.TOO_MANY_REQUESTS);
   });
 });
