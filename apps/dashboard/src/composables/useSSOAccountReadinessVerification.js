@@ -1,4 +1,4 @@
-import { computed, onUnmounted, watch } from 'vue';
+import { computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useIsMutating, useQueryClient } from '@tanstack/vue-query';
 import { setUser } from '@sentry/vue';
@@ -14,14 +14,6 @@ import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import { isRosteringEndedError, isTerminalAuthError, isUserNotProvisionedError } from '@/utils/api-errors';
 
 const { logAuthEvent } = useSentryLogging();
-
-// How long the SSO landing page waits for the Firebase token listener to
-// produce an access token before concluding there is no session at all
-// (deep link, stale bookmark, or an SSO redirect that never signed in).
-// The token normally arrives within a couple of seconds of the redirect;
-// the period is generous so a slow token exchange on a weak device makes
-// the cut, and the watcher below cancels the timer the moment it does.
-const NO_SESSION_GRACE_PERIOD_MS = 20_000;
 
 /**
  * Verify account readiness after SSO authentication.
@@ -41,8 +33,8 @@ const NO_SESSION_GRACE_PERIOD_MS = 20_000;
  *   cached during the provisioning window, clearing any stale global error,
  *   and the redirect to the user's original destination;
  * - a no-session guard: without an access token the query never fires, so a
- *   visitor who lands here signed out is routed to SignIn after a grace
- *   period instead of spinning forever;
+ *   visitor who lands here signed out is routed to SignIn at once. The
+ *   router gate makes that check synchronous — see below;
  * - progress/error logging for the SSO flow; and
  * - `retryPolling`, which resets the `/me` query so SSOAuthPage's retry
  *   button restarts the provisioning wait from scratch.
@@ -102,28 +94,27 @@ const useSSOAccountReadinessVerification = () => {
   };
 
   // No access token means the /me query is disabled and will never settle.
-  // Give the Firebase token listener a grace period, then route to SignIn —
-  // mirrors the old polling loop, which fetched unconditionally, exhausted
-  // its retries on auth/required, and landed on SignIn.
-  const noSessionTimer = setTimeout(() => {
-    if (authStore.accessToken || hasRedirected) return;
+  // The router gate (`authReady`, awaited in `beforeEach`) has already
+  // resolved by the time this page mounts, so a missing token here is not
+  // "not yet" — it is "signed out": a deep link, a stale bookmark, or an SSO
+  // redirect that never signed in. Route to SignIn immediately. This is what
+  // the gate bought: no timer has to guess, and a slow-but-successful token
+  // exchange can no longer be cut off mid-flight.
+  if (!authStore.accessToken) {
     redirectToSignIn();
-  }, NO_SESSION_GRACE_PERIOD_MS);
-  onUnmounted(() => clearTimeout(noSessionTimer));
+  }
 
-  // A token that arrives cancels the timer — the query takes over from here.
   // A token that later *disappears* outside the sign-out flow (revocation,
   // account disabled, an identity reset) disables the /me query again:
   // nothing would fetch, no watcher would navigate, and the page would spin
   // forever — so route to SignIn immediately instead. The page's own
   // sign-out is excluded: the mutation resets state and navigates itself.
+  // Still needed after the gate, which settles the session at boot and says
+  // nothing about it being revoked later in the same session.
   watch(
     () => Boolean(authStore.accessToken),
     (hasToken, hadToken) => {
-      if (hasToken) {
-        clearTimeout(noSessionTimer);
-        return;
-      }
+      if (hasToken) return;
       if (hadToken && !hasRedirected && signOutMutationCount.value === 0) {
         redirectToSignIn();
       }
