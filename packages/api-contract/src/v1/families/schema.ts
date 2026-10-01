@@ -118,8 +118,6 @@ export type RegistrationOptIns = z.infer<typeof RegistrationOptInsSchema>;
  *
  * `name` reuses the canonical `CreateUserNameSchema` from the users contract
  * to keep validation rules consistent across signup paths.
- * `optIns` contains mutable user preferences rather than versioned agreement
- * signatures; its nested shape can grow without adding top-level fields.
  *
  * Excluded from this schema:
  * - userType / authProvider — server-set to caregiver / [password]
@@ -136,7 +134,6 @@ export const CreateFamilyRequestSchema = z
     password: z.string().min(8),
     name: CreateUserNameSchema,
     location: FamilyLocationSchema.optional(),
-    optIns: RegistrationOptInsSchema.optional(),
   })
   .strict();
 

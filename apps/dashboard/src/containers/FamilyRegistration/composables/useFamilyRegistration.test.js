@@ -36,13 +36,7 @@ vi.mock('@/clients/roar-api', () => ({
 
 import { useFamilyRegistration } from './useFamilyRegistration';
 
-const FORM = {
-  email: 'parent@example.com',
-  password: 'super-secret',
-  firstName: 'Pat',
-  lastName: 'Guardian',
-  canContactForFutureStudies: true,
-};
+const FORM = { email: 'parent@example.com', password: 'super-secret', firstName: 'Pat', lastName: 'Guardian' };
 
 function setupSaga() {
   const [result] = withSetup(() => useFamilyRegistration());
@@ -82,27 +76,13 @@ describe('useFamilyRegistration', () => {
     await saga.submit(FORM);
 
     expect(order).toEqual(['createFamily', 'signIn', 'refresh']);
-    // The legacy checkbox name is mapped into the nested API opt-in shape.
+    // Create body excludes legacy fields / isTestData.
     expect(mockCreateFamily).toHaveBeenCalledWith({
-      body: {
-        email: 'parent@example.com',
-        password: 'super-secret',
-        name: { first: 'Pat', last: 'Guardian' },
-        optIns: { researchContact: true },
-      },
+      body: { email: 'parent@example.com', password: 'super-secret', name: { first: 'Pat', last: 'Guardian' } },
     });
     expect(mockLogIn).toHaveBeenCalledWith({ email: 'parent@example.com', password: 'super-secret' });
     expectNoAgreementWork();
     expect(saga.error.value).toBeNull();
-  });
-
-  it('includes a declined research-contact preference in the create body', async () => {
-    const saga = setupSaga();
-    await saga.submit({ ...FORM, canContactForFutureStudies: false });
-
-    expect(mockCreateFamily).toHaveBeenCalledWith({
-      body: expect.objectContaining({ optIns: { researchContact: false } }),
-    });
   });
 
   it('surfaces a terminal "email in use" error on a 409 create and does not sign in', async () => {

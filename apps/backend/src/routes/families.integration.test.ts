@@ -426,7 +426,6 @@ describe('POST /v1/families', () => {
     email: makeEmail(suffix),
     password: 'Password123!',
     name: { first: 'Pat', last: 'Parent' },
-    optIns: { researchContact: true },
   });
 
   beforeEach(() => {
@@ -457,7 +456,6 @@ describe('POST /v1/families', () => {
       expect(userRow!.email).toBe(body.email);
       expect(userRow!.userType).toBe('caregiver');
       expect(userRow!.authProvider).toEqual(['password']);
-      expect(userRow!.optinResearchContact).toBe(true);
       // assessmentPid is server-generated — verify it was set (deterministic from email, but the
       // test only needs to assert it's not null since the generator is exercised elsewhere)
       expect(userRow!.assessmentPid).not.toBeNull();
@@ -499,34 +497,6 @@ describe('POST /v1/families', () => {
       const [familyRow] = await CoreDbClient.select().from(families).where(eq(families.id, res.body.data.id));
       expect(familyRow!.locationCountry).toBe('US');
     });
-
-    it('persists a declined research-contact opt-in as false', async () => {
-      const body = {
-        ...validBody('research-contact-declined'),
-        optIns: { researchContact: false },
-      };
-
-      const res = await expectRoute('POST', '/v1/families').unauthenticated().withBody(body).toReturn(201);
-      const [familyRow] = await CoreDbClient.select().from(families).where(eq(families.id, res.body.data.id));
-      const [userRow] = await CoreDbClient.select().from(users).where(eq(users.id, familyRow!.createdBy!));
-
-      expect(userRow!.optinResearchContact).toBe(false);
-    });
-
-    it('persists a missing research-contact opt-in as null for backward compatibility', async () => {
-      const completeBody = validBody('research-contact-not-provided');
-      const body = {
-        email: completeBody.email,
-        password: completeBody.password,
-        name: completeBody.name,
-      };
-
-      const res = await expectRoute('POST', '/v1/families').unauthenticated().withBody(body).toReturn(201);
-      const [familyRow] = await CoreDbClient.select().from(families).where(eq(families.id, res.body.data.id));
-      const [userRow] = await CoreDbClient.select().from(users).where(eq(users.id, familyRow!.createdBy!));
-
-      expect(userRow!.optinResearchContact).toBeNull();
-    });
   });
 
   describe('validation', () => {
@@ -555,16 +525,6 @@ describe('POST /v1/families', () => {
       await expectRoute('POST', '/v1/families')
         .unauthenticated()
         .withBody({ ...validBody('strict'), unexpectedField: 'nope' })
-        .toReturn(400);
-    });
-
-    it('returns 400 for an unknown field in the optIns object', async () => {
-      await expectRoute('POST', '/v1/families')
-        .unauthenticated()
-        .withBody({
-          ...validBody('strict-opt-ins'),
-          optIns: { researchContact: true, productUpdates: true },
-        })
         .toReturn(400);
     });
   });

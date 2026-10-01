@@ -3,9 +3,11 @@
  * body expected by `POST /v1/families/` (`CreateFamilyRequestSchema`).
  *
  * The create-family endpoint registers the caretaker and their family in one
- * call. The legacy `canContactForFutureStudies` checkbox maps to the nested
- * `optIns.researchContact` preference expected by the strict API contract.
- * Legacy `invitationCodes` are intentionally not part of this caretaker call.
+ * call. Its body is `.strict()` and accepts only `{ email, password, name, location? }`
+ * — notably it does NOT accept the legacy `canContactForFutureStudies` flag or
+ * `invitationCodes` that the old firekit `createNewFamily` payload carried, so
+ * those are intentionally dropped here. (See the migration report for the
+ * follow-up needed to preserve `canContactForFutureStudies`.)
  *
  * `name.{first,last}` are required and must match the API's identifier regex
  * (start with a letter); this mapper trims them and fails clearly if either is
@@ -16,8 +18,7 @@
  * @param {string} form.password - The caretaker password.
  * @param {string} form.firstName - The caretaker first name.
  * @param {string} form.lastName - The caretaker last name.
- * @param {boolean} form.canContactForFutureStudies - Research-contact preference.
- * @returns {{ email: string, password: string, name: { first: string, last: string }, optIns: { researchContact: boolean } }}
+ * @returns {{ email: string, password: string, name: { first: string, last: string } }}
  *   The `CreateFamilyRequestSchema`-shaped body.
  * @throws {Error} If a required field is missing.
  */
@@ -41,15 +42,15 @@ export function mapParentFormToCreateFamily(form) {
     throw new Error('Parent first and last name are required.');
   }
 
-  if (typeof form.canContactForFutureStudies !== 'boolean') {
-    throw new Error('Research contact preference must be a boolean.');
-  }
-
+  // NOTE: `form.canContactForFutureStudies` is intentionally omitted. The
+  // `POST /v1/families/` body (`CreateFamilyRequestSchema`) is `.strict()` and
+  // does not yet accept this flag, so including it would make the create request
+  // fail. Preserving it (form schema + backend support) is tracked for a
+  // follow-up; left here so the dropped field isn't silently forgotten.
   return {
     email,
     password: form.password,
     name: { first, last },
-    optIns: { researchContact: form.canContactForFutureStudies },
   };
 }
 

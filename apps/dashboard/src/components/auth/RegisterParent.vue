@@ -149,7 +149,7 @@
               name="canContactForFutureStudies"
               binary
             />
-            <label for="canContactForFutureStudies" class="ml-2"
+            <label for="keepUpdated" class="ml-2"
               >Contact me about new research opportunities and ROAR innovations</label
             >
           </div>

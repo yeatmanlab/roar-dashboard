@@ -63,7 +63,7 @@ export function useFamilyRegistration() {
   /**
    * Runs the registration saga for the submitted parent form values.
    *
-   * @param {Object} form - Parent form values, including `canContactForFutureStudies`.
+   * @param {Object} form - Parent form values: `{ email, password, firstName, lastName }`.
    * @returns {Promise<void>} Resolves when the family is created and the caretaker
    *   is signed in. On failure, `error.value` is set and the error is re-thrown so
    *   the caller can keep the user on the form.
