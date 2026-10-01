@@ -72,7 +72,7 @@ export const FamiliesController = {
    * identity yet at the point of this call. The service layer enforces the only safety
    * guarantees that matter for this endpoint (email uniqueness, one-family-per-caretaker).
    *
-   * @param body Caretaker credentials, name, opt-ins, and optional family location
+   * @param body Caretaker credentials + name + optional family location
    */
   create: async (body: CreateFamilyRequest) => {
     try {
@@ -81,7 +81,6 @@ export const FamiliesController = {
         password: body.password,
         name: body.name,
         location: body.location,
-        optIns: body.optIns,
       };
 
       const { id } = await familyService.create(serviceInput);
