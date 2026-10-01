@@ -8,6 +8,12 @@ const registrationService = RegistrationService();
 
 /** HTTP mapping for the public pre-authentication registration surface. */
 export const AuthController = {
+  /**
+   * Return the current registration agreements for a requested locale.
+   *
+   * @param query - Validated locale query
+   * @returns Typed HTTP response containing agreements or a server error
+   */
   getRegistrationAgreements: async (query: RegistrationAgreementsQuery) => {
     try {
       const items = await registrationService.getAgreements(query.locale);
@@ -23,6 +29,12 @@ export const AuthController = {
     }
   },
 
+  /**
+   * Register a caretaker after contract and agreement validation.
+   *
+   * @param body - Validated registration payload
+   * @returns Typed 204 response or a mapped registration error
+   */
   register: async (body: RegistrationRequest) => {
     try {
       await registrationService.register({

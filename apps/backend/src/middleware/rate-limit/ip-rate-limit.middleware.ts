@@ -168,12 +168,29 @@ function getRateLimitIpKey(ip: string): string {
   return `ipv6:${prefix}/64`;
 }
 
+/**
+ * Attach standard rate-limit metadata to a response.
+ *
+ * @param res - Express response receiving the headers
+ * @param limit - Maximum requests permitted in the current window
+ * @param remaining - Requests remaining after the current attempt
+ * @param resetAt - Window reset time in Unix milliseconds
+ * @returns Nothing
+ */
 function setRateLimitHeaders(res: Response, limit: number, remaining: number, resetAt: number): void {
   res.set('RateLimit-Limit', String(limit));
   res.set('RateLimit-Remaining', String(remaining));
   res.set('RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
 }
 
+/**
+ * Send a standard traced API error for a rejected request.
+ *
+ * @param res - Express response used to return the error
+ * @param resetAt - Window reset time in Unix milliseconds
+ * @param currentTime - Current time in Unix milliseconds
+ * @returns Nothing
+ */
 function sendRateLimitedResponse(res: Response, resetAt: number, currentTime: number): void {
   res.set('Retry-After', String(Math.max(1, Math.ceil((resetAt - currentTime) / 1000))));
   const error = new ApiError(ApiErrorMessage.RATE_LIMITED, {

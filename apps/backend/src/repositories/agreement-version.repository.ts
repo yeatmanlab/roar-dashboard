@@ -45,7 +45,13 @@ export class AgreementVersionRepository extends BaseRepository<AgreementVersion,
     super(db, agreementVersions);
   }
 
-  /** Returns the current registration agreements available in a locale. */
+  /**
+   * Return current signable registration agreements available in a locale.
+   *
+   * @param locale - Locale to match exactly
+   * @param agreementTypes - Signable agreement types to include
+   * @returns Current matching agreement versions ordered by agreement name and id
+   */
   async listCurrentForRegistration(
     locale: string,
     agreementTypes: readonly AgreementType[],
@@ -66,7 +72,12 @@ export class AgreementVersionRepository extends BaseRepository<AgreementVersion,
       .orderBy(asc(agreements.name), asc(agreements.id));
   }
 
-  /** Returns agreement metadata for submitted versions, including stale versions. */
+  /**
+   * Return registration candidate metadata for submitted version ids, including stale versions.
+   *
+   * @param versionIds - Submitted agreement-version ids
+   * @returns Matching versions; unknown ids are omitted
+   */
   async getRegistrationCandidatesByIds(versionIds: string[]): Promise<RegistrationAgreementVersion[]> {
     if (versionIds.length === 0) return [];
 
