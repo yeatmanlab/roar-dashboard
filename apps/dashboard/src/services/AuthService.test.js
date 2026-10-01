@@ -84,7 +84,21 @@ describe('AuthService.authReady', () => {
     const service = await createService();
     const state = await service.authReady();
 
-    expect(state).toEqual({ user, initError: null, redirectError: null });
+    // `isFromRedirect: false` — a restored session on an ordinary load, not
+    // a redirect return. The store keys the sign-in spinner on this.
+    expect(state).toEqual({ user, isFromRedirect: false, initError: null, redirectError: null });
+  });
+
+  it('flags a session established by a pending redirect result', async () => {
+    const user = { uid: 'sso-user' };
+    mocks.getRedirectResult.mockResolvedValue({ user });
+    emitToken(user);
+
+    const service = await createService();
+    const state = await service.authReady();
+
+    expect(state.isFromRedirect).toBe(true);
+    expect(state.user).toBe(user);
   });
 
   it('resolves with a null user when signed out', async () => {

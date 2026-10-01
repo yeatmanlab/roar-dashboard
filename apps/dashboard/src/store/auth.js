@@ -121,14 +121,19 @@ export const useAuthStore = () => {
 
         if (state.redirectError) {
           console.error('Error processing redirect result:', state.redirectError);
-          this.redirectError = state.redirectError;
         }
+        // Unconditional write: a stale persisted error from a previous boot
+        // must not survive a boot that had none.
+        this.redirectError = state.redirectError;
 
-        // A returning SSO user is signed in by the time readiness resolves,
-        // but the claims fetch and first navigation still have to run. Hold
-        // the app-wide spinner across that window — the SignIn container
-        // clears it once the session is bootstrapped.
-        this.spinner = Boolean(state.user) && !state.redirectError;
+        // A returning SSO *redirect* user is signed in by the time readiness
+        // resolves, but the claims fetch and post-sign-in navigation still
+        // have to run — hold the SignIn page's overlay spinner across that
+        // window, as `initStateFromRedirect` used to. Keyed on the redirect
+        // result, not on session presence: an ordinary reload with a
+        // restored session must clear the (persisted) flag, or it lingers
+        // with no owner and blurs the sign-in form on the next visit there.
+        this.spinner = state.isFromRedirect && !state.redirectError;
 
         return state;
       },
