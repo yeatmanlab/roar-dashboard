@@ -42,10 +42,22 @@ export class UserRepository extends BaseRepository<User, typeof users> {
   /**
    * Find a user by their Firebase authentication ID.
    *
-   * @param authId - The Firebase UID to look up.
+   * `users.authId` is nullable and unique, and Postgres permits many NULLs in a
+   * unique column, so rostered-but-unclaimed users all share `authId = NULL`.
+   * A blank argument must never reach the WHERE clause: `eq()` renders
+   * `authId = NULL`, which matches nothing today, but a null-safe comparison
+   * would match an arbitrary unclaimed user and authenticate the caller as them.
+   * The guard pins that invariant here rather than relying on the SQL semantics.
+   *
+   * @param authId - The Firebase UID to look up. Must be a non-empty string.
    * @returns The user record if found, null otherwise.
+   * @throws {Error} If `authId` is null, undefined, or empty.
    */
   async findByAuthId(authId: string): Promise<User | null> {
+    if (!authId) {
+      throw new Error('findByAuthId requires a non-empty authId');
+    }
+
     const [user] = await this.db.select().from(this.table).where(eq(users.authId, authId)).limit(1);
 
     return user ?? null;
