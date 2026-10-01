@@ -229,10 +229,7 @@ describe('GET /v1/agreements/:agreementId/versions/:versionId/content', () => {
         },
         { transient: { agreementId: agreement.id } },
       );
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({ ok: true, text: async () => '# Immutable agreement content' }),
-      );
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('# Immutable agreement content')));
 
       const res = await expectRoute('GET', `/v1/agreements/${agreement.id}/versions/${version.id}/content`)
         .as(tiers.admin)
