@@ -39,6 +39,8 @@ import type {
 } from '../../types/user';
 import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 
+const FIREBASE_COMPENSATION_FAILURE_EVENT = 'registration.firebase_compensation_failed';
+
 /**
  * Caretaker name fields supplied at family-registration time.
  */
@@ -929,14 +931,19 @@ export function FamilyService({
   /**
    * Delete a Firebase Auth account as a saga compensation step. Failures are logged with full
    * context but not re-thrown — the caller surfaces a 5xx to the client regardless. The
-   * structured log gives a paper trail for manual reconciliation.
+   * structured event is stable so deployment monitoring can alert and route the orphan to
+   * manual reconciliation.
+   *
+   * @param firebaseUid - Firebase account that should be removed
+   * @param reason - Saga stage that triggered compensation
+   * @returns Nothing; compensation failure is recorded rather than re-thrown
    */
   async function compensateDeleteFirebaseUser(firebaseUid: string, reason: string): Promise<void> {
     try {
       await FirebaseAuthClient.deleteUser(firebaseUid);
     } catch (compensationError) {
       logger.error(
-        { err: compensationError, context: { firebaseUid, reason } },
+        { event: FIREBASE_COMPENSATION_FAILURE_EVENT, err: compensationError, context: { firebaseUid, reason } },
         'Firebase deleteUser compensation failed — orphaned auth account requires manual cleanup',
       );
     }

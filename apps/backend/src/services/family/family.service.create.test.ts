@@ -276,6 +276,7 @@ describe('FamilyService.create', () => {
       // The orphaned-account paper trail is logged
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
+          event: 'registration.firebase_compensation_failed',
           err: expect.any(Error),
           context: expect.objectContaining({ firebaseUid: FIREBASE_UID, reason: 'step 3 failure' }),
         }),
