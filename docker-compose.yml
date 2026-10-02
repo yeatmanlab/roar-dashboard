@@ -15,10 +15,17 @@ services:
     ports:
       - "${ROAR_PG_PORT:-5432}:5432"
     volumes:
+      # Persist database data across `docker compose down` — the Auth emulator
+      # already persists its users, so without this the two drift apart after a
+      # down/up (emulator users exist, their DB rows don't). The postgres:18
+      # image expects the mount at /var/lib/postgresql (not .../data).
       - postgres-data:/var/lib/postgresql
       - ./docker/postgres:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      # -h forces a TCP probe: during first-boot init the entrypoint runs a
+      # temporary socket-only server, which plain pg_isready reports as ready
+      # before dependents can actually connect over TCP.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -55,27 +62,48 @@ services:
       timeout: 5s
       retries: 12
 
+  # Shared emulator image (docker/firebase-emulator) — same image and config as
+  # the assessment stack. Storage is included because recording assessments
+  # (roar-readaloud, roav-ran, roav-apps) derive the Storage emulator host from
+  # FIREBASE_AUTH_EMULATOR_HOST and upload to :9199 — without it, every recording
+  # upload in platform-context dev gets connection-refused.
   firebase-auth-emulator:
     container_name: roar-firebase-auth
-    build: docker/firebase-auth-emulator
+    build: docker/firebase-emulator
+    # Rebuild on every `up` (layer-cached, seconds): a cached image from before
+    # the shared-image consolidation cannot run this command — it lacks Java 21
+    # and the pre-downloaded Storage JAR — and compose never rebuilds an
+    # existing image on its own.
+    pull_policy: build
     command: >
       emulators:start
-        --only auth
+        --only auth,storage
         --project ${GCLOUD_PROJECT:-demo-roar}
         --config /firebase.json
         --import /emulator-data
         --export-on-exit /emulator-data
     ports:
       - "${ROAR_AUTH_PORT:-9099}:9099"
-      - "${ROAR_AUTH_UI_PORT:-9999}:9999"
+      - "${ROAR_STORAGE_PORT:-9199}:9199"
+      - "${ROAR_AUTH_UI_PORT:-9999}:9000"
     volumes:
-      - ./docker/firebase-auth-emulator/firebase.json:/firebase.json:ro
+      - ./docker/firebase-emulator/firebase.json:/firebase.json:ro
+      # firebase.json references storage.rules relative to its own location.
+      - ./docker/firebase-emulator/storage.rules:/storage.rules:ro
       - firebase-auth-data:/emulator-data
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:9099/ || exit 1"]
+      # Probe both emulators so a half-started container doesn't report healthy.
+      # Timing matches the assessment stack's copy of this service: the JVM-based
+      # Storage emulator makes cold starts much slower than auth alone.
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:9099/ && curl --silent http://localhost:9199/ --output /dev/null",
+        ]
       interval: 5s
       timeout: 5s
-      retries: 12
+      retries: 20
+      start_period: 45s
 
 volumes:
   postgres-data:
