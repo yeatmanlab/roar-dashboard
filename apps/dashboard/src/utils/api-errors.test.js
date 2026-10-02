@@ -3,7 +3,7 @@ import {
   getApiErrorCode,
   getApiErrorMessage,
   API_ERROR_CODES,
-  isMissingBaseUrlError,
+  isBaseUrlConfigError,
   isRosteringEndedError,
   isTerminalAuthError,
 } from './api-errors';
@@ -123,23 +123,29 @@ describe('isTerminalAuthError', () => {
   });
 });
 
-describe('isMissingBaseUrlError', () => {
-  it('returns true for the code the API client tags onto the thrown Error', () => {
+describe('isBaseUrlConfigError', () => {
+  it('returns true for the missing-base-URL code the API client tags onto the thrown Error', () => {
     // `getRoarApiClient()` throws a plain Error with `.code` set, so the
     // plain-code branch of `getApiErrorCode` is the one that has to match.
     const error = new Error('VITE_ROAR_API_BASE_URL is not set.');
     error.code = API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
-    expect(isMissingBaseUrlError(error)).toBe(true);
+    expect(isBaseUrlConfigError(error)).toBe(true);
+  });
+
+  it('returns true for the invalid-base-URL code', () => {
+    const error = new Error('VITE_ROAR_API_BASE_URL must be an origin with no path.');
+    error.code = API_ERROR_CODES.CONFIG_BASE_URL_INVALID;
+    expect(isBaseUrlConfigError(error)).toBe(true);
   });
 
   it('returns false for auth and rostering errors', () => {
-    expect(isMissingBaseUrlError({ error: { code: API_ERROR_CODES.AUTH_REQUIRED } })).toBe(false);
-    expect(isMissingBaseUrlError({ error: { code: API_ERROR_CODES.AUTH_ROSTERING_ENDED } })).toBe(false);
+    expect(isBaseUrlConfigError({ error: { code: API_ERROR_CODES.AUTH_REQUIRED } })).toBe(false);
+    expect(isBaseUrlConfigError({ error: { code: API_ERROR_CODES.AUTH_ROSTERING_ENDED } })).toBe(false);
   });
 
   it('returns false for untagged errors', () => {
-    expect(isMissingBaseUrlError(new Error('network down'))).toBe(false);
-    expect(isMissingBaseUrlError({})).toBe(false);
-    expect(isMissingBaseUrlError(null)).toBe(false);
+    expect(isBaseUrlConfigError(new Error('network down'))).toBe(false);
+    expect(isBaseUrlConfigError({})).toBe(false);
+    expect(isBaseUrlConfigError(null)).toBe(false);
   });
 });
