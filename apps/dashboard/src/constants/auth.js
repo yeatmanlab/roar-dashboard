@@ -6,10 +6,28 @@ import { oneMinuteInMs, oneSecondInMs } from './time.js';
  * @constant {number} AUTH_SESSION_TIMEOUT_IDLE_THRESHOLD - Session timeout limit (in ms) before dialog is shown.
  * @constant {number} AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION - Session timeout countdown duration (in ms).
  */
-export const AUTH_SESSION_TIMEOUT_IDLE_THRESHOLD =
-  parseInt(import.meta.env.VITE_AUTH_SESSION_TIMEOUT_IDLE_THRESHOLD, 10) || 15 * oneMinuteInMs;
-export const AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION =
-  parseInt(import.meta.env.VITE_AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION, 10) || 60 * oneSecondInMs;
+/**
+ * Parse an env-provided duration, falling back only when the variable is
+ * absent or not a number. `parseInt(x) || fallback` would also discard an
+ * explicit `0`, making the value unsettable.
+ *
+ * @param {string | undefined} rawValue - The env variable's raw string value.
+ * @param {number} fallbackMs - Default duration when the variable is unset or invalid.
+ * @returns {number} The parsed duration in milliseconds.
+ */
+function parseDurationEnv(rawValue, fallbackMs) {
+  const parsed = Number.parseInt(rawValue, 10);
+  return Number.isFinite(parsed) ? parsed : fallbackMs;
+}
+
+export const AUTH_SESSION_TIMEOUT_IDLE_THRESHOLD = parseDurationEnv(
+  import.meta.env.VITE_AUTH_SESSION_TIMEOUT_IDLE_THRESHOLD,
+  15 * oneMinuteInMs,
+);
+export const AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION = parseDurationEnv(
+  import.meta.env.VITE_AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION,
+  60 * oneSecondInMs,
+);
 
 /**
  * How long the router's first navigation waits for Firebase to report the
@@ -24,6 +42,17 @@ export const AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION =
  * @constant {number} AUTH_READY_TIMEOUT_MS
  */
 export const AUTH_READY_TIMEOUT_MS = 10 * oneSecondInMs;
+
+/**
+ * How long the router guard waits for the first `/me` fetch before letting
+ * the navigation proceed without it. A timeout degrades the guard: the
+ * unsigned-TOS gate is skipped and the super-admin check falls back to the
+ * persisted store claims, both re-evaluated on the next navigation. The
+ * guard logs a warning breadcrumb when this fires.
+ *
+ * @constant {number} ROUTER_ME_PREFETCH_TIMEOUT_MS
+ */
+export const ROUTER_ME_PREFETCH_TIMEOUT_MS = 5 * oneSecondInMs;
 
 /**
  * Auth User Type
