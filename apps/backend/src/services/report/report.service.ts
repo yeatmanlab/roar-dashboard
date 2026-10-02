@@ -2904,20 +2904,19 @@ function resolveScoringRulesForVariant(taskSlug: string): ResolvedScoringRules {
     percentileCutoffsByVersion: [],
     rawScoreThresholdsByVersion: [],
     percentileBelowGrade: null,
-    percentileFieldNames: [],
-    rawScoreFieldNames: [],
-    standardScoreFieldNames: [],
+    percentileFieldsByVersion: [],
+    rawScoreFieldsByVersion: [],
+    standardScoreFieldsByVersion: [],
   };
 
   const config = getScoringConfig(taskSlug);
   if (!config) return empty;
 
-  const fieldNames = resolveScoreFieldNames(taskSlug, null);
   const baseRules: ResolvedScoringRules = {
     ...empty,
-    percentileFieldNames: fieldNames.percentileFieldNames,
-    rawScoreFieldNames: fieldNames.rawScoreFieldNames,
-    standardScoreFieldNames: fieldNames.standardScoreFieldNames,
+    percentileFieldsByVersion: config.scoreFields.percentile ?? [],
+    rawScoreFieldsByVersion: config.scoreFields.rawScore ?? [],
+    standardScoreFieldsByVersion: config.scoreFields.standardScore ?? [],
   };
 
   if (config.classification.type === 'assessment-computed') {
