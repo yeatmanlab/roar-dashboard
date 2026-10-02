@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   signInWithEmailAndPassword: vi.fn(),
   getIdToken: vi.fn(),
   getCurrentUser: vi.fn(),
+  authReady: vi.fn(),
   initializeFirekit: vi.fn(),
   setGlobalError: vi.fn(),
 }));
@@ -17,6 +18,7 @@ vi.mock('@/services/AuthService', () => ({
     signInWithEmailAndPassword: mocks.signInWithEmailAndPassword,
     getIdToken: mocks.getIdToken,
     getCurrentUser: mocks.getCurrentUser,
+    authReady: mocks.authReady,
   }),
 }));
 
@@ -358,5 +360,65 @@ describe('authStore.initFirekit', () => {
 
     expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
     expect(authStore.roarfirekit).toBeNull();
+  });
+});
+
+describe('authStore.awaitAuthReady', () => {
+  let authStore;
+
+  const readyState = (overrides = {}) => ({
+    user: null,
+    isFromRedirect: false,
+    initError: null,
+    redirectError: null,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setActivePinia(createPinia());
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    authStore = useAuthStore();
+  });
+
+  it('holds the spinner for a session just established by a redirect return', async () => {
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'sso-user' }, isFromRedirect: true }));
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.spinner).toBe(true);
+  });
+
+  it('clears the spinner for a session restored on an ordinary load', async () => {
+    // Regression guard: keying the spinner on session presence instead of
+    // the redirect result left `spinner: true` in the persisted store on
+    // every signed-in reload, with no owner to clear it — SignIn would
+    // render a permanent blur overlay the next time the user landed there
+    // (e.g. after auth expiry). Only a redirect return is mid-sign-in.
+    authStore.spinner = true; // stale persisted value
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'user-1' } }));
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.spinner).toBe(false);
+  });
+
+  it('records a redirect failure and does not hold the spinner', async () => {
+    const redirectError = new Error('auth/account-exists-with-different-credential');
+    mocks.authReady.mockResolvedValue(readyState({ isFromRedirect: true, redirectError }));
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.redirectError).toBe(redirectError);
+    expect(authStore.spinner).toBe(false);
+  });
+
+  it('clears a stale persisted redirectError on a boot without one', async () => {
+    authStore.redirectError = new Error('stale');
+    mocks.authReady.mockResolvedValue(readyState());
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.redirectError).toBeNull();
   });
 });

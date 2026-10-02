@@ -89,11 +89,53 @@ export const useAuthStore = () => {
       /**
        * Initialize the AuthService's Firebase Auth instance and set up the
        * token change listener. Called once during bootstrap, before initFirekit.
+       *
+       * The long-lived listener is attached before awaiting readiness so the
+       * store observes the same first emission the gate waits on, rather than
+       * subscribing after it and missing it.
        */
       async initAuth() {
         const authService = getAuthService();
         await authService.initialize();
         this.setAuthStateListener();
+        await this.awaitAuthReady();
+      },
+
+      /**
+       * Await the one-time auth readiness resolution and record its outcome.
+       *
+       * Delegates to `AuthService.authReady()` — the memoized composition of
+       * initialization, pending-redirect consumption, and the first token
+       * emission. This is what the router's `beforeEach` gate awaits, so
+       * after it resolves session presence is a synchronous fact.
+       *
+       * Mirrors the service's contract: it does not throw. A redirect failure
+       * lands in `redirectError`; an init failure is surfaced by `initAuth`'s
+       * caller via the bootstrap error boundary in `App.vue`.
+       *
+       * @returns {Promise<import('@/services/AuthService').AuthReadyState>}
+       */
+      async awaitAuthReady() {
+        const authService = getAuthService();
+        const state = await authService.authReady();
+
+        if (state.redirectError) {
+          console.error('Error processing redirect result:', state.redirectError);
+        }
+        // Unconditional write: a stale persisted error from a previous boot
+        // must not survive a boot that had none.
+        this.redirectError = state.redirectError;
+
+        // A returning SSO *redirect* user is signed in by the time readiness
+        // resolves, but the claims fetch and post-sign-in navigation still
+        // have to run — hold the SignIn page's overlay spinner across that
+        // window, as `initStateFromRedirect` used to. Keyed on the redirect
+        // result, not on session presence: an ordinary reload with a
+        // restored session must clear the (persisted) flag, or it lingers
+        // with no owner and blurs the sign-in form on the next visit there.
+        this.spinner = state.isFromRedirect && !state.redirectError;
+
+        return state;
       },
 
       /**
@@ -276,27 +318,6 @@ export const useAuthStore = () => {
         this.ssoProvider = providerName;
         const authService = getAuthService();
         return authService.signInWithRedirect(providerName);
-      },
-
-      /**
-       * Check for a pending SSO redirect result on page load.
-       */
-      async initStateFromRedirect() {
-        this.spinner = true;
-        this.redirectError = null;
-        const authService = getAuthService();
-        try {
-          const result = await authService.getRedirectResult();
-          if (result !== null) {
-            this.spinner = true;
-          } else {
-            this.spinner = false;
-          }
-        } catch (error) {
-          console.error('Error processing redirect result:', error);
-          this.redirectError = error;
-          this.spinner = false;
-        }
       },
 
       /**
