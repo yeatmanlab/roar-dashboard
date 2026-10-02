@@ -1,6 +1,6 @@
 import { QueryCache, QueryClient } from '@tanstack/vue-query';
 import {
-  isMissingBaseUrlError,
+  isBaseUrlConfigError,
   isRosteringEndedError,
   isTerminalAuthError,
   isUserNotProvisionedError,
@@ -86,9 +86,9 @@ export function setProvisioningContextCheck(check) {
  * @returns {boolean} Whether TanStack Query should retry.
  */
 export function meRetryPolicy(failureCount, error) {
-  // A missing API base URL comes from the build, so it is terminal for the
-  // page load — retrying only delays the error UI.
-  if (isRosteringEndedError(error) || isTerminalAuthError(error) || isMissingBaseUrlError(error)) {
+  // A missing or malformed API base URL comes from the build, so it is
+  // terminal for the page load — retrying only delays the error UI.
+  if (isRosteringEndedError(error) || isTerminalAuthError(error) || isBaseUrlConfigError(error)) {
     return false;
   }
   if (isUserNotProvisionedError(error) && provisioningContextCheck()) {
@@ -161,8 +161,8 @@ export const queryClient = new QueryClient({
         type = GLOBAL_ERROR_TYPES.ROSTERING_ENDED;
       } else if (isTerminalAuthError(error)) {
         type = GLOBAL_ERROR_TYPES.AUTH_EXPIRED;
-      } else if (isMissingBaseUrlError(error)) {
-        // A missing base URL breaks every query in the app, not just `/me`, so
+      } else if (isBaseUrlConfigError(error)) {
+        // A misconfigured base URL breaks every query in the app, not just `/me`, so
         // it takes the whole page to the error state regardless of which query
         // surfaced it first. Signing out won't help, but the page is at least
         // explicit instead of spinning.
@@ -221,9 +221,9 @@ export const queryClient = new QueryClient({
       gcTime: window.Cypress ? 0 : 15 * 60 * 1000,
       retry: (failureCount, error) => {
         // Don't retry on terminal auth errors (unrecoverable), nor on a
-        // missing base URL — that comes from the build, so it is terminal for
+        // misconfigured base URL — that comes from the build, so it is terminal for
         // the page load and retrying only delays the error UI.
-        if (isRosteringEndedError(error) || isTerminalAuthError(error) || isMissingBaseUrlError(error)) {
+        if (isRosteringEndedError(error) || isTerminalAuthError(error) || isBaseUrlConfigError(error)) {
           return false;
         }
         // Deterministic behavior in Cypress E2E.

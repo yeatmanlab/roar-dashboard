@@ -50,6 +50,46 @@ describe('getRoarApiClient', () => {
 
     expect(() => getRoarApiClient()).toThrow('VITE_ROAR_API_BASE_URL is not set');
   });
+
+  it('throws when VITE_ROAR_API_BASE_URL is not a valid URL', async () => {
+    vi.stubEnv('VITE_ROAR_API_BASE_URL', 'not-a-url');
+    const { getRoarApiClient } = await import('./index');
+
+    expect(() => getRoarApiClient()).toThrow('VITE_ROAR_API_BASE_URL is not a valid URL');
+  });
+
+  it('throws when VITE_ROAR_API_BASE_URL carries a path component', async () => {
+    // The documented double-prefix trap: the contract adds /v1 itself, so a
+    // configured /v1 suffix would produce /v1/v1/... requests.
+    vi.stubEnv('VITE_ROAR_API_BASE_URL', 'https://api.test.example.com/v1');
+    const { getRoarApiClient } = await import('./index');
+
+    expect(() => getRoarApiClient()).toThrow('must be an origin with no path');
+  });
+
+  it('throws when VITE_ROAR_API_BASE_URL has a trailing slash', async () => {
+    // ts-rest concatenates baseUrl + path directly, so a trailing slash
+    // produces double-slash request URLs.
+    vi.stubEnv('VITE_ROAR_API_BASE_URL', 'https://api.test.example.com/');
+    const { getRoarApiClient } = await import('./index');
+
+    expect(() => getRoarApiClient()).toThrow('must be an origin with no path');
+  });
+
+  it('throws when VITE_ROAR_API_BASE_URL carries a query string', async () => {
+    vi.stubEnv('VITE_ROAR_API_BASE_URL', 'https://api.test.example.com?x=1');
+    const { getRoarApiClient } = await import('./index');
+
+    expect(() => getRoarApiClient()).toThrow('must be an origin with no path');
+  });
+
+  it('accepts a bare origin with an explicit port', async () => {
+    // Guard against a false positive: a port is not a path.
+    vi.stubEnv('VITE_ROAR_API_BASE_URL', 'http://127.0.0.1:4000');
+    const { getRoarApiClient } = await import('./index');
+
+    expect(() => getRoarApiClient()).not.toThrow();
+  });
 });
 
 describe('apiWithAuthRetry', () => {
