@@ -1,5 +1,5 @@
 import { storeToRefs } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { setUser } from '@sentry/vue';
 
 import { isMobileBrowser } from '@/helpers';
@@ -25,6 +25,12 @@ export function useAuth(context) {
   // pull reactive store refs (spinner, ssoProvider)
   const { spinner, ssoProvider } = storeToRefs(authStore);
 
+  // Forward the deep-link target onto the `/sso` route when present, matching
+  // how the SSO landing page and the router guard pass `redirect_to` through.
+  // Returns an empty object (no key) when absent, so the push carries no
+  // stray `?redirect_to=undefined`.
+  const redirectToQuery = (r) => (r.query.redirect_to ? { redirect_to: r.query.redirect_to } : {});
+
   const isUsername = computed(() => {
     const v = email.value ?? '';
     return v !== '' && !String(v).includes('@');
@@ -33,15 +39,79 @@ export function useAuth(context) {
   const showScopedProviders = computed(() => !showPasswordField.value && !emailLinkSent.value);
 
   // ---------- Post-login redirect wiring ----------
-  authStore.$subscribe(() => {
-    if (authStore.uid) {
-      if (ssoProvider.value) {
-        router.push({ path: APP_ROUTES.SSO });
-      } else {
-        router.push({ path: redirectSignInPath(route) });
+  // A failed SSO redirect is recorded on the store during boot
+  // (`awaitAuthReady`) because SignIn isn't mounted yet when the redirect
+  // result is consumed. Surface it through the existing SSO error banner and
+  // consume it, so it can't re-display on a later visit to the page. A `watch`
+  // with `immediate: true` (not a one-shot read) because the first navigation
+  // can beat `createAuthService`, so SignIn can mount before the store write
+  // lands — a plain read would then miss it until the next visit.
+  watch(
+    () => authStore.redirectError,
+    (error) => {
+      if (error) {
+        ssoError.value = true;
+        authStore.redirectError = null;
       }
-    }
-  });
+    },
+    { immediate: true },
+  );
+
+  /**
+   * Navigate away from SignIn exactly once after a sign-in.
+   *
+   * The `routed` guard plus explicit unwatch replaces a store-wide
+   * `$subscribe` that pushed a route on EVERY store mutation while `uid` was
+   * truthy — it had no unsubscribe, so it kept racing the router guard's
+   * TOS/permission redirects and the SSO readiness redirect long after the
+   * first navigation. (Same pattern as `AuthEmailLink.vue`.)
+   *
+   * The overlay spinner is cleared once the navigation settles: after leaving
+   * SignIn the destination page owns its own loading UX, and SignIn is the
+   * only consumer of `authStore.spinner` — leaving it set would blur the
+   * sign-in form on the next visit to the page.
+   *
+   * The `routed` latch is per-SignIn-instance. The keyed `router-view` remounts
+   * SignIn on every entry, so a fresh visit always gets a fresh latch; the only
+   * way to strand it is a push redirected back to the identical `/signin`
+   * fullPath (which does not remount), and that path carries its own global
+   * error that owns the next step.
+   */
+  let routed = false;
+  function redirectAfterSignIn() {
+    if (routed) return;
+    routed = true;
+    stopRedirectWatch();
+
+    // Carry the original destination through an SSO sign-in too: the router
+    // guard only preserves `redirect_to` for UNauthenticated users, and the
+    // user is signed in by the time this runs, so the SSO landing page would
+    // otherwise lose it and always fall back to Home.
+    const destination = ssoProvider.value
+      ? { path: APP_ROUTES.SSO, query: redirectToQuery(route) }
+      : { path: redirectSignInPath(route) };
+    router.push(destination).finally(() => {
+      spinner.value = false;
+    });
+  }
+
+  const stopRedirectWatch = watch(
+    () => authStore.uid,
+    (uid) => {
+      if (uid) redirectAfterSignIn();
+    },
+  );
+
+  // Returning from an SSO *redirect*, the session is restored during boot —
+  // before this page mounts — so the watch above sees no `uid` transition.
+  // `awaitAuthReady` marks that exact window by holding the spinner, so a
+  // truthy pair here means "post-redirect bootstrap in progress": hand over
+  // to the SSO landing page, which owns the provisioning wait. A signed-in
+  // user who deliberately navigates to SignIn (e.g. to sign out while TOS is
+  // unsigned) has `spinner === false` and is NOT bounced away.
+  if (authStore.uid && spinner.value) {
+    redirectAfterSignIn();
+  }
 
   /**
    * Handle a failure that happened *after* the credential check succeeded.
