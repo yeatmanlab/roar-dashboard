@@ -10,6 +10,7 @@ export default {
   taskSlugs: [PA_TASK_ID],
   scoreFields: {
     percentile: [
+      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, fieldName: PA_SCORE_NAMES.PERCENTILE },
       {
         minVersion: 0,
         fieldName: {
@@ -22,6 +23,7 @@ export default {
       },
     ],
     percentileDisplay: [
+      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, fieldName: PA_SCORE_NAMES.PERCENTILE },
       {
         minVersion: 0,
         fieldName: {
@@ -34,6 +36,7 @@ export default {
       },
     ],
     standardScore: [
+      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, fieldName: PA_SCORE_NAMES.STANDARD_SCORE },
       {
         minVersion: 0,
         fieldName: {
@@ -46,6 +49,7 @@ export default {
       },
     ],
     standardScoreDisplay: [
+      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, fieldName: PA_SCORE_NAMES.STANDARD_SCORE },
       {
         minVersion: 0,
         fieldName: {
@@ -63,12 +67,10 @@ export default {
     type: 'percentile-then-rawscore',
     percentileCutoffs: [
       { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, cutoffs: { achieved: 40, developing: 20 } },
-      { minVersion: 3, cutoffs: { achieved: 40, developing: 20 } },
       { minVersion: 0, cutoffs: { achieved: 50, developing: 25 } },
     ],
     rawScoreThresholds: [
       { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, thresholds: { above: 480, some: 420 } },
-      { minVersion: 3, thresholds: { above: 480, some: 420 } },
       { minVersion: 0, thresholds: { above: 55, some: 45 } },
     ],
   },

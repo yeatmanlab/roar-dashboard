@@ -339,15 +339,16 @@ export function resolveScoreFieldName(
  * When omitted, returns all possible field names across all versions (backward compat).
  *
  * @param taskSlug - The task slug
- * @param gradeLevel - Numeric grade level, or null
+ * @param grade - Grade enum string, number, or null. Normalized via `getGradeAsNumber`.
  * @param scoringVersion - When provided, resolve for this version only. Omit for all versions.
  * @returns Resolved field names for percentile and raw score
  */
 export function resolveScoreFieldNames(
   taskSlug: string,
-  gradeLevel: number | null,
+  grade: string | number | null,
   scoringVersion?: number | null,
 ): ScoreFieldResolution {
+  const gradeLevel = getGradeAsNumber(grade);
   const emptyResolution: ScoreFieldResolution = {
     percentileFieldNames: [],
     percentileDisplayFieldNames: [],
