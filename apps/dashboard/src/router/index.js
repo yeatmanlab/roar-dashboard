@@ -9,7 +9,7 @@ import {
   pageTitlesBR,
 } from '@/translations/exports';
 import { APP_ROUTES, APP_ROUTE_NAMES, GAME_ROUTES } from '@/constants/routes';
-import { AUTH_READY_TIMEOUT_MS, AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { AUTH_READY_TIMEOUT_MS, AUTH_SSO_PROVIDERS, ROUTER_ME_PREFETCH_TIMEOUT_MS } from '@/constants/auth';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { AUTH_LOG_MESSAGES, NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
@@ -21,6 +21,10 @@ import { getAuthService } from '@/services/AuthService';
 import { queryClient, setProvisioningContextCheck } from '@/queryClient';
 const { Permissions } = usePermissions();
 const { logNavEvent, logAuthEvent } = useSentryLogging();
+
+// Race sentinel: distinguishes "the /me prefetch timed out" from a prefetch
+// that legitimately resolved to no data, so the degradation can be logged.
+const ME_PREFETCH_TIMED_OUT = Symbol('me-prefetch-timed-out');
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -1227,9 +1231,10 @@ router.beforeEach(async (to, from, next) => {
     // Failures resolve to `undefined` — terminal /me errors are surfaced via
     // the QueryCache → globalError bridge, which the early-return guard
     // above handles on the next navigation. The `.catch` also covers a
-    // rejection that lands AFTER the 5s timeout won the race (a slow /me
+    // rejection that lands AFTER the timeout won the race (a slow /me
     // can reject long after this guard returned); without it, that orphaned
     // rejection would surface as an unhandled promise rejection.
+    let timeoutId;
     meData = await Promise.race([
       queryClient
         .ensureQueryData({
@@ -1245,8 +1250,22 @@ router.beforeEach(async (to, from, next) => {
           staleTime: 60_000,
         })
         .catch(() => undefined),
-      new Promise((resolve) => setTimeout(() => resolve(undefined), 5000)),
+      new Promise((resolve) => {
+        timeoutId = setTimeout(() => resolve(ME_PREFETCH_TIMED_OUT), ROUTER_ME_PREFETCH_TIMEOUT_MS);
+      }),
     ]);
+    clearTimeout(timeoutId);
+
+    // The fail-open degradation is deliberate (freezing the router is worse),
+    // but it must be observable: on timeout the unsigned-TOS gate is skipped
+    // and the super-admin check degrades to the persisted store fallback.
+    if (meData === ME_PREFETCH_TIMED_OUT) {
+      meData = undefined;
+      logNavEvent(NAV_LOG_MESSAGES.ME_PREFETCH_TIMED_OUT, {
+        level: 'warning',
+        data: { timeoutMs: ROUTER_ME_PREFETCH_TIMEOUT_MS, to: to.fullPath },
+      });
+    }
   }
   if (!meData) {
     meData = queryClient.getQueryData([ME_QUERY_KEY]);

@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   authReady: vi.fn(),
   getAuthService: vi.fn(),
   logAuthEvent: vi.fn(),
+  logNavEvent: vi.fn(),
   userCan: vi.fn(() => true),
   globalError: { value: null },
   clearGlobalError: vi.fn(),
@@ -24,7 +25,7 @@ vi.mock('@/services/AuthService', () => ({
 }));
 
 vi.mock('@/composables/useSentryLogging', () => ({
-  default: () => ({ logNavEvent: vi.fn(), logAuthEvent: mocks.logAuthEvent }),
+  default: () => ({ logNavEvent: mocks.logNavEvent, logAuthEvent: mocks.logAuthEvent }),
 }));
 
 // The route table reads permission constants at module load, so the mock has
@@ -67,8 +68,8 @@ vi.mock('@/composables/queries/useMeQuery', () => ({ fetchMe: vi.fn() }));
 const authStore = { isAuthenticated: false, ssoProvider: null, userClaims: null };
 vi.mock('@/store/auth', () => ({ useAuthStore: () => authStore }));
 
-const { AUTH_READY_TIMEOUT_MS } = await import('@/constants/auth');
-const { AUTH_LOG_MESSAGES } = await import('@/constants/logMessages');
+const { AUTH_READY_TIMEOUT_MS, ROUTER_ME_PREFETCH_TIMEOUT_MS } = await import('@/constants/auth');
+const { AUTH_LOG_MESSAGES, NAV_LOG_MESSAGES } = await import('@/constants/logMessages');
 
 /**
  * Load the router and return its single registered `beforeEach` guard.
@@ -112,6 +113,9 @@ describe('router auth-readiness gate', () => {
     mocks.globalError.value = null;
     mocks.getAuthService.mockReturnValue({ authReady: mocks.authReady });
     mocks.authReady.mockResolvedValue({ user: null, initError: null, redirectError: null });
+    // `clearAllMocks` keeps implementations, so per-test overrides (e.g. the
+    // never-settling /me prefetch) would otherwise leak into later tests.
+    mocks.ensureQueryData.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -187,6 +191,43 @@ describe('router auth-readiness gate', () => {
     await guard(toSignIn, fromHome, next);
 
     expect(mocks.logAuthEvent).not.toHaveBeenCalledWith(AUTH_LOG_MESSAGES.AUTH_READY_TIMED_OUT, expect.anything());
+  });
+
+  it('logs a warning and proceeds when the /me prefetch times out', async () => {
+    vi.useFakeTimers();
+    authStore.isAuthenticated = true;
+    // A /me fetch that never settles — the guard's fail-open race must win.
+    mocks.ensureQueryData.mockReturnValue(new Promise(() => {}));
+
+    const guard = await loadGuard();
+    const next = vi.fn();
+
+    const protectedRoute = { name: 'Home', path: '/', fullPath: '/', query: {}, meta: {} };
+    const navigation = guard(protectedRoute, fromHome, next);
+    await vi.advanceTimersByTimeAsync(ROUTER_ME_PREFETCH_TIMEOUT_MS);
+    await navigation;
+
+    // Fail-open is deliberate (freezing the router is worse), but the
+    // degradation — skipped TOS gate, store-fallback super-admin check —
+    // must be observable.
+    expect(next).toHaveBeenCalled();
+    expect(mocks.logNavEvent).toHaveBeenCalledWith(NAV_LOG_MESSAGES.ME_PREFETCH_TIMED_OUT, {
+      level: 'warning',
+      data: { timeoutMs: ROUTER_ME_PREFETCH_TIMEOUT_MS, to: protectedRoute.fullPath },
+    });
+  });
+
+  it('does not log the /me timeout when the prefetch settles in time', async () => {
+    authStore.isAuthenticated = true;
+    mocks.ensureQueryData.mockResolvedValue({ unsignedAgreements: [], userType: 'educator' });
+
+    const guard = await loadGuard();
+    const next = vi.fn();
+
+    const protectedRoute = { name: 'Home', path: '/', fullPath: '/', query: {}, meta: {} };
+    await guard(protectedRoute, fromHome, next);
+
+    expect(mocks.logNavEvent).not.toHaveBeenCalledWith(NAV_LOG_MESSAGES.ME_PREFETCH_TIMED_OUT, expect.anything());
   });
 
   it('proceeds when the AuthService has not been created yet', async () => {
