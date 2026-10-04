@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   connectAuthEmulator: vi.fn(),
   getRedirectResult: vi.fn().mockResolvedValue(null),
   onIdTokenChanged: vi.fn(),
+  getIdToken: vi.fn(),
 }));
 
 vi.mock('firebase/app', () => ({
@@ -31,7 +32,7 @@ vi.mock('firebase/auth', () => ({
   isSignInWithEmailLink: vi.fn(),
   sendPasswordResetEmail: vi.fn(),
   fetchSignInMethodsForEmail: vi.fn(),
-  getIdToken: vi.fn(),
+  getIdToken: mocks.getIdToken,
   onIdTokenChanged: mocks.onIdTokenChanged,
   signOut: vi.fn(),
   GoogleAuthProvider: class {},
@@ -74,19 +75,34 @@ describe('AuthService.authReady', () => {
     mocks.getAuth.mockReturnValue({ currentUser: null });
     mocks.setPersistence.mockResolvedValue(undefined);
     mocks.getRedirectResult.mockResolvedValue(null);
+    mocks.getIdToken.mockResolvedValue(null);
     emitToken(null);
   });
 
-  it('resolves with the signed-in user once the first token emission lands', async () => {
-    const user = { uid: 'user-1' };
+  /**
+   * Put a signed-in user on the Firebase Auth instance so `AuthService.getIdToken`
+   * reaches the firebase `getIdToken` mock (it short-circuits to null when
+   * `currentUser` is null). Returns the configured token.
+   */
+  const signInWithToken = (user, token) => {
+    mocks.getAuth.mockReturnValue({ currentUser: user });
+    mocks.getIdToken.mockResolvedValue(token);
     emitToken(user);
+    return token;
+  };
+
+  it('resolves with the signed-in user and its token once the first emission lands', async () => {
+    const user = { uid: 'user-1' };
+    const token = signInWithToken(user, 'id-token-1');
 
     const service = await createService();
     const state = await service.authReady();
 
     // `isFromRedirect: false` — a restored session on an ordinary load, not
     // a redirect return. The store keys the sign-in spinner on this.
-    expect(state).toEqual({ user, isFromRedirect: false, initError: null, redirectError: null });
+    // `accessToken` is resolved as part of readiness so the store can write it
+    // synchronously before the gate opens.
+    expect(state).toEqual({ user, accessToken: token, isFromRedirect: false, initError: null, redirectError: null });
   });
 
   it('flags a session established by a pending redirect result', async () => {
@@ -101,12 +117,28 @@ describe('AuthService.authReady', () => {
     expect(state.user).toBe(user);
   });
 
-  it('resolves with a null user when signed out', async () => {
+  it('resolves with a null user and null token when signed out', async () => {
     const service = await createService();
     const state = await service.authReady();
 
     expect(state.user).toBeNull();
+    expect(state.accessToken).toBeNull();
     expect(state.initError).toBeNull();
+  });
+
+  it('resolves the ID token only after the first emission settles', async () => {
+    // The token must come from the readiness path, not be left for the store's
+    // async listener — otherwise the gate could open before accessToken lands.
+    const user = { uid: 'user-1' };
+    signInWithToken(user, 'id-token-1');
+
+    const service = await createService();
+    const state = await service.authReady();
+
+    expect(state.accessToken).toBe('id-token-1');
+    // getIdToken is reached (currentUser is set), confirming the token was
+    // resolved during readiness rather than defaulted.
+    expect(mocks.getIdToken).toHaveBeenCalled();
   });
 
   it('consumes the pending redirect before observing the token listener', async () => {

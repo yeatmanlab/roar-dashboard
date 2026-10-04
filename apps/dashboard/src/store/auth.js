@@ -126,6 +126,18 @@ export const useAuthStore = () => {
         // must not survive a boot that had none.
         this.redirectError = state.redirectError;
 
+        // Write the first token from the readiness state so that "gate
+        // resolved" implies "accessToken is set" by construction. The
+        // long-lived `onIdTokenChanged` listener (attached in `initAuth`
+        // before this runs) also writes it, but only after an extra
+        // `await getIdToken()` in its own callback — so without this, the gate
+        // could open before the token landed, and the SSO readiness page would
+        // read `!accessToken` on mount and bounce a successful sign-in back to
+        // SignIn. `getIdToken()` returned null when signed out, so a signed-out
+        // boot correctly leaves this null. Both writes resolve the same
+        // first-emission token, so the listener's later write is idempotent.
+        this.accessToken = state.accessToken;
+
         // A returning SSO *redirect* user is signed in by the time readiness
         // resolves, but the claims fetch and post-sign-in navigation still
         // have to run — hold the SignIn page's overlay spinner across that
