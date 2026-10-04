@@ -1069,19 +1069,28 @@ setProvisioningContextCheck(() => {
  * @returns {Promise<void>}
  */
 const awaitAuthReady = async (to) => {
-  let authService;
   try {
-    authService = getAuthService();
+    // Fail fast if the service was never created. It is created in `mountApp`
+    // (setup.js) before the router is installed, so this only trips on the
+    // Cypress component-test path (which loads `plugins.js` directly and never
+    // calls `mountApp`). Nothing to await there; the store's `isAuthenticated`
+    // is false either way, and the guard re-runs.
+    getAuthService();
   } catch {
-    // `createAuthService` runs in App.vue's `onBeforeMount`, which can lose
-    // the race to the first navigation. Nothing to await yet; the store's
-    // `isAuthenticated` is false either way, and the guard re-runs.
     return;
   }
 
+  const store = useAuthStore();
+
   let timeoutId;
+  // Await the STORE's readiness, not `authService.authReady()` directly. Both
+  // resolve from the same memoized promise, but `awaitAuthReady` writes
+  // `accessToken` in its continuation — awaiting it here makes "gate resolved
+  // ⟹ accessToken written" structural rather than dependent on which awaiter
+  // wins the microtask race. It never rejects (mirrors the service contract),
+  // so no catch is needed around it.
   const timedOut = await Promise.race([
-    authService.authReady().then(() => false),
+    store.awaitAuthReady().then(() => false),
     new Promise((resolve) => {
       timeoutId = setTimeout(() => resolve(true), AUTH_READY_TIMEOUT_MS);
     }),
