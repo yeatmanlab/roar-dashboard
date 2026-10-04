@@ -4,7 +4,6 @@ import { mount, flushPromises } from '@vue/test-utils';
 
 const mockSetGlobalError = vi.fn();
 const mockClearGlobalError = vi.fn();
-const mockCreateAuthService = vi.fn();
 
 const authStore = {
   accessToken: null,
@@ -21,7 +20,6 @@ vi.mock('vue-router', () => ({
 vi.mock('vue-recaptcha', () => ({ useRecaptchaProvider: vi.fn() }));
 vi.mock('@unhead/vue/components', () => ({ Head: { render: () => null } }));
 vi.mock('@/store/auth', () => ({ useAuthStore: () => authStore }));
-vi.mock('@/services/AuthService', () => ({ createAuthService: mockCreateAuthService }));
 vi.mock('@/helpers/resolveUserClaims', () => ({ resolveUserClaims: vi.fn().mockResolvedValue(null) }));
 vi.mock('@/translations/i18n', () => ({
   i18n: { global: { locale: ref('en'), fallbackLocale: ref('en') } },
@@ -55,10 +53,12 @@ describe('App.vue bootstrap', () => {
   });
 
   it('runs the bootstrap sequence without touching global error state', async () => {
+    // `createAuthService` is no longer called here — it runs in `mountApp`
+    // (setup.js) before the router, so the first navigation's readiness gate
+    // has a service to await. App.vue only drives initialization.
     mountApp();
     await flushPromises();
 
-    expect(mockCreateAuthService).toHaveBeenCalledTimes(1);
     expect(authStore.initAuth).toHaveBeenCalledTimes(1);
     expect(authStore.initFirekit).toHaveBeenCalledTimes(1);
     expect(mockSetGlobalError).not.toHaveBeenCalled();

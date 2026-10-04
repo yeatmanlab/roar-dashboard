@@ -53,7 +53,6 @@ const VueQueryDevtools = defineAsyncComponent(() =>
 );
 
 import { useAuthStore } from '@/store/auth';
-import { createAuthService } from '@/services/AuthService';
 import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { i18n } from '@/translations/i18n';
 import useCurrentUser from '@/composables/useCurrentUser';
@@ -145,24 +144,20 @@ useGlobalErrorRedirect();
 
 onBeforeMount(async () => {
   try {
-    // 1. Create the AuthService singleton — owns Firebase Auth directly.
-    createAuthService({
-      projectId: import.meta.env.VITE_FIREBASE_ADMIN_PROJECT_ID,
-      apiKey: import.meta.env.VITE_FIREBASE_ADMIN_API_KEY,
-      authDomain: import.meta.env.VITE_FIREBASE_ADMIN_AUTH_DOMAIN,
-      emulatorAuthHost: import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST || undefined,
-    });
-
-    // 2. Initialize Auth, then await readiness: Firebase app + emulator +
+    // The AuthService singleton is created in `mountApp` (setup.js), before the
+    // router is installed, so the first navigation's readiness gate has a
+    // service to await. Here we only drive initialization.
+    //
+    // 1. Initialize Auth, then await readiness: Firebase app + emulator +
     //    token listener, any pending SSO redirect consumed, and the first
     //    token emission observed. The router's `beforeEach` awaits the same
     //    memoized promise, so no route resolves on unknown auth state.
     await authStore.initAuth();
 
-    // 3. Initialize Firekit for non-auth operations (Firestore, assessments).
+    // 2. Initialize Firekit for non-auth operations (Firestore, assessments).
     await authStore.initFirekit();
 
-    // 4. Claims are derived from the backend `/me` response on all builds (see
+    // 3. Claims are derived from the backend `/me` response on all builds (see
     // `resolveUserClaims`) and copied onto the auth store for the legacy
     // consumers that still read `authStore.userClaims` (`useUserType`,
     // `usePermissions`, the `roarUid` getter). The `useMeQuery` composable
@@ -196,11 +191,12 @@ onBeforeMount(async () => {
   } catch (error) {
     // `initFirekit` catches internally and `initAuth`'s readiness step never
     // rejects (a redirect failure comes back as state), so this boundary
-    // guards the steps with none of their own — `createAuthService` and
-    // `initAuth`'s `initialize()` (missing Firebase config, persistence
-    // setup, emulator init). Without it a rejection escapes the lifecycle
-    // hook: no error page, no readiness, an app stuck on whatever painted
-    // first.
+    // guards the one step with none of its own — `initAuth`'s `initialize()`
+    // (persistence setup, emulator init). Without it a rejection escapes the
+    // lifecycle hook: no error page, no readiness, an app stuck on whatever
+    // painted first. (`createAuthService` itself runs earlier in `mountApp`,
+    // outside this hook; a missing-config throw there fails the mount loudly
+    // rather than landing here.)
     //
     // `isAuthStoreReady` intentionally stays false — it only gates the
     // session timer, and a session that never bootstrapped has nothing to
