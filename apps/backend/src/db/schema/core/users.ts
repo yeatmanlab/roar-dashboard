@@ -26,13 +26,18 @@ const db = p.pgSchema('app');
  * - `email` must be unique (case-insensitive) when not null
  * - `dob` must be in the past when not null
  *
+ * Why `authId` stays nullable:
+ * Rostering creates users before their Firebase account exists, so there is no UID to store
+ * yet, and a sentinel placeholder would collide in the unique index. The cost is that every
+ * unclaimed user shares `authId = NULL`, so a lookup must never compare against a blank value
+ * — `UserRepository.findByAuthId` throws instead of querying.
+ *
  * @see {@link userOrgs} - User's organization memberships
  * @see {@link userClasses} - User's class enrollments
  * @see {@link userFamilies} - User's family memberships
  * @see {@link userGroups} - User's group memberships
  *
  * @todo Should `authProvider` be notNull()?
- * @todo Should `authId` be notNull()?
  */
 export const users = db.table(
   'users',
