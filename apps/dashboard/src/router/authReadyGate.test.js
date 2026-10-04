@@ -64,7 +64,15 @@ vi.mock('@/queryClient', () => ({
 
 vi.mock('@/composables/queries/useMeQuery', () => ({ fetchMe: vi.fn() }));
 
-const authStore = { isAuthenticated: false, ssoProvider: null, userClaims: null };
+// The guard awaits `store.awaitAuthReady()` (not `authService.authReady()`
+// directly), so the mock store delegates to the same `authReady` the tests
+// drive — mirroring the real action, whose resolution is what the gate waits on.
+const authStore = {
+  isAuthenticated: false,
+  ssoProvider: null,
+  userClaims: null,
+  awaitAuthReady: vi.fn(() => mocks.getAuthService().authReady()),
+};
 vi.mock('@/store/auth', () => ({ useAuthStore: () => authStore }));
 
 const { AUTH_READY_TIMEOUT_MS } = await import('@/constants/auth');
@@ -139,6 +147,18 @@ describe('router auth-readiness gate', () => {
     await navigation;
 
     expect(next).toHaveBeenCalled();
+  });
+
+  it('awaits the store readiness action, not authReady() directly', async () => {
+    // The guard must await `store.awaitAuthReady()` so that `accessToken` (which
+    // that action writes in its continuation) is set before the gate opens —
+    // a structural guarantee rather than a microtask-ordering accident.
+    const guard = await loadGuard();
+    const next = vi.fn();
+
+    await guard(toSignIn, fromHome, next);
+
+    expect(authStore.awaitAuthReady).toHaveBeenCalledTimes(1);
   });
 
   it('awaits readiness before reading isAuthenticated', async () => {
