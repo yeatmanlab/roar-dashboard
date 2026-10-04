@@ -43,6 +43,8 @@ const FIREBASE_APP_NAME = 'roar-dashboard-auth';
  *   SSO redirect result, as opposed to restored from persistence on an ordinary load.
  * @property {unknown} initError - Firebase initialization failure, if any.
  * @property {unknown} redirectError - Pending-SSO-redirect failure, if any.
+ * @property {unknown} tokenError - ID-token resolution failure, if any (e.g. an offline reload
+ *   with an expired token). The session may still be present (`user` set) with a null token.
  */
 
 /**
@@ -171,7 +173,14 @@ class AuthService {
    */
   async #doAuthReady() {
     /** @type {AuthReadyState} */
-    const state = { user: null, accessToken: null, isFromRedirect: false, initError: null, redirectError: null };
+    const state = {
+      user: null,
+      accessToken: null,
+      isFromRedirect: false,
+      initError: null,
+      redirectError: null,
+      tokenError: null,
+    };
 
     try {
       await this.initialize();
@@ -228,7 +237,19 @@ class AuthService {
     // known, closing the window where the gate opened but the store had not
     // yet written the token (which bounced a successful SSO sign-in back to
     // SignIn). `getIdToken` returns null when signed out.
-    state.accessToken = await this.getIdToken();
+    //
+    // Wrapped in try/catch: `getIdToken` rejects with
+    // `auth/network-request-failed` when a restored session's token is expired
+    // and the refresh can't reach the network (an offline reload). This
+    // promise is memoized and awaited by the router guard, which must never
+    // reject — so a token failure degrades to a null token carried as
+    // `tokenError`, not a thrown navigation. The long-lived listener retries
+    // the token on the next emission.
+    try {
+      state.accessToken = await this.getIdToken();
+    } catch (error) {
+      state.tokenError = error;
+    }
 
     return state;
   }

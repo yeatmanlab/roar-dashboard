@@ -372,6 +372,7 @@ describe('authStore.awaitAuthReady', () => {
     isFromRedirect: false,
     initError: null,
     redirectError: null,
+    tokenError: null,
     ...overrides,
   });
 
@@ -441,5 +442,19 @@ describe('authStore.awaitAuthReady', () => {
     await authStore.awaitAuthReady();
 
     expect(authStore.accessToken).toBeNull();
+  });
+
+  it('degrades to a null token (and logs) when readiness reports a token failure', async () => {
+    // An offline reload with an expired token: the session is present but the
+    // token could not be resolved. The gate must still open (no throw), with a
+    // null token rather than a stale one.
+    authStore.accessToken = 'stale-token';
+    const tokenError = new Error('auth/network-request-failed');
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'user-1' }, accessToken: null, tokenError }));
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.accessToken).toBeNull();
+    expect(console.error).toHaveBeenCalledWith('Error resolving the access token during auth readiness:', tokenError);
   });
 });

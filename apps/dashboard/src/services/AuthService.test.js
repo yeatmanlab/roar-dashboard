@@ -102,7 +102,14 @@ describe('AuthService.authReady', () => {
     // a redirect return. The store keys the sign-in spinner on this.
     // `accessToken` is resolved as part of readiness so the store can write it
     // synchronously before the gate opens.
-    expect(state).toEqual({ user, accessToken: token, isFromRedirect: false, initError: null, redirectError: null });
+    expect(state).toEqual({
+      user,
+      accessToken: token,
+      isFromRedirect: false,
+      initError: null,
+      redirectError: null,
+      tokenError: null,
+    });
   });
 
   it('flags a session established by a pending redirect result', async () => {
@@ -139,6 +146,24 @@ describe('AuthService.authReady', () => {
     // getIdToken is reached (currentUser is set), confirming the token was
     // resolved during readiness rather than defaulted.
     expect(mocks.getIdToken).toHaveBeenCalled();
+  });
+
+  it('carries a token-resolution failure as state without rejecting', async () => {
+    // getIdToken rejects on an offline reload with an expired token. The
+    // router guard awaits this (memoized) promise and must never reject, so the
+    // failure degrades to a null token carried as `tokenError` — the session
+    // (user) is still reported present.
+    const user = { uid: 'user-1' };
+    mocks.getAuth.mockReturnValue({ currentUser: user });
+    mocks.getIdToken.mockRejectedValue(new Error('auth/network-request-failed'));
+    emitToken(user);
+
+    const service = await createService();
+    const state = await service.authReady();
+
+    expect(state.user).toBe(user);
+    expect(state.accessToken).toBeNull();
+    expect(state.tokenError).toBeInstanceOf(Error);
   });
 
   it('consumes the pending redirect before observing the token listener', async () => {
