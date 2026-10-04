@@ -6,7 +6,7 @@
   </div>
 </template>
 <script setup>
-import { onMounted, watch, ref, computed, onBeforeUnmount } from 'vue';
+import { watch, ref, computed, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
@@ -14,6 +14,7 @@ import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk
 import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
 import { useAuthStore } from '@/store/auth';
 import useAssessmentAuthCallbacks from '@/composables/useAssessmentAuthCallbacks';
+import useAuthReady from '@/composables/useAuthReady';
 import { useGameStore } from '@/store/game';
 import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
@@ -40,19 +41,10 @@ const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isAuthReady } = storeToRefs(authStore);
 
-const initialized = ref(false);
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
+const { ready: initialized } = useAuthReady();
 const handlePopState = () => {
   router.go(0);
 };
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
 
 // Resolves the proxy-launch id or the launching user's own `/me` id. The student-data query
 // below is gated on it because `useUserStudentDataQuery` falls back to the Firestore
@@ -72,10 +64,6 @@ window.addEventListener(
   },
   { once: true },
 );
-
-onMounted(() => {
-  if (authStore.isAuthReady) init();
-});
 
 // Declare interval at component scope
 let checkGameStarted;

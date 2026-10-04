@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
+import { computed, reactive, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -174,7 +174,7 @@ import _values from 'lodash/values';
 import _cloneDeep from 'lodash/cloneDeep';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
-import { useAuthStore } from '@/store/auth';
+import useAuthReady from '@/composables/useAuthReady';
 import useAdministrationQuery from '@/composables/queries/useAdministrationQuery';
 import useAdministrationAssigneesQuery from '@/composables/queries/useAdministrationAssigneesQuery';
 import useAdministrationTaskVariantsQuery from '@/composables/queries/useAdministrationTaskVariantsQuery';
@@ -194,14 +194,12 @@ import { usePermissions } from '@/composables/usePermissions';
 import AdministrationDatePicker from '@/components/AdministrationDatePicker';
 const { userCan, Permissions } = usePermissions();
 
-const initialized = ref(false);
+const { ready: initialized } = useAuthReady();
 const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
 
 const { mutate: upsertAdministration, isPending: isSubmitting } = useUpsertAdministrationMutation();
-
-const authStore = useAuthStore();
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
@@ -552,23 +550,6 @@ const submit = async () => {
     },
   );
 };
-
-// +------------------------------------------------------------------------------------------------------------------+
-// | Lifecycle hooks and subscriptions
-// +------------------------------------------------------------------------------------------------------------------+
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
-
-onMounted(async () => {
-  if (authStore.isAuthReady) init();
-});
 
 watch(
   [existingAdministration, existingAssignees, existingTaskVariants, existingAgreements, allVariants],

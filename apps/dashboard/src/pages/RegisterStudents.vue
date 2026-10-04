@@ -372,7 +372,7 @@
   </div>
 </template>
 <script setup>
-import { ref, toRaw, onMounted, computed } from 'vue';
+import { ref, toRaw, computed } from 'vue';
 import Dropdown from 'primevue/dropdown';
 import Stepper from 'primevue/stepper';
 import Step from 'primevue/step';
@@ -387,8 +387,6 @@ import csvRowToImportRow from '@/helpers/csvRowToImportRow';
 import useBulkImportUsersMutation from '@/composables/mutations/useBulkImportUsersMutation';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { useToast } from 'primevue/usetoast';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import OrgPicker from '@/components/OrgPicker.vue';
 import PvDataTable from 'primevue/datatable';
@@ -403,6 +401,7 @@ import SelectButton from 'primevue/selectbutton';
 import MultiSelect from 'primevue/multiselect';
 import { usePermissions } from '../composables/usePermissions';
 import { exportCsv, orderByDefault } from '@/helpers/query/utils';
+import useAuthReady from '@/composables/useAuthReady';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUserType from '@/composables/useUserType';
 import _without from 'lodash/without';
@@ -416,12 +415,9 @@ const isFileUploaded = ref(false);
 const showSubmitTable = ref(false);
 const allStudentsValid = ref(false);
 
-const refreshing = ref(false);
-const initialized = ref(false);
+const { ready: initialized } = useAuthReady();
 
 const toast = useToast();
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 const { userCan, Permissions } = usePermissions();
 const bulkImportUsersMutation = useBulkImportUsersMutation();
 
@@ -933,28 +929,6 @@ const submit = async () => {
   }
   submitting.value = SubmitStatus.COMPLETE;
 };
-
-/**
- * Handles firekit initialization
- */
-let unsubscribe;
-const refresh = () => {
-  refreshing.value = true;
-  if (unsubscribe) unsubscribe();
-
-  refreshing.value = false;
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.createUpdateUser) refresh();
-});
-
-onMounted(async () => {
-  if (roarfirekit.value.createUpdateUser) {
-    refresh();
-  }
-});
 </script>
 <style>
 .page-container {

@@ -106,7 +106,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 import _filter from 'lodash/filter';
 import _isEmpty from 'lodash/isEmpty';
 import { storeToRefs } from 'pinia';
@@ -117,6 +117,7 @@ import PvSelect from 'primevue/select';
 import PvToggleSwitch from 'primevue/toggleswitch';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import useAuthReady from '@/composables/useAuthReady';
 import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import useUserMembershipsQuery from '@/composables/queries/useUserMembershipsQuery';
@@ -158,25 +159,10 @@ const queryClient = useQueryClient();
 const { mutateAsync: recordUserAgreement } = useRecordUserAgreementMutation();
 const { mutate: signOut } = useSignOutMutation();
 
-let unsubscribe;
-const initialized = ref(false);
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
+const { ready: initialized } = useAuthReady();
 
 const authStore = useAuthStore();
 const { showOptionalAssessments } = storeToRefs(authStore);
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
-
-onMounted(async () => {
-  if (authStore.isAuthReady) {
-    init();
-  }
-});
 
 const getOptionLabel = computed(() => {
   return (option) => {

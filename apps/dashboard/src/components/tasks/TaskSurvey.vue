@@ -7,7 +7,7 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
+import { onBeforeUnmount, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
@@ -38,21 +38,9 @@ const taskStarted = ref(false);
 // gated on it so the survey never starts without a participant identity to attribute it to.
 const participantId = useParticipantId(props.launchId);
 
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-};
 const handlePopState = () => router.go(0);
 
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
-
 window.addEventListener('popstate', handlePopState, { once: true });
-
-onMounted(async () => {
-  if (authStore.isAuthReady) init();
-});
 
 onBeforeUnmount(() => {
   window.removeEventListener('popstate', handlePopState);

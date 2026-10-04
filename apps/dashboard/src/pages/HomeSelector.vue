@@ -47,12 +47,13 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import PvButton from 'primevue/button';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import useAuthReady from '@/composables/useAuthReady';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSentryLogging from '@/composables/useSentryLogging';
@@ -79,16 +80,7 @@ if (ssoProvider.value) {
 const gameStore = useGameStore();
 const { requireRefresh } = storeToRefs(gameStore);
 
-const initialized = ref(false);
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
+const { ready: initialized } = useAuthReady();
 
 const {
   isLoading: isLoadingClaims,
@@ -179,7 +171,6 @@ onMounted(async () => {
     requireRefresh.value = false;
     router.go(0);
   }
-  if (authStore.isAuthReady) init();
   setSentryWidgetVisibility(!isParticipant.value);
 });
 </script>

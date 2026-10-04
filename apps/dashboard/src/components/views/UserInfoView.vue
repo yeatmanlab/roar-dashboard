@@ -26,12 +26,13 @@
   </section>
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
+import useAuthReady from '@/composables/useAuthReady';
 import useUserProfileQuery from '@/composables/queries/useUserProfileQuery';
 import useUpdateUserMutation from '@/composables/mutations/useUpdateUserMutation';
 import { mapUserFormToUpdateBody } from '@/helpers/mappers/mapUserFormToUpdateBody';
@@ -50,23 +51,10 @@ const userType = computed(() => {
   return _get(userData.value, 'userType', 'student');
 });
 
-// +-------------------------+
-// | Firekit Inititalization |
-// +-------------------------+
-const initialized = ref(false);
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
-
-onMounted(() => {
-  if (authStore.isAuthReady) init();
-});
+// +-----------------+
+// | Auth readiness  |
+// +-----------------+
+const { ready: initialized } = useAuthReady();
 
 // +---------+
 // | Queries |

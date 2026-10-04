@@ -9,9 +9,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import useAuthReady from '@/composables/useAuthReady';
 import useUserType from '@/composables/useUserType';
 import useCurrentUser from '@/composables/useCurrentUser';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -23,18 +24,7 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
-const initialized = ref(false);
-
-let unsubscribe;
-
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
+const { ready: initialized } = useAuthReady();
 
 const { mutate: signOut } = useSignOutMutation();
 
@@ -189,9 +179,5 @@ const menuItems = computed(() => {
   }
 
   return items;
-});
-
-onMounted(() => {
-  if (authStore.isAuthReady) init();
 });
 </script>
