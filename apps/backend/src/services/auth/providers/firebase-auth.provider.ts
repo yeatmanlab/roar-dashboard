@@ -6,6 +6,7 @@ import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
 import { ApiError } from '../../../errors/api-error';
 import { logger } from '../../../logger';
 import { getFirebaseErrorCode } from '../../../utils/get-firebase-error-code.util';
+import type { AuthProvider } from '../auth-provider.interface';
 import type { DecodedUser } from '../auth.service';
 
 /**
@@ -18,7 +19,7 @@ import type { DecodedUser } from '../auth.service';
  * @throws {ApiError} AUTH_TOKEN_EXPIRED if the token has expired
  * @throws {ApiError} AUTH_TOKEN_INVALID for any other verification failure
  */
-export class FirebaseAuthProvider {
+export class FirebaseAuthProvider implements AuthProvider {
   async verifyToken(token: string): Promise<DecodedUser> {
     try {
       const decoded = await FirebaseAuthClient.verifyIdToken(token, true);
