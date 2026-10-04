@@ -106,12 +106,15 @@ export const useAuthStore = () => {
        *
        * Delegates to `AuthService.authReady()` — the memoized composition of
        * initialization, pending-redirect consumption, and the first token
-       * emission. This is what the router's `beforeEach` gate awaits, so
-       * after it resolves session presence is a synchronous fact.
+       * emission — then records the outcome on the store. The router's
+       * `beforeEach` gate awaits THIS method (not `authReady()` directly) so
+       * that `accessToken` is written before the gate opens; after it resolves
+       * session presence and the token are both synchronous facts.
        *
        * Mirrors the service's contract: it does not throw. A redirect failure
-       * lands in `redirectError`; an init failure is surfaced by `initAuth`'s
-       * caller via the bootstrap error boundary in `App.vue`.
+       * lands in `redirectError`, a token-resolution failure in `tokenError`
+       * (with a null token); an init failure is surfaced by `initAuth`'s caller
+       * via the bootstrap error boundary in `App.vue`.
        *
        * @returns {Promise<import('@/services/AuthService').AuthReadyState>}
        */
@@ -122,20 +125,29 @@ export const useAuthStore = () => {
         if (state.redirectError) {
           console.error('Error processing redirect result:', state.redirectError);
         }
+        if (state.tokenError) {
+          // The session may still be present with a null token (offline reload
+          // with an expired token). Log for Sentry visibility; the degraded
+          // null token flows through below, and the long-lived listener retries
+          // the token on its next emission.
+          console.error('Error resolving the access token during auth readiness:', state.tokenError);
+        }
         // Unconditional write: a stale persisted error from a previous boot
         // must not survive a boot that had none.
         this.redirectError = state.redirectError;
 
-        // Write the first token from the readiness state so that "gate
-        // resolved" implies "accessToken is set" by construction. The
-        // long-lived `onIdTokenChanged` listener (attached in `initAuth`
-        // before this runs) also writes it, but only after an extra
-        // `await getIdToken()` in its own callback — so without this, the gate
-        // could open before the token landed, and the SSO readiness page would
+        // Write the first token from the readiness state. The router guard
+        // awaits THIS method (not `authService.authReady()` directly), so by
+        // the time the gate opens `accessToken` is written — a structural
+        // guarantee, not a microtask-ordering accident. Without it the gate
+        // could open before the token landed and the SSO readiness page would
         // read `!accessToken` on mount and bounce a successful sign-in back to
-        // SignIn. `getIdToken()` returned null when signed out, so a signed-out
-        // boot correctly leaves this null. Both writes resolve the same
-        // first-emission token, so the listener's later write is idempotent.
+        // SignIn. Null when signed out, or when the token failed to resolve
+        // (see `tokenError` above). The long-lived `onIdTokenChanged` listener
+        // also writes the token from the same first emission, so its later
+        // write is idempotent. This method is called by both `initAuth` and the
+        // guard; the writes are from the same memoized state, so running the
+        // continuation twice is safe.
         this.accessToken = state.accessToken;
 
         // A returning SSO *redirect* user is signed in by the time readiness
