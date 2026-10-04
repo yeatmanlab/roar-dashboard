@@ -37,6 +37,8 @@ const FIREBASE_APP_NAME = 'roar-dashboard-auth';
  *
  * @typedef {object} AuthReadyState
  * @property {import('firebase/auth').User | null} user - The signed-in user, or null if signed out.
+ * @property {string | null} accessToken - The signed-in user's ID token, resolved as part of
+ *   readiness so a caller can write it synchronously before the gate opens; null when signed out.
  * @property {boolean} isFromRedirect - True when the session was just established by a pending
  *   SSO redirect result, as opposed to restored from persistence on an ordinary load.
  * @property {unknown} initError - Firebase initialization failure, if any.
@@ -169,7 +171,7 @@ class AuthService {
    */
   async #doAuthReady() {
     /** @type {AuthReadyState} */
-    const state = { user: null, isFromRedirect: false, initError: null, redirectError: null };
+    const state = { user: null, accessToken: null, isFromRedirect: false, initError: null, redirectError: null };
 
     try {
       await this.initialize();
@@ -218,6 +220,15 @@ class AuthService {
 
       if (settled) unsubscribe();
     });
+
+    // Resolve the ID token as part of readiness. The store's long-lived
+    // listener also derives the token, but it does so AFTER an extra
+    // `await getIdToken()` in its own callback — so a caller that writes
+    // `accessToken` from this state resolves the gate only once the token is
+    // known, closing the window where the gate opened but the store had not
+    // yet written the token (which bounced a successful SSO sign-in back to
+    // SignIn). `getIdToken` returns null when signed out.
+    state.accessToken = await this.getIdToken();
 
     return state;
   }

@@ -368,6 +368,7 @@ describe('authStore.awaitAuthReady', () => {
 
   const readyState = (overrides = {}) => ({
     user: null,
+    accessToken: null,
     isFromRedirect: false,
     initError: null,
     redirectError: null,
@@ -420,5 +421,25 @@ describe('authStore.awaitAuthReady', () => {
     await authStore.awaitAuthReady();
 
     expect(authStore.redirectError).toBeNull();
+  });
+
+  it('writes the access token from the readiness state so the gate opens with it set', async () => {
+    // The guarantee the readiness gate sells: when it resolves, accessToken is
+    // already present — so the SSO readiness page does not read `!accessToken`
+    // on mount and bounce a successful sign-in back to SignIn.
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'user-1' }, accessToken: 'id-token-1' }));
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.accessToken).toBe('id-token-1');
+  });
+
+  it('leaves the access token null for a signed-out boot', async () => {
+    authStore.accessToken = 'stale-token'; // stale persisted value
+    mocks.authReady.mockResolvedValue(readyState());
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.accessToken).toBeNull();
   });
 });
