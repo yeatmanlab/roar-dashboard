@@ -3,6 +3,7 @@ import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { AdministrationsContract } from '@roar-platform/api-contract';
 import { AdministrationsController } from '../controllers/administrations.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
+import { asTsRestMiddleware } from '../middleware/auth-guard/as-ts-rest-middleware';
 
 const s = initServer();
 
@@ -15,93 +16,83 @@ const s = initServer();
 export function registerAdministrationsRoutes(routerInstance: Router) {
   const AdministrationsRoutes = s.router(AdministrationsContract, {
     list: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, query }) => AdministrationsController.list(user!, query),
     },
     create: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, body }) => AdministrationsController.create(user!, body),
     },
     get: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.get(user!, id),
     },
     getAssignees: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.getAssignees(user!, id),
     },
     listTaskVariants: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id }, query }) =>
         AdministrationsController.listTaskVariants(user!, id, query),
     },
     listAgreements: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id }, query }) =>
         AdministrationsController.listAgreements(user!, id, query),
     },
     getTree: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id }, query }) => AdministrationsController.getTree(user!, id, query),
     },
     delete: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.delete(user!, id),
     },
     update: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id }, body }) => AdministrationsController.update(user!, id, body),
     },
     aggregateSupportCategories: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id }, query }) =>
         AdministrationsController.aggregateSupportCategories(user!, id, query),
     },
     progressReports: {
       getStudentProgress: {
-        // @ts-expect-error - ts-rest middleware type incompatibility with Express
-        middleware: [AuthGuardMiddleware],
+        middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
         handler: async ({ req: { user }, params: { id }, query }) =>
           AdministrationsController.listProgressStudents(user!, id, query),
       },
       getProgressOverview: {
-        // @ts-expect-error - ts-rest middleware type incompatibility with Express
-        middleware: [AuthGuardMiddleware],
+        middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
         handler: async ({ req: { user }, params: { id }, query }) =>
           AdministrationsController.getProgressOverview(user!, id, query),
       },
     },
     scoreReports: {
       getOverview: {
-        // @ts-expect-error - ts-rest middleware type incompatibility with Express
-        middleware: [AuthGuardMiddleware],
+        middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
         handler: async ({ req: { user }, params: { id }, query }) =>
           AdministrationsController.getScoreOverview(user!, id, query),
       },
       getScoreFacets: {
-        // @ts-expect-error - ts-rest middleware type incompatibility with Express
-        middleware: [AuthGuardMiddleware],
+        middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
         handler: async ({ req: { user }, params: { id }, query }) =>
           AdministrationsController.getScoreFacets(user!, id, query),
       },
       listStudents: {
-        // @ts-expect-error - ts-rest middleware type incompatibility with Express
-        middleware: [AuthGuardMiddleware],
+        middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
         handler: async ({ req: { user }, params: { id }, query }) =>
           AdministrationsController.listStudentScores(user!, id, query),
       },
       getIndividualStudentReport: {
-        middleware: [AuthGuardMiddleware],
+        middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
         handler: async ({ req: { user }, params: { id, userId }, query }) =>
           AdministrationsController.getIndividualStudentReport(user!, id, userId, query),
       },
       listTaskSubscores: {
-        // @ts-expect-error - ts-rest middleware type incompatibility with Express
-        middleware: [AuthGuardMiddleware],
+        middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
         handler: async ({ req: { user }, params: { id, taskId }, query }) =>
           AdministrationsController.listTaskSubscores(user!, id, taskId, query),
       },

@@ -4,6 +4,7 @@ import { AgreementsContract } from '@roar-platform/api-contract';
 import { AgreementsController } from '../controllers/agreements.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
 import { ImmutablePublicCacheControlMiddleware } from '../middleware/cache-control/public-cache-control.middleware';
+import { asTsRestMiddleware } from '../middleware/auth-guard/as-ts-rest-middleware';
 
 const s = initServer();
 
@@ -18,12 +19,11 @@ const s = initServer();
 export function registerAgreementsRoutes(routerInstance: Router) {
   const AgreementsRoutes = s.router(AgreementsContract, {
     list: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, query }) => AgreementsController.list(user!, query),
     },
     getVersionContent: {
-      middleware: [AuthGuardMiddleware, ImmutablePublicCacheControlMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware), asTsRestMiddleware(ImmutablePublicCacheControlMiddleware)],
       handler: async ({ req: { user }, params }) => AgreementsController.getVersionContent(user!, params),
     },
   });
