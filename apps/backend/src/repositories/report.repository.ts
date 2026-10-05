@@ -39,7 +39,8 @@ import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
 import { COMPOSITE_RUN_TASK_ID } from '../constants/run';
-import { SCORE_DOMAIN, SCORE_NAME, SCORE_TYPE } from '../constants/run-scores';
+import { SCORE_DOMAIN, SCORE_NAME } from '../constants/run-scores';
+import { compositeComputedScoreFilter } from './utils/composite-score-filter.utils';
 import { GRADE_MAP } from '../utils/get-grade-as-number.util';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
@@ -3387,14 +3388,6 @@ export class ReportRepository {
 }
 
 // --- SQL emission helpers for the student-scores query (top-level utilities) ---
-
-/**
- * Restrict a `run_scores` read to what `scoreFields` addresses: computed scores
- * in the composite domain.
- */
-function compositeComputedScoreFilter(): SQL {
-  return and(eq(fdwRunScores.type, SCORE_TYPE.COMPUTED), eq(fdwRunScores.domain, SCORE_DOMAIN.COMPOSITE))!;
-}
 
 /**
  * Emit SQL that coerces a text grade column to a numeric grade level.
