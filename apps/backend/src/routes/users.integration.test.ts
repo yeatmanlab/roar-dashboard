@@ -4283,12 +4283,13 @@ describe('POST /v1/users/anonymous', () => {
     expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
   });
 
-  it('returns 401 when the token is from a non-anonymous provider', async () => {
+  it('returns 403 when the token is from a non-anonymous provider', async () => {
     // authenticateAs sets claims: {} (no firebase key), so isAnonymousToken returns
-    // false and AnonTokenMiddleware rejects the request as non-anonymous.
-    const res = await expectRoute('POST', '/v1/users/anonymous').as(tiers.student).toReturn(401);
+    // false and AnonTokenMiddleware rejects the request as non-anonymous. The caller
+    // is authenticated, so this is 403 (wrong credential type) rather than 401.
+    const res = await expectRoute('POST', '/v1/users/anonymous').as(tiers.student).toReturn(403);
 
-    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
   });
 
   it('returns 200 with { data: { id: <uuid> } } on first call for a new anonymous user', async () => {
