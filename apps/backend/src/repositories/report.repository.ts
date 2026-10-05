@@ -2273,12 +2273,11 @@ export class ReportRepository {
         return null;
       }
       const sub = buildVariantScoreSub(alias, ref.taskVariantId, rules);
-      const cols = sub as unknown as Record<string, SQL>;
       const expr = buildFieldValueSql(
         entries,
-        sql`COALESCE(${cols[pivotColumn(alias, VER_KEY)]}, 0)`,
+        sql`COALESCE(${pivotRef(sub, alias, VER_KEY)}, 0)`,
         gradeAsIntSql(sql`COALESCE(${sub.grade}, ${users.grade})`),
-        (name) => cols[pivotColumn(alias, name)]!,
+        (name) => pivotRef(sub, alias, name),
       );
       if (!expr) return null;
       joins.push({ sub, alias, expr });
@@ -2292,11 +2291,9 @@ export class ReportRepository {
 
       const alias = `${aliasPrefix}_sl`;
       const sub = buildVariantScoreSub(alias, ref.taskVariantId, rules);
-      const cols = sub as unknown as Record<string, SQL>;
-
       // Assessment-computed: the run's own supportLevel string, mapped to priority
       if (rules.assessmentSupportLevelField) {
-        const expr = sql`CASE ${cols[pivotColumn(alias, SUPPORT_LEVEL_KEY)]}
+        const expr = sql`CASE ${pivotRef(sub, alias, SUPPORT_LEVEL_KEY)}
           WHEN 'achievedSkill' THEN 3
           WHEN 'developingSkill' THEN 2
           WHEN 'needsExtraSupport' THEN 1
@@ -2307,9 +2304,9 @@ export class ReportRepository {
       }
 
       // Percentile-then-rawscore: each leg resolves its own field name per run
-      const verSql = sql`COALESCE(${cols[pivotColumn(alias, VER_KEY)]}, 0)`;
+      const verSql = sql`COALESCE(${pivotRef(sub, alias, VER_KEY)}, 0)`;
       const gradeSql = gradeAsIntSql(sql`COALESCE(${sub.grade}, ${users.grade})`);
-      const colFor = (name: string) => cols[pivotColumn(alias, name)]!;
+      const colFor = (name: string) => pivotRef(sub, alias, name);
 
       const pctSql =
         rules.percentileCutoffsByVersion.length > 0
@@ -3430,6 +3427,11 @@ function pivotColumn(alias: string, key: string): string {
   return `${alias}__${key}`;
 }
 
+/** Read one aggregate column off a pivot subquery. Keys are generated, so always present. */
+function pivotRef(sub: unknown, alias: string, key: string): SQL {
+  return (sub as Record<string, SQL>)[pivotColumn(alias, key)]!;
+}
+
 /**
  * Every score name a field type could resolve to, across all versions and both
  * grade branches. The pivot needs a column for each, since which one is the
@@ -3452,6 +3454,10 @@ function candidateFieldNames(entries: VersionedFieldName[]): string[] {
 /**
  * Emit SQL that resolves one field type to a single value per run — the SQL
  * counterpart of `resolveScoreFieldName`.
+ *
+ * Branches are emitted in array order and SQL takes the first match, which is only correct
+ * for strictly descending `minVersion`. `VersionedFieldNameArraySchema`'s `descendingMinVersion`
+ * refinement enforces that at config-parse time, same as `resolveVersionedEntry` relies on.
  *
  * A NULL grade — `Ungraded`, `Other`, or none recorded — takes the `gradeGte` branch,
  * mirroring `resolveFieldValue`: the filter path has to agree with the response path, so
