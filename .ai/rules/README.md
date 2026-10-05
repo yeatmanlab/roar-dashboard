@@ -115,7 +115,7 @@ Rules are designed to work with any AI coding tool and for direct human referenc
 
 **AI tools:** Each tool discovers rules through its own convention. No manual configuration is needed.
 
-- **Claude Code**: `CLAUDE.md` at the repo root (symlink to `AGENTS.md`) plus `.claude/rules/` (symlink to `.ai/rules/`).
+- **Claude Code**: `CLAUDE.md` at the repo root (symlink to `AGENTS.md`) plus the `.claude/{rules,agents,commands,skills}` symlinks into `.ai/`. Rules load with the project context; agents (`.ai/agents/`), slash commands (`.ai/commands/`), and vendored skills (`.ai/skills/`, pinned in `skills-lock.json`) resolve through the same fan-out — see the "AI Agents, Commands, and Skills" section in `AGENTS.md`.
 - **Cursor**: `.cursor/rules/` (symlink to `.ai/rules/`).
 - **GitHub Copilot**: The Copilot coding agent reads `AGENTS.md` directly.
 

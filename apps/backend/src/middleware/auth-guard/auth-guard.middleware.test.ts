@@ -90,6 +90,21 @@ describe('AuthGuardMiddleware', () => {
     });
   });
 
+  it('should return 401 without a user lookup when the verified token carries a blank uid', async () => {
+    const mockDecodedUser = DecodedUserFactory.build({ uid: '' });
+
+    authServiceMock.mockResolvedValue(mockDecodedUser);
+
+    const response = await request(app)
+      .get('/')
+      .set('Authorization', 'Bearer mock-valid-jwt-token')
+      .expect(StatusCodes.UNAUTHORIZED);
+
+    expect(mockFindByAuthId).not.toHaveBeenCalled();
+    expect(response.body.message).toBe(ApiErrorMessage.UNAUTHORIZED);
+    expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_INVALID);
+  });
+
   it('should return 401 when user is not found in database', async () => {
     const mockDecodedUser = DecodedUserFactory.build();
 

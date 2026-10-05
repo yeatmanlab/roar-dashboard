@@ -45,9 +45,12 @@ export function isAnonymousToken(claims: Record<string, unknown>): boolean {
  * then attaches the decoded user to `req.decodedAnonymousUser`.
  *
  * Returns 401 if:
- * - No Authorization header is present
+ * - No Authorization header is present, or it is not a well-formed `Bearer <token>` header
  * - The token is invalid or expired
- * - The token is not from an anonymous sign-in (e.g., email/password or Google)
+ *
+ * Returns 403 if:
+ * - The token is valid but not from an anonymous sign-in (e.g., email/password or Google).
+ *   The caller is authenticated, so this is an authorization failure, not a missing credential.
  *
  * @param req - The Express request object.
  * @param res - The Express response object.
@@ -73,10 +76,13 @@ export async function AnonTokenMiddleware(req: Request, res: Response, next: Nex
         { uid: decodedUser.uid, signInProvider },
         'Non-anonymous token presented to anonymous-only endpoint — likely a client misconfiguration',
       );
+      // 403, not 401: the caller authenticated successfully, but with the wrong credential
+      // type for this endpoint. Signing in again cannot help, so the client needs to tell
+      // "sign in" apart from "use an anonymous session here".
       return next(
-        new ApiError(ApiErrorMessage.UNAUTHORIZED, {
-          statusCode: StatusCodes.UNAUTHORIZED,
-          code: ApiErrorCode.AUTH_REQUIRED,
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
           context: { uid: decodedUser.uid },
         }),
       );
