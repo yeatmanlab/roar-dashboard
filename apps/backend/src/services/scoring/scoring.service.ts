@@ -1,5 +1,12 @@
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
-import type { ScoringConfig, FieldNameValue, SCORE_FIELD_TYPES, SubscoreColumn } from './scoring.config-schema';
+import type {
+  ScoringConfig,
+  FieldNameValue,
+  SCORE_FIELD_TYPES,
+  SubscoreColumn,
+  DisplayRanges,
+  ScoreRange,
+} from './scoring.config-schema';
 import { getScoringConfig } from './scoring.config-registry';
 import type {
   SupportLevel,
@@ -147,6 +154,30 @@ export function getSupportLevel(input: ScoringInput): SupportLevel | null {
 }
 
 /**
+ * Resolve the configured display range (dial min/max) for a resolved score type.
+ *
+ * @param displayRanges - The task's configured display ranges, if any
+ * @param scoreType - The score type resolved for this run
+ * @param scoringVersion - The scoring version, with legacy runs normalized to 0
+ * @returns The range to render, or null when the config declares none
+ */
+function resolveDisplayRange(
+  displayRanges: DisplayRanges | undefined,
+  scoreType: DisplayScoreType,
+  scoringVersion: number,
+): ScoreRange | null {
+  if (!displayRanges) {
+    return null;
+  }
+
+  if (scoreType === 'rawScore') {
+    return resolveVersionedEntry(displayRanges.rawScore ?? [], scoringVersion)?.range ?? null;
+  }
+
+  return displayRanges[scoreType] ?? null;
+}
+
+/**
  * Resolve a task's primary display descriptor (which score to surface, its
  * value, label, and range) from config — moving the dashboard's
  * `getScoreToDisplay` + percent-correct/raw-only/version branching server-side.
@@ -231,7 +262,7 @@ export function getScoreDisplay(args: {
     scoreType,
     value,
     label: scoreType,
-    range: config.displayRanges?.[scoreType] ?? null,
+    range: resolveDisplayRange(config.displayRanges, scoreType, version),
   };
 }
 

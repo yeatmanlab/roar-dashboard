@@ -32,6 +32,6 @@ export default {
   ],
   displayCategory: [{ minVersion: 0, category: 'rawOnly' }],
   displayRanges: {
-    rawScore: { min: 0, max: 100 },
+    rawScore: [{ minVersion: 0, range: { min: 0, max: 100 } }],
   },
 } as const;
