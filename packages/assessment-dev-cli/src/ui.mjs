@@ -225,7 +225,7 @@ export async function loadUi() {
     stream: (text) => console.log(`${BAR()}  ${text}`),
     /**
      * Yes/no prompt. Non-interactive runs (CI, pipes) get `nonTtyValue` so
-     * automation is never blocked — the same contract the bash scripts had.
+     * automation is never blocked.
      */
     confirm: async (message, { nonTtyValue, initialValue = false }) => {
       if (!process.stdin.isTTY) return nonTtyValue;

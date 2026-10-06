@@ -4,8 +4,8 @@ import https from 'node:https';
 import { capture } from './proc.mjs';
 
 /**
- * True when the given TCP port is already bound (lsof on macOS, ss on Linux —
- * the same probes the bash scripts used; both tolerate the tool being absent).
+ * True when the given TCP port is already bound (lsof on macOS, ss on Linux;
+ * both tolerate the tool being absent).
  *
  * @param {string|number} port
  */

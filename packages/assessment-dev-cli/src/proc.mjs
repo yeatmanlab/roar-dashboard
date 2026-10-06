@@ -93,8 +93,8 @@ export function runStreamed(command, { cwd, env } = {}, onLine) {
 }
 
 /**
- * Sleeps synchronously — used only in the teardown fallback, mirroring the
- * bash scripts' `sleep 1` while Docker notices killed processes.
+ * Sleeps synchronously — used only in the teardown fallback, giving Docker a
+ * moment to notice killed processes.
  *
  * @param {number} ms - Milliseconds to block.
  */
