@@ -10,7 +10,7 @@
  */
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { REPO_ROOT } from './context.mjs';
+import { ASSESSMENT_NAME, REPO_ROOT, validAssessmentName } from './context.mjs';
 import { npmCli, run } from './proc.mjs';
 import { loadUi } from './ui.mjs';
 
@@ -29,6 +29,15 @@ const [command, ...args] = process.argv.slice(2);
 if (!command || !(command in COMMANDS)) {
   console.error(`Unknown command: ${command ?? '(none)'}`);
   console.error(`Usage: assessment-dev-cli <${Object.keys(COMMANDS).join('|')}> [args]`);
+  process.exit(1);
+}
+
+// The directory name becomes the compose substitution variable ASSESSMENT_NAME,
+// which lands inside a `sh -c` command string and a volume mount path — reject
+// anything that is not a plain assessment package name before it gets there.
+if (!validAssessmentName(ASSESSMENT_NAME)) {
+  console.error(`"${ASSESSMENT_NAME}" is not an assessment package name (expected lowercase letters, digits, and -).`);
+  console.error('Run the CLI from an assessment directory under apps/assessments/.');
   process.exit(1);
 }
 

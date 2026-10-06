@@ -20,6 +20,23 @@ export const PARAMS_EXAMPLE_FILE = path.join(ASSESSMENT_DIR, 'taskVariantParamet
 export const DEFAULT_PG_PORT = '5433';
 
 /**
+ * True when the name is a legitimate assessment directory name — the shape of
+ * the DB task-slug constraint, and of every directory under apps/assessments/.
+ *
+ * The CLI gates on this before dispatching, because docker compose substitutes
+ * ${ASSESSMENT_NAME} textually into the migrate service's `sh -c` command and
+ * into the config volume's mount path. Anything outside this alphabet (shell
+ * metacharacters, quotes, path separators) would be interpreted there rather
+ * than treated as a name.
+ *
+ * @param {string} name
+ * @returns {boolean}
+ */
+export function validAssessmentName(name) {
+  return /^[a-z0-9-]+$/.test(name);
+}
+
+/**
  * The auth-emulator host dev bundles default to — read from the same file the
  * bundler configs use, so the CLI's probes can never drift from the bundles.
  */

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PG_PORT, resolvePgPort, stackPorts } from './context.mjs';
+import { DEFAULT_PG_PORT, resolvePgPort, stackPorts, validAssessmentName } from './context.mjs';
 import { hasYesFlag } from './help.mjs';
 
 describe('resolvePgPort', () => {
@@ -44,6 +44,24 @@ describe('resolvePgPort', () => {
 describe('stackPorts', () => {
   it('lists every host port the stack binds, Postgres first', () => {
     expect(stackPorts('5544')).toEqual(['5544', '9097', '9197', '9002', '4002']);
+  });
+});
+
+describe('validAssessmentName', () => {
+  it.each([
+    ['roar-swr', true],
+    ['roav-ran', true],
+    ['roar-multichoice', true],
+    ['Roar-SWR', false],
+    ['roar swr', false],
+    ['roar-swr copy', false],
+    ['..', false],
+    ['../evil', false],
+    ['roar-swr; rm -rf /', false],
+    ['$(whoami)', false],
+    ['', false],
+  ])('%j -> %s', (name, expected) => {
+    expect(validAssessmentName(name)).toBe(expected);
   });
 });
 
