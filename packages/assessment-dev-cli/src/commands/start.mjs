@@ -10,9 +10,12 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import {
   ASSESSMENT_AUTH_EMULATOR_HOST,
+  ASSESSMENT_BACKEND_PORT,
   ASSESSMENT_BACKEND_URL,
   ASSESSMENT_NAME,
   ASSESSMENT_STORAGE_EMULATOR_HOST,
+  DEV_SERVER_PORT,
+  EMULATOR_UI_PORT,
   PARAMS_FILE,
   resolvePgPort,
   stackPorts,
@@ -42,7 +45,7 @@ const STALE_CONTAINERS = [
 /** The supabase-style service summary shown once the environment is up. */
 function printRunningSummary(ui, pgPort) {
   const rows = [
-    ['Firebase Emulator', 'http://localhost:9002'],
+    ['Firebase Emulator', `http://localhost:${EMULATOR_UI_PORT}`],
     ['Backend API', ASSESSMENT_BACKEND_URL],
     ['Database URLs', `postgres://postgres:postgres@localhost:${pgPort}/roar_core`],
     ['', `postgres://postgres:postgres@localhost:${pgPort}/roar_assessment`],
@@ -51,7 +54,7 @@ function printRunningSummary(ui, pgPort) {
   const labelWidth = Math.max(...rows.map(([label]) => label.length), 'Assessment'.length) + 2;
   // The assessment URL is the one researchers actually need — bold, set apart.
   const lines = [
-    ui.strong(`${'Assessment'.padEnd(labelWidth)}http://localhost:8000`),
+    ui.strong(`${'Assessment'.padEnd(labelWidth)}http://localhost:${DEV_SERVER_PORT}`),
     '',
     ...rows.map(([label, value]) => `${label.padEnd(labelWidth)}${value}`),
   ];
@@ -86,7 +89,9 @@ export async function start(ui) {
   // still be running — trusting them prints a summary claiming the new ports
   // and predev's remedies loop back here. A port mismatch falls through to the
   // slow path, whose stale-container cleanup self-heals.
-  const backendCurrent = capture(['docker', 'port', 'assessment-backend', '4000/tcp']).stdout.endsWith(':4002');
+  const backendCurrent = capture(['docker', 'port', 'assessment-backend', '4000/tcp']).stdout.endsWith(
+    `:${ASSESSMENT_BACKEND_PORT}`,
+  );
   const emulatorCurrent = capture(['docker', 'port', 'firebase-emulator', '9099/tcp'])
     .stdout.split('\n')[0]
     .endsWith(`:${ASSESSMENT_AUTH_EMULATOR_HOST.split(':')[1]}`);

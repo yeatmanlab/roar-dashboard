@@ -19,7 +19,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { ASSESSMENT_AUTH_EMULATOR_HOST, ASSESSMENT_BACKEND_URL, REPO_ROOT } from '../context.mjs';
+import { ASSESSMENT_AUTH_EMULATOR_HOST, ASSESSMENT_BACKEND_URL, DEV_SERVER_PORT, REPO_ROOT } from '../context.mjs';
 import { portInUse, probe } from '../net.mjs';
 
 /** The platform stack's canonical emulator host and host-run backend. */
@@ -34,8 +34,8 @@ function fail(ui, headline, lines) {
 
 export async function predev(ui) {
   // 1. The dev server's own port.
-  if (portInUse('8000')) {
-    fail(ui, 'Port 8000 is already in use.', [
+  if (portInUse(DEV_SERVER_PORT)) {
+    fail(ui, `Port ${DEV_SERVER_PORT} is already in use.`, [
       'A previous dev server (or another assessment) is still running — stop it first.',
     ]);
     return;

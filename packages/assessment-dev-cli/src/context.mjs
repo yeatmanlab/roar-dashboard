@@ -80,23 +80,34 @@ export function resolvePgPort(captureFn = capture) {
  */
 export function stackPorts(pgPort) {
   // Emulator ports come from the shared host constants so the preflight can
-  // never drift from what the bundles target; the Emulator UI (9002) and
-  // backend (4002) ports must match docker-compose.assessment.yml.
+  // never drift from what the bundles target.
   return [
     pgPort,
     ASSESSMENT_AUTH_EMULATOR_HOST.split(':')[1],
     ASSESSMENT_STORAGE_EMULATOR_HOST.split(':')[1],
-    '9002',
-    '4002',
+    EMULATOR_UI_PORT,
+    ASSESSMENT_BACKEND_PORT,
   ];
 }
 
 /**
- * Where the containerized assessment backend answers on the host. 4002 —
- * deliberately not 4000, which the platform dev backend owns, so both stacks
- * run in parallel. Must match the port mapping in docker-compose.assessment.yml.
+ * Host port of the containerized assessment backend. 4002 — deliberately not
+ * 4000, which the platform dev backend owns, so both stacks run in parallel.
+ * Must match the port mapping in docker-compose.assessment.yml.
  */
-export const ASSESSMENT_BACKEND_URL = 'http://localhost:4002';
+export const ASSESSMENT_BACKEND_PORT = '4002';
+
+/**
+ * Host port of the Firebase Emulator UI. Must match the port mapping in
+ * docker-compose.assessment.yml.
+ */
+export const EMULATOR_UI_PORT = '9002';
+
+/** Port every assessment's dev server binds (webpack or vite, see each config). */
+export const DEV_SERVER_PORT = '8000';
+
+/** Where the containerized assessment backend answers on the host. */
+export const ASSESSMENT_BACKEND_URL = `http://localhost:${ASSESSMENT_BACKEND_PORT}`;
 
 /**
  * Environment for docker compose invocations — the compose file substitutes
