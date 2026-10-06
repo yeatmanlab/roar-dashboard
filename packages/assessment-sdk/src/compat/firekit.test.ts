@@ -51,7 +51,7 @@ function createMockLogger() {
   };
 }
 
-function createMockContext(fetchImpl?: typeof fetch): CommandContext {
+function createMockContext(): CommandContext {
   return {
     baseUrl: 'http://localhost:3000',
     auth: {
@@ -61,7 +61,6 @@ function createMockContext(fetchImpl?: typeof fetch): CommandContext {
       participantId: 'participant-123',
     },
     logger: createMockLogger(),
-    ...(fetchImpl ? { fetchImpl } : {}),
   };
 }
 

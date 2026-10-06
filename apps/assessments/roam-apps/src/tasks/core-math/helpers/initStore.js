@@ -82,7 +82,7 @@ export const initStoreCoreMath = () => {
   store.session.set('warningVisible', false);
 
   //for showing replay button
-  store.session.set('replayButton', true);
+  //store.session.set('replayButton', true);
 
   // for storing next stimulus
   store.session.set('nextStimulus', null);

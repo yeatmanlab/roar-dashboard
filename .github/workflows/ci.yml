@@ -71,7 +71,7 @@ jobs:
       - name: Run OpenFGA model tests
         uses: openfga/action-openfga-test@v0.1.2
         with:
-          test_path: packages/authz/tests
+          test_path: packages/authz
 
       - name: Run all tests
         run: npm run test
