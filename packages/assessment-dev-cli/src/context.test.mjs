@@ -24,6 +24,21 @@ describe('resolvePgPort', () => {
     const captureFn = vi.fn().mockReturnValue({ ok: false, stdout: '' });
     expect(resolvePgPort(captureFn)).toBe(DEFAULT_PG_PORT);
   });
+
+  it('falls back to the default when the lookup succeeds with empty output', () => {
+    const captureFn = vi.fn().mockReturnValue({ ok: true, stdout: '' });
+    expect(resolvePgPort(captureFn)).toBe(DEFAULT_PG_PORT);
+  });
+
+  it('parses the port from an IPv6-first binding', () => {
+    const captureFn = vi.fn().mockReturnValue({ ok: true, stdout: '[::]:5544\n0.0.0.0:5544' });
+    expect(resolvePgPort(captureFn)).toBe('5544');
+  });
+
+  it('parses the port from a loopback binding', () => {
+    const captureFn = vi.fn().mockReturnValue({ ok: true, stdout: '127.0.0.1:5544' });
+    expect(resolvePgPort(captureFn)).toBe('5544');
+  });
 });
 
 describe('stackPorts', () => {
