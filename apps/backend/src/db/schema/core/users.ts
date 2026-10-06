@@ -76,6 +76,8 @@ export const users = db.table(
     hispanicEthnicity: p.boolean(),
     homeLanguage: p.text(),
 
+    optinResearchContact: p.boolean(),
+
     isSuperAdmin: p.boolean().notNull().default(false),
 
     rosteringEnded: p.timestamp({ withTimezone: true }),
