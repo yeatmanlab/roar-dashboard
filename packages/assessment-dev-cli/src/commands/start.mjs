@@ -221,9 +221,12 @@ export async function start(ui) {
   child.stdout.on('data', consume);
   child.stderr.on('data', consume);
   // Ctrl+C goes to the whole foreground process group; let the dev server
-  // handle it and mirror its exit instead of dying first.
-  process.on('SIGINT', () => {});
-  process.on('SIGTERM', () => {});
+  // handle it and mirror its exit instead of dying first. Forward the signal
+  // rather than ignoring it, so a kill aimed at this process alone (a process
+  // manager signals the pid, not the group) still stops the dev server — the
+  // duplicate delivery on Ctrl+C is harmless.
+  process.on('SIGINT', () => child.kill('SIGINT'));
+  process.on('SIGTERM', () => child.kill('SIGTERM'));
   await new Promise((resolve) => {
     // Without this listener a spawn failure (ENOENT, Windows .cmd rules)
     // throws an unhandled 'error' event and the 'exit' event — and with it
