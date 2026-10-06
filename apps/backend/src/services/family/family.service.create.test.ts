@@ -52,6 +52,7 @@ const validInput = {
   email: 'parent@example.com',
   password: 'password123',
   name: { first: 'Pat', last: 'Parent' },
+  optIns: { researchContact: true },
 };
 
 const FIREBASE_UID = 'fb-uid-abc';
@@ -102,6 +103,8 @@ describe('FamilyService.create', () => {
         displayName: 'Pat Parent',
       });
       expect(mockFamilyRepo.createWithCaretaker).toHaveBeenCalledTimes(1);
+      const [caretakerData] = mockFamilyRepo.createWithCaretaker.mock.calls[0]!;
+      expect(caretakerData).toMatchObject({ optinResearchContact: true });
       expect(mockRosterRepo.create).toHaveBeenCalledTimes(1);
       const rosterArgs = mockRosterRepo.create.mock.calls[0]![0];
       expect(rosterArgs.data).toMatchObject({
