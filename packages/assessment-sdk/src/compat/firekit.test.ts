@@ -1698,16 +1698,26 @@ describe('firekit compat', () => {
       fresh._resetFirekitCompat();
     });
 
-    it('does not reconnect the emulator after a facade reset', () => {
-      // storageEmulatorConnected is module-level, so it persists across facade resets.
-      // The emulator test above already triggered the connection; after reset it should not reconnect.
+    it('does not reconnect the emulator after a facade reset', async () => {
+      // storageEmulatorConnected is module-level, so it persists across facade
+      // resets — prove that on a fresh module instance: connect once, reset the
+      // facade, fetch the bucket again, and the connection count stays at one.
+      vi.resetModules();
+      const fresh = await import('./firekit');
       vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
-      _resetFirekitCompat();
-      initializeFirekit('run-emulator-reset-test');
+      vi.stubGlobal('fetch', setupFetchMock('run-emulator-reset-test'));
+      const taskInfo = { variantId: 'variant-123', taskVersion: '1.0.0', isAnonymous: true };
 
-      getFirekitCompat()._getStorageBucket();
+      fresh.initFirekitCompat(createMockContext(), taskInfo);
+      fresh.getFirekitCompat()._getStorageBucket();
+      expect(connectStorageEmulator).toHaveBeenCalledTimes(1);
 
-      expect(connectStorageEmulator).not.toHaveBeenCalled();
+      fresh._resetFirekitCompat();
+      fresh.initFirekitCompat(createMockContext(), taskInfo);
+      fresh.getFirekitCompat()._getStorageBucket();
+
+      expect(connectStorageEmulator).toHaveBeenCalledTimes(1);
+      fresh._resetFirekitCompat();
     });
 
     it('uses the prod recordings bucket when projectId is gse-roar-admin', () => {
