@@ -53,7 +53,7 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       # Host side defaults to 5433 to coexist with a persistent Postgres on 5432.
-      - "${ASSESSMENT_PG_PORT:-5433}:5432"
+      - "127.0.0.1:${ASSESSMENT_PG_PORT:-5433}:5432"
     volumes:
       # Explicitly named (mirroring the platform stack's roar-postgres-data)
       # rather than compose's auto <project>_<key> prefix. The name changed from
@@ -126,11 +126,11 @@ services:
         --project demo-roar
         --config /firebase.json
     ports:
-      - "9097:9099"
+      - "127.0.0.1:9097:9099"
       # Storage emulator (recording uploads) and the Emulator UI (view recordings
       # at :9002).
-      - "9197:9199"
-      - "9002:9000"
+      - "127.0.0.1:9197:9199"
+      - "127.0.0.1:9002:9000"
     healthcheck:
       # curl returns 0 on any HTTP response — checks that both the auth (9099) and storage
       # (9199) emulators are accepting connections so `--wait` doesn't proceed before uploads work.
@@ -182,7 +182,7 @@ services:
       # Host 4002 — the platform dev backend owns 4000, and the stacks run in
       # parallel. Must match the BACKEND_URL the assessment CLI exports
       # (packages/assessment-dev-cli).
-      - "4002:4000"
+      - "127.0.0.1:4002:4000"
     depends_on:
       assessment-db-migrate:
         condition: service_completed_successfully

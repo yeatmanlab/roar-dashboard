@@ -13,7 +13,7 @@ services:
       POSTGRES_USER: ${PG_USER:-postgres}
       POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
     ports:
-      - "${ROAR_PG_PORT:-5432}:5432"
+      - "127.0.0.1:${ROAR_PG_PORT:-5432}:5432"
     volumes:
       # Persist database data across `docker compose down` — the Auth emulator
       # already persists its users, so without this the two drift apart after a
@@ -52,7 +52,7 @@ services:
       openfga-migrate:
         condition: service_completed_successfully
     ports:
-      - "${ROAR_FGA_PORT:-4010}:8080"
+      - "127.0.0.1:${ROAR_FGA_PORT:-4010}:8080"
     environment:
       - OPENFGA_DATASTORE_ENGINE=postgres
       - OPENFGA_DATASTORE_URI=postgres://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@postgres:5432/roar_openfga
@@ -83,9 +83,9 @@ services:
         --import /emulator-data
         --export-on-exit /emulator-data
     ports:
-      - "${ROAR_AUTH_PORT:-9099}:9099"
-      - "${ROAR_STORAGE_PORT:-9199}:9199"
-      - "${ROAR_AUTH_UI_PORT:-9999}:9000"
+      - "127.0.0.1:${ROAR_AUTH_PORT:-9099}:9099"
+      - "127.0.0.1:${ROAR_STORAGE_PORT:-9199}:9199"
+      - "127.0.0.1:${ROAR_AUTH_UI_PORT:-9999}:9000"
     volumes:
       - ./docker/firebase-emulator/firebase.json:/firebase.json:ro
       # firebase.json references storage.rules relative to its own location.
