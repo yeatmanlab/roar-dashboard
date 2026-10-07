@@ -81,8 +81,9 @@ async function apiWithAuthRetry(args) {
  * Creates the client on first call (lazy initialization).
  *
  * @returns {ReturnType<typeof initClient>} Typed ts-rest client
- * @throws {Error} If VITE_ROAR_API_BASE_URL is not set. The error carries
- *   `code: 'config/base-url-missing'` so `isMissingBaseUrlError` can classify
+ * @throws {Error} If VITE_ROAR_API_BASE_URL is not set or is not a bare
+ *   origin. The error carries `code: 'config/base-url-missing'` or
+ *   `code: 'config/base-url-invalid'` so `isBaseUrlConfigError` can classify
  *   it without matching on the message text.
  */
 export function getRoarApiClient() {
@@ -93,6 +94,25 @@ export function getRoarApiClient() {
       // recognize it. The base URL is baked in at build time, so this can
       // never resolve itself between attempts — retrying is pure delay.
       error.code = API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
+      throw error;
+    }
+
+    // The base URL must be a bare origin: the contract applies its own /v1
+    // pathPrefix, so a configured path (typically a trailing /v1) silently
+    // doubles into /v1/v1/... requests that 404 on every endpoint.
+    let baseUrl;
+    try {
+      baseUrl = new URL(ROAR_API_BASE_URL);
+    } catch {
+      const error = new Error(`VITE_ROAR_API_BASE_URL is not a valid URL: ${ROAR_API_BASE_URL}`);
+      error.code = API_ERROR_CODES.CONFIG_BASE_URL_INVALID;
+      throw error;
+    }
+    if (baseUrl.pathname !== '/' || baseUrl.search !== '' || baseUrl.hash !== '' || ROAR_API_BASE_URL.endsWith('/')) {
+      const error = new Error(
+        `VITE_ROAR_API_BASE_URL must be an origin with no path, query, hash, or trailing slash (the contract adds /v1): ${ROAR_API_BASE_URL}`,
+      );
+      error.code = API_ERROR_CODES.CONFIG_BASE_URL_INVALID;
       throw error;
     }
 

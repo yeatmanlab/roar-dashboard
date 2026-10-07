@@ -30,18 +30,31 @@ const MOCK_UID = 'firebase-uid-1';
 
 /**
  * Build the context object `useAuth` destructures, backed by a minimal fake
- * auth store. `$subscribe` is a no-op here — the post-login redirect wiring is
- * out of scope for these tests (and is tracked separately in #2214).
+ * auth store. `uid` is exposed through a getter over a ref so the composable's
+ * post-sign-in redirect `watch` can observe transitions; tests drive it via
+ * the returned `uidRef`.
  */
-function createContext({ uid = MOCK_UID } = {}) {
+function createContext({ uid = MOCK_UID, spinner = false, redirectError = null } = {}) {
+  const uidRef = ref(uid);
+  // `uid` and `redirectError` are getters over refs so the composable's
+  // `watch`es observe transitions; tests drive them via `uidRef` /
+  // `redirectErrorRef`.
+  const redirectErrorRef = ref(redirectError);
   const authStore = {
-    uid,
+    get uid() {
+      return uidRef.value;
+    },
     roarUid: null,
     userClaims: null,
-    spinner: ref(false),
+    get redirectError() {
+      return redirectErrorRef.value;
+    },
+    set redirectError(value) {
+      redirectErrorRef.value = value;
+    },
+    spinner: ref(spinner),
     ssoProvider: ref(null),
     roarfirekit: ref(null),
-    $subscribe: vi.fn(),
     logInWithEmailAndPassword: vi.fn().mockResolvedValue(undefined),
     signInWithPopup: vi.fn().mockResolvedValue(undefined),
     signInWithRedirect: vi.fn(),
@@ -50,7 +63,9 @@ function createContext({ uid = MOCK_UID } = {}) {
 
   return {
     authStore,
-    router: { push: vi.fn() },
+    uidRef,
+    redirectErrorRef,
+    router: { push: vi.fn().mockResolvedValue(undefined) },
     route: { query: {} },
     email: ref('teacher@example.org'),
     password: ref('correct-horse'),
@@ -174,6 +189,111 @@ describe('useAuth — credential vs. bootstrap error separation', () => {
       expect(context.authStore.signInWithPopup).toHaveBeenCalledWith('google');
       expect(context.invalid.value).toBe(false);
       expect(context.authStore.spinner.value).toBe(false);
+    });
+  });
+
+  describe('post-sign-in redirect wiring', () => {
+    it('redirects to the sign-in redirect path when the uid becomes set', async () => {
+      const context = createContext({ uid: null });
+      useAuth(context);
+
+      context.uidRef.value = MOCK_UID;
+      await flushPromises();
+
+      expect(context.router.push).toHaveBeenCalledTimes(1);
+      expect(context.router.push).toHaveBeenCalledWith({ path: '/' });
+    });
+
+    it('redirects to the SSO landing page when an SSO provider is active', async () => {
+      const context = createContext({ uid: null });
+      context.authStore.ssoProvider.value = 'clever';
+      useAuth(context);
+
+      context.uidRef.value = MOCK_UID;
+      await flushPromises();
+
+      expect(context.router.push).toHaveBeenCalledTimes(1);
+      expect(context.router.push).toHaveBeenCalledWith({ path: '/sso', query: {} });
+    });
+
+    it('carries redirect_to onto the SSO landing page so the deep-link target survives', async () => {
+      // The router guard preserves redirect_to only for unauthenticated users;
+      // the user is signed in by the time this fires, so useAuth must forward it.
+      const context = createContext({ uid: null });
+      context.authStore.ssoProvider.value = 'clever';
+      context.route.query = { redirect_to: '/scores/123' };
+      useAuth(context);
+
+      context.uidRef.value = MOCK_UID;
+      await flushPromises();
+
+      expect(context.router.push).toHaveBeenCalledWith({ path: '/sso', query: { redirect_to: '/scores/123' } });
+    });
+
+    it('fires exactly once — later uid changes and store mutations do not re-push', async () => {
+      // The regression this replaces: a store-wide $subscribe pushed a route
+      // on EVERY store mutation while uid was truthy, racing the router
+      // guard's TOS/permission redirects long after the first navigation.
+      const context = createContext({ uid: null });
+      useAuth(context);
+
+      context.uidRef.value = MOCK_UID;
+      await flushPromises();
+      context.authStore.spinner.value = true;
+      context.uidRef.value = 'another-uid';
+      await flushPromises();
+
+      expect(context.router.push).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not bounce a signed-in user who deliberately visits the page', async () => {
+      // e.g. navigating to SignIn to sign out while TOS is unsigned: the uid
+      // is already set when the composable mounts and no redirect bootstrap
+      // is in progress (spinner off), so the user must be left on the page.
+      const context = createContext({ uid: MOCK_UID, spinner: false });
+      useAuth(context);
+      await flushPromises();
+
+      expect(context.router.push).not.toHaveBeenCalled();
+    });
+
+    it('redirects at mount when returning from an SSO redirect (uid restored during boot)', async () => {
+      // awaitAuthReady marks the post-redirect bootstrap window by holding
+      // the spinner; the uid never transitions after mount, so the watch
+      // alone would leave the user stranded on SignIn.
+      const context = createContext({ uid: MOCK_UID, spinner: true });
+      context.authStore.ssoProvider.value = 'clever';
+      useAuth(context);
+      await flushPromises();
+
+      expect(context.router.push).toHaveBeenCalledTimes(1);
+      expect(context.router.push).toHaveBeenCalledWith({ path: '/sso', query: {} });
+      // The spinner is released once the navigation settles — SignIn is its
+      // only consumer, and a persisted `true` would blur the form on the
+      // next visit.
+      expect(context.authStore.spinner.value).toBe(false);
+    });
+
+    it('surfaces a redirect failure already on the store at mount as the SSO error banner and consumes it', () => {
+      const context = createContext({ uid: null, redirectError: new Error('auth/account-exists') });
+      useAuth(context);
+
+      expect(context.ssoError.value).toBe(true);
+      expect(context.authStore.redirectError).toBe(null);
+    });
+
+    it('surfaces a redirect failure written AFTER mount (first-navigation-beats-createAuthService ordering)', async () => {
+      // SignIn can mount before the store write lands; a one-shot read would
+      // miss it, so the consumption is a reactive watch with immediate:true.
+      const context = createContext({ uid: null });
+      useAuth(context);
+      expect(context.ssoError.value).toBe(false);
+
+      context.redirectErrorRef.value = new Error('auth/account-exists');
+      await flushPromises();
+
+      expect(context.ssoError.value).toBe(true);
+      expect(context.authStore.redirectError).toBe(null);
     });
   });
 });
