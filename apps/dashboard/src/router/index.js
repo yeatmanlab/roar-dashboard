@@ -9,6 +9,7 @@ import {
   pageTitlesBR,
 } from '@/translations/exports';
 import { APP_ROUTES, APP_ROUTE_NAMES, GAME_ROUTES } from '@/constants/routes';
+import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
@@ -16,7 +17,7 @@ import { fetchMe } from '@/composables/queries/useMeQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { useGlobalError } from '@/composables/useGlobalError';
-import { queryClient } from '@/queryClient';
+import { queryClient, setProvisioningContextCheck } from '@/queryClient';
 const { Permissions } = usePermissions();
 const { logNavEvent } = useSentryLogging();
 
@@ -804,39 +805,44 @@ const routes = [
     name: 'SSO',
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../pages/SSOAuthPage.vue'),
-    props: (route) => ({ code: route.query.code }), // @TODO: Isn't the code processed by the sign-in page?
-    meta: { pageTitle: 'Signing you in…' },
+    // The OAuth `code` parameter is consumed by AuthSSO.vue on the provider
+    // callback routes below — SSOAuthPage declares no props.
+    // `awaitsUserProvisioning` exempts this route from App.vue's `/me` gate
+    // and generic-error redirect: after the SSO redirect, `/me` fails with
+    // `auth/user-not-found` until the backend provisions the user, and this
+    // page owns the loading/retry UX for that window.
+    meta: { pageTitle: 'Signing you in…', awaitsUserProvisioning: true },
   },
   {
     path: APP_ROUTES.AUTH_CLEVER,
     name: 'AuthClever',
     beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../components/auth/AuthClever.vue'),
-    props: (route) => ({ code: route.query.code }),
+    component: () => import('../components/auth/AuthSSO.vue'),
+    props: (route) => ({ code: route.query.code, provider: AUTH_SSO_PROVIDERS.CLEVER }),
     meta: { pageTitle: 'Clever Authentication' },
   },
   {
     path: APP_ROUTES.AUTH_CLASSLINK,
     name: 'AuthClassLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../components/auth/AuthClassLink.vue'),
-    props: (route) => ({ code: route.query.code }),
+    component: () => import('../components/auth/AuthSSO.vue'),
+    props: (route) => ({ code: route.query.code, provider: AUTH_SSO_PROVIDERS.CLASSLINK }),
     meta: { pageTitle: 'ClassLink Authentication' },
   },
   {
     path: APP_ROUTES.AUTH_NYCPS,
     name: 'AuthNycps',
     beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../components/auth/AuthNycps.vue'),
-    props: (route) => ({ code: route.query.code }),
+    component: () => import('../components/auth/AuthSSO.vue'),
+    props: (route) => ({ code: route.query.code, provider: AUTH_SSO_PROVIDERS.NYCPS }),
     meta: { pageTitle: 'NYCPS Authentication' },
   },
   {
     path: APP_ROUTES.AUTH_NYCPS_INITIATE,
     name: 'InitiateAuthNycps',
     beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../components/auth/AuthNycps.vue'),
-    props: () => ({ code: 'true' }),
+    component: () => import('../components/auth/AuthSSO.vue'),
+    props: () => ({ code: 'true', provider: AUTH_SSO_PROVIDERS.NYCPS }),
     meta: { pageTitle: 'Initiate NYCPS Authentication' },
   },
   {
@@ -1025,6 +1031,26 @@ export const router = createRouter({
   },
 });
 
+// Tell the /me retry policy (queryClient.js) when a provisioning wait may be
+// in progress, so `auth/user-not-found` gets the patient ~100s schedule.
+// Two signals, both needed:
+//   - `meta.awaitsUserProvisioning` — the SSO landing page. Derived from the
+//     matched route, not a pathname comparison, so trailing slashes and any
+//     future flagged route behave like every other provisioning exemption.
+//   - `authStore.ssoProvider` — a redirect SSO return lands on /signin and
+//     enables /me there, before useAuth's $subscribe pushes to /sso. Without
+//     this signal that window would burn the generic ~7s budget and bounce
+//     an unprovisioned user to GenericError mid-sign-in.
+setProvisioningContextCheck(() => {
+  if (router.currentRoute.value.meta?.awaitsUserProvisioning) return true;
+  try {
+    return Boolean(useAuthStore().ssoProvider);
+  } catch {
+    // Pinia isn't installed yet (early boot) — no SSO flow can be in flight.
+    return false;
+  }
+});
+
 router.beforeEach(async (to, from, next) => {
   const store = useAuthStore();
   const { userCan } = usePermissions();
@@ -1074,8 +1100,19 @@ router.beforeEach(async (to, from, next) => {
       return;
     }
     if (globalError.value.type === GLOBAL_ERROR_TYPES.SERVER_ERROR && to.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
-      next({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
-      return;
+      // Routes that own the provisioning wait (the SSO landing page) render
+      // their own retryable error UX for an exhausted /me query — don't
+      // hijack a navigation to them. Leaving such a route abandons that
+      // wait, so the error it owned goes with it: clear it and let the
+      // navigation through instead of bouncing the user to GenericError.
+      if (to.meta?.awaitsUserProvisioning || from.meta?.awaitsUserProvisioning) {
+        if (from.meta?.awaitsUserProvisioning && !to.meta?.awaitsUserProvisioning) {
+          clearGlobalError();
+        }
+      } else {
+        next({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
+        return;
+      }
     }
   }
 
@@ -1133,28 +1170,36 @@ router.beforeEach(async (to, from, next) => {
   // navigation through and re-evaluate on the next one than freeze the
   // router. App.vue's `AppSpinner` gates render on `isMeSettling` in the
   // meantime, so the user never sees a flash of the wrong page.
+  // Routes flagged `awaitsUserProvisioning` (the SSO landing page) skip the
+  // prefetch entirely: the page owns the `/me` lifecycle during provisioning,
+  // the unsigned-TOS gate cannot apply to a user whose record doesn't exist
+  // yet, and starting a long provisioning-aware retry cycle here would only
+  // be abandoned by the 5s race below.
   let meData;
-  if (store.isAuthenticated) {
-    try {
-      meData = await Promise.race([
-        queryClient.ensureQueryData({
+  if (store.isAuthenticated && !to.meta?.awaitsUserProvisioning) {
+    // Failures resolve to `undefined` — terminal /me errors are surfaced via
+    // the QueryCache → globalError bridge, which the early-return guard
+    // above handles on the next navigation. The `.catch` also covers a
+    // rejection that lands AFTER the 5s timeout won the race (a slow /me
+    // can reject long after this guard returned); without it, that orphaned
+    // rejection would surface as an unhandled promise rejection.
+    meData = await Promise.race([
+      queryClient
+        .ensureQueryData({
           queryKey: [ME_QUERY_KEY],
           // Required: no defaultQueryFn is configured on the queryClient, so
-          // after an identity reset clears the entry, ensureQueryData without
-          // a queryFn would reject with "Missing queryFn" and silently skip
-          // the unsigned-TOS gate.
+          // after an identity reset clears the entry, ensureQueryData
+          // without a queryFn would reject with "Missing queryFn" and
+          // silently skip the unsigned-TOS gate. The retry policy is NOT
+          // attached here — it is pinned on the query key via
+          // `setQueryDefaults` in queryClient.js, so every /me initiator
+          // shares the same schedule.
           queryFn: fetchMe,
           staleTime: 60_000,
-        }),
-        new Promise((resolve) => setTimeout(() => resolve(undefined), 5000)),
-      ]);
-    } catch {
-      // ensureQueryData throws on terminal `/me` failures (rostering-ended,
-      // auth-expired). Those are surfaced via the QueryCache → globalError
-      // bridge, which the early-return guard above handles. Treat the
-      // payload as unavailable and let navigation continue.
-      meData = undefined;
-    }
+        })
+        .catch(() => undefined),
+      new Promise((resolve) => setTimeout(() => resolve(undefined), 5000)),
+    ]);
   }
   if (!meData) {
     meData = queryClient.getQueryData([ME_QUERY_KEY]);
