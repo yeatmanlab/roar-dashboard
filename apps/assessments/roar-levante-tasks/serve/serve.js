@@ -126,7 +126,7 @@ onAuthStateChanged(auth, async (user) => {
       // Game params come from the variant, which TaskLauncher resolves through the SDK using the
       // taskInfo below — so none are passed here. `logger` stays undefined for standalone play.
       const task = new TaskLauncher({}, userParams, isDev, undefined, { ctx, taskInfo });
-      task.run();
+      task.run().catch((err) => console.error('[roar-levante-tasks] run() failed:', err));
     } catch (err) {
       console.error('[roar-levante-tasks] Failed to initialize assessment:', err);
     }

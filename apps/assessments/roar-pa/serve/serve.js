@@ -98,7 +98,7 @@ onAuthStateChanged(auth, async (user) => {
       // Game params come from the variant, which the assessment resolves through the SDK using
       // the taskInfo below — so none are passed here.
       const roarApp = new RoarPA({}, userParams, undefined, { ctx, taskInfo });
-      roarApp.run();
+      roarApp.run().catch((err) => console.error('[roar-pa] run() failed:', err));
     } catch (err) {
       console.error('Failed to initialize assessment:', err);
     }

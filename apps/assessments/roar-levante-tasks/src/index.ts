@@ -96,8 +96,10 @@ export class TaskLauncher {
     // `GameParamsType` is `Record<string, string>`, but seeded variant params legitimately
     // carry numbers and booleans, and the SDK types them `Record<string, unknown>`. serve.js
     // has always passed exactly this value in — being JavaScript, it was never checked.
-    // Widening `GameParamsType` is the real fix and ripples through every consumer, so it is
-    // left for its own change.
+    // Widening `GameParamsType` to `Record<string, unknown>` is the real fix. The surface is
+    // small — the alias in types/index.d.ts, the `taskName`/`language` reads below and in the
+    // telemetry payload, and the signatures in helpers/config.ts and utils/logger.ts — but it
+    // is narrowing work unrelated to this change, so it is left for its own.
     this.gameParams = { ...this.gameParams, ...variantParams } as GameParamsType;
   }
 

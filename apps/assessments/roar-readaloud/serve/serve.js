@@ -90,7 +90,7 @@ onAuthStateChanged(auth, async (user) => {
       // Game params come from the variant, which ReadAloudTask resolves through the SDK using
       // the taskInfo below — so none are passed here.
       const task = new ReadAloudTask({}, userParams, { assessmentPid, assessmentUid: user.uid }, { ctx, taskInfo });
-      task.run();
+      task.run().catch((err) => console.error('[roar-readaloud] run() failed:', err));
     } catch (err) {
       console.error('[roar-readaloud] Failed to initialize assessment:', err);
     }

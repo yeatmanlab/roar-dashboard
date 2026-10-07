@@ -26,8 +26,8 @@ class RoarMultichoice {
     this.jsPsych = null;
 
     // `initFirekitCompat` is synchronous, so initializing here rather than in `run()` keeps the
-    // facade ready before any other method can touch it — including for hosts that call `init()`
-    // directly. Skipped when the host retains ownership of SDK setup.
+    // facade ready before any other method can touch it. Skipped when the host retains
+    // ownership of SDK setup.
     if (sdkContext) {
       initFirekitCompat(sdkContext.ctx, sdkContext.taskInfo);
     }

@@ -110,7 +110,7 @@ onAuthStateChanged(auth, async (user) => {
       // task URL param is the fallback for standalone play without a stored variantId;
       // variantParams.task is authoritative when the variant carries it explicitly.
       const roarApp = new RoarMultichoice({ task }, userParams, null, { ctx, taskInfo });
-      roarApp.run();
+      roarApp.run().catch((err) => console.error('[roar-multichoice] run() failed:', err));
     } catch (err) {
       console.error('Failed to initialize assessment:', err);
     }

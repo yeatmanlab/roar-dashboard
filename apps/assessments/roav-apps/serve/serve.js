@@ -114,7 +114,7 @@ onAuthStateChanged(auth, async (user) => {
       // params MUST include `taskName`, which TaskLauncher reads off gameParams to route to
       // taskConfig[camelize(taskName)]; a variant missing it fails task resolution.
       const task = new TaskLauncher({}, userParams, undefined, { ctx, taskInfo });
-      task.run();
+      task.run().catch((err) => console.error('[roav-apps] run() failed:', err));
     } catch (err) {
       console.error('[roav-apps] Failed to initialize assessment:', err);
     }
