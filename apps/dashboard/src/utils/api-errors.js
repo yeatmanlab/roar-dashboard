@@ -53,6 +53,9 @@ export function getApiErrorMessage(response) {
  */
 export const API_ERROR_CODES = Object.freeze({
   AUTH_REQUIRED: 'auth/required',
+  // Mirror the backend's ApiErrorCode enum values. The SDK receiver pins the
+  // same two token codes for its 401 refresh-and-retry — a backend rename
+  // must update all three places.
   AUTH_TOKEN_EXPIRED: 'auth/token-expired',
   AUTH_TOKEN_INVALID: 'auth/token-invalid',
   AUTH_ROSTERING_ENDED: 'auth/rostering-ended',

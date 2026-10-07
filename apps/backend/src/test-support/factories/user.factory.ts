@@ -45,6 +45,7 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
       race: user.race,
       hispanicEthnicity: user.hispanicEthnicity,
       homeLanguage: user.homeLanguage,
+      optinResearchContact: user.optinResearchContact,
       isSuperAdmin: user.isSuperAdmin,
       rosteringEnded: user.rosteringEnded,
     };
@@ -81,6 +82,7 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
     race: null,
     hispanicEthnicity: null,
     homeLanguage: null,
+    optinResearchContact: null,
     isSuperAdmin: false,
     rosteringEnded: null,
     createdAt: new Date(),
