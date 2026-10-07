@@ -4,13 +4,13 @@ import { tsRestFetchApi } from '@ts-rest/core';
 // Set the env var before any module imports reference it
 vi.stubEnv('VITE_ROAR_API_BASE_URL', 'https://api.test.example.com');
 
-vi.mock('@ts-rest/core', () => ({
+// Partial mock: only the client factory and the fetcher are replaced. The
+// rest of @ts-rest/core stays real so the (unmocked) api-contract module can
+// build its routers with the real initContract.
+vi.mock('@ts-rest/core', async (importOriginal) => ({
+  ...(await importOriginal()),
   initClient: vi.fn(() => ({})),
   tsRestFetchApi: vi.fn(),
-}));
-
-vi.mock('@roar-platform/api-contract', () => ({
-  ApiContractV1: {},
 }));
 
 const mockAuthStore = {
@@ -72,7 +72,7 @@ describe('apiWithAuthRetry', () => {
   });
 
   it('attaches the auth token to requests', async () => {
-    const mockResponse = { status: 200, clone: () => mockResponse, json: () => ({}) };
+    const mockResponse = { status: 200, body: {} };
     vi.mocked(tsRestFetchApi).mockResolvedValue(mockResponse);
 
     await capturedApi({ headers: { 'Content-Type': 'application/json' } });
@@ -89,7 +89,7 @@ describe('apiWithAuthRetry', () => {
 
   it('omits Authorization header when no token is available', async () => {
     mockAuthStore.accessToken = null;
-    const mockResponse = { status: 200, clone: () => mockResponse, json: () => ({}) };
+    const mockResponse = { status: 200, body: {} };
     vi.mocked(tsRestFetchApi).mockResolvedValue(mockResponse);
 
     await capturedApi({ headers: {} });
@@ -101,10 +101,7 @@ describe('apiWithAuthRetry', () => {
   it('retries on 401 with auth/token-expired after refreshing the token', async () => {
     const expiredResponse = {
       status: 401,
-      clone() {
-        return this;
-      },
-      json: vi.fn().mockResolvedValue({ error: { code: 'auth/token-expired' } }),
+      body: { error: { code: 'auth/token-expired' } },
     };
     const successResponse = { status: 200 };
 
@@ -130,10 +127,7 @@ describe('apiWithAuthRetry', () => {
     // with one forced refresh — same treatment as an expired token.
     const invalidResponse = {
       status: 401,
-      clone() {
-        return this;
-      },
-      json: vi.fn().mockResolvedValue({ error: { code: 'auth/token-invalid' } }),
+      body: { error: { code: 'auth/token-invalid' } },
     };
     const successResponse = { status: 200 };
 
@@ -156,10 +150,7 @@ describe('apiWithAuthRetry', () => {
   it('does not retry on 401 with a non-token error code', async () => {
     const unauthorizedResponse = {
       status: 401,
-      clone() {
-        return this;
-      },
-      json: vi.fn().mockResolvedValue({ error: { code: 'auth/required' } }),
+      body: { error: { code: 'auth/required' } },
     };
 
     vi.mocked(tsRestFetchApi).mockResolvedValue(unauthorizedResponse);
@@ -174,10 +165,7 @@ describe('apiWithAuthRetry', () => {
   it('returns the original 401 without retrying when forceIdTokenRefresh returns null', async () => {
     const expiredResponse = {
       status: 401,
-      clone() {
-        return this;
-      },
-      json: vi.fn().mockResolvedValue({ error: { code: 'auth/token-expired' } }),
+      body: { error: { code: 'auth/token-expired' } },
     };
 
     vi.mocked(tsRestFetchApi).mockResolvedValueOnce(expiredResponse);
@@ -195,10 +183,7 @@ describe('apiWithAuthRetry', () => {
   it('returns the original 401 when the token refresh itself fails', async () => {
     const expiredResponse = {
       status: 401,
-      clone() {
-        return this;
-      },
-      json: vi.fn().mockResolvedValue({ error: { code: 'auth/token-expired' } }),
+      body: { error: { code: 'auth/token-expired' } },
     };
 
     vi.mocked(tsRestFetchApi).mockResolvedValueOnce(expiredResponse);
@@ -216,10 +201,7 @@ describe('apiWithAuthRetry', () => {
   it('propagates a retry failure as an error instead of returning the original 401', async () => {
     const expiredResponse = {
       status: 401,
-      clone() {
-        return this;
-      },
-      json: vi.fn().mockResolvedValue({ error: { code: 'auth/token-expired' } }),
+      body: { error: { code: 'auth/token-expired' } },
     };
 
     vi.mocked(tsRestFetchApi).mockResolvedValueOnce(expiredResponse).mockRejectedValueOnce(new Error('network down'));
@@ -231,13 +213,44 @@ describe('apiWithAuthRetry', () => {
     await expect(capturedApi({ headers: {} })).rejects.toThrow('network down');
   });
 
-  it('returns original response when 401 body cannot be parsed', async () => {
+  it('mock fidelity: the real tsRestFetchApi resolves a parsed-body object, not a fetch Response', async () => {
+    // Guards every hand-built response mock in this file against drift from
+    // ts-rest's actual return shape. The 401 retry was dead code for months
+    // because the mocks carried clone()/json() methods the real return value
+    // does not have — this test fails loudly if that assumption breaks again
+    // on a ts-rest upgrade.
+    const { tsRestFetchApi: realTsRestFetchApi } = await vi.importActual('@ts-rest/core');
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: { code: 'auth/token-expired' } }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const response = await realTsRestFetchApi({
+        route: { responses: {} },
+        path: 'https://api.test.example.com/v1/me',
+        method: 'GET',
+        headers: {},
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ error: { code: 'auth/token-expired' } });
+      expect(response.clone).toBeUndefined();
+      expect(response.json).toBeUndefined();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('returns the original 401 when the body is not a JSON envelope', async () => {
+    // ts-rest parses non-JSON responses to a string (or blob) body — e.g. an
+    // HTML error page from an intermediary. No error code to interpret.
     const badResponse = {
       status: 401,
-      clone() {
-        return this;
-      },
-      json: vi.fn().mockRejectedValue(new Error('invalid json')),
+      body: '<html>Unauthorized</html>',
     };
 
     vi.mocked(tsRestFetchApi).mockResolvedValue(badResponse);
@@ -245,6 +258,7 @@ describe('apiWithAuthRetry', () => {
     const result = await capturedApi({ headers: {} });
 
     expect(result).toBe(badResponse);
+    expect(mockAuthStore.forceIdTokenRefresh).not.toHaveBeenCalled();
     expect(tsRestFetchApi).toHaveBeenCalledTimes(1);
   });
 });
