@@ -21,7 +21,8 @@ function handleInstructions() {
     const corsiBlocks = content.find('.jspsych-corsi-block');
 
     if (corsiBlocks.length === 0) {
-      cy.contains('OK').click();
+      // Increase timeout to account for longer audio (only enabled when audio is done)
+      cy.contains('OK', { timeout: 10000 }).should('not.be.disabled').click();
     }
   });
   return;

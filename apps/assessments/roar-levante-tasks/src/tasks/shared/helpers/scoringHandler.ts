@@ -2,7 +2,7 @@ import * as Papa from 'papaparse';
 import _mapValues from 'lodash/mapValues';
 import _omit from 'lodash/omit';
 //@ts-ignore
-import { getGrade } from '@bdelab/roar-utils';
+import { getGrade, getAgeData } from '@bdelab/roar-utils';
 import type { IrtEstimate } from './irtEstimates';
 import { LEVANTE_NORMED_TASK_IDS, LEVANTE_SCORE_TABLE_URL } from '@roar-platform/assessment-schema/roar-levante-tasks';
 import type { LevanteNormedTaskId, LevanteScoringVersion } from '@roar-platform/assessment-schema/roar-levante-tasks';
@@ -18,6 +18,8 @@ interface LookupRow {
 interface UserMetadata {
   age?: number | string;
   grade?: number | string;
+  birthMonth?: number | string;
+  birthYear?: number | string;
   [key: string]: any;
 }
 
@@ -51,22 +53,21 @@ export class ScoringHandler {
   }
 
   private getAgeForScore = ({ ageMin, ageMax }: { ageMin: number; ageMax: number }) => {
-    // isNaN handles standalone params
-    if (this.userMetadata?.age == undefined || isNaN(Number(this.userMetadata?.age))) {
-      if (!this.userMetadata?.grade) return;
-      const grade = getGrade(this.userMetadata?.grade);
+    const { birthMonth, birthYear, grade } = this.userMetadata;
+    if (birthMonth == undefined && birthYear == undefined) {
+      if (!grade) return;
+      const gradeValue = getGrade(grade);
 
       // Unable to parse grade
+      if (gradeValue == undefined) return;
 
-      if (grade == undefined) return;
-
-      this.ageForScore = 66 + Number(grade) * 12;
+      this.ageForScore = 66 + Number(gradeValue) * 12;
     } else {
-      this.ageForScore = Number(this.userMetadata.age);
+      this.ageForScore = getAgeData(birthMonth, birthYear).ageMonths;
     }
 
-    if (this.ageForScore < ageMin) this.ageForScore = ageMin;
-    if (this.ageForScore > ageMax) this.ageForScore = ageMax;
+    if (this.ageForScore && this.ageForScore < ageMin) this.ageForScore = ageMin;
+    if (this.ageForScore && this.ageForScore > ageMax) this.ageForScore = ageMax;
   };
 
   async initTable(): Promise<LookupRow[]> {
