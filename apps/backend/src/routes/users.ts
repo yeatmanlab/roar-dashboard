@@ -4,6 +4,7 @@ import { UsersContract } from '@roar-platform/api-contract';
 import { UsersController } from '../controllers/users.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
 import { AnonTokenMiddleware } from '../middleware/anon-token/anon-token.middleware';
+import { asTsRestMiddleware } from '../middleware/auth-guard/as-ts-rest-middleware';
 
 const s = initServer();
 
@@ -16,56 +17,54 @@ const s = initServer();
 export function registerUserRoutes(routerInstance: Router) {
   const UserRoutes = s.router(UsersContract, {
     get: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id } }) => UsersController.get(user!, id),
     },
     create: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, body }) => UsersController.create(user!, body),
     },
     bulkImport: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, body }) => UsersController.bulkImport(user!, body),
     },
     update: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id }, body }) => UsersController.update(user!, id, body),
     },
     recordUserAgreement: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { userId }, body }) =>
         UsersController.recordUserAgreement(user!, userId, body),
     },
     listUserAdministrations: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { userId }, query }) =>
         UsersController.listUserAdministrations(user!, userId, query),
     },
     getUserAdministration: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { userId, administrationId } }) =>
         UsersController.getUserAdministration(user!, userId, administrationId),
     },
     listUserAdministrationAgreements: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { userId, administrationId }, query }) =>
         UsersController.listUserAdministrationAgreements(user!, userId, administrationId, query),
     },
     listUserMemberships: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { userId } }) => UsersController.listUserMemberships(user!, userId),
     },
     scoreReports: {
       getGuardianStudentReport: {
-        middleware: [AuthGuardMiddleware],
+        middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
         handler: async ({ req: { user }, params: { userId } }) =>
           UsersController.getGuardianStudentReport(user!, userId),
       },
     },
     createAnonymous: {
-      middleware: [AnonTokenMiddleware],
+      middleware: [asTsRestMiddleware(AnonTokenMiddleware)],
       handler: async ({ req: { decodedAnonymousUser } }) => UsersController.createAnonymous(decodedAnonymousUser!.uid),
     },
   });

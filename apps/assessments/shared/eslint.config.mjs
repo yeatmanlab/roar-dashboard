@@ -16,4 +16,15 @@ export default [
       },
     },
   },
+
+  // devEmulatorHost is CommonJS so the webpack .cjs configs can require() it.
+  {
+    files: ['**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
 ];

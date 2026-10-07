@@ -19,7 +19,7 @@ flowchart LR
   C -->|same variants| B
 ```
 
-- **Configure** and **seed** variants: see the setup guide's [Configuring task variants](./ASSESSMENT_ENVIRONMENT.md#configuring-task-variants). To pick up a newly added variant without losing data, use `npm run seed:tasks`.
+- **Configure** and **seed** variants: see the setup guide's [Configuring task variants](./ASSESSMENT_ENVIRONMENT.md#configuring-task-variants). To pick up a newly added variant without losing data, use `npm run seed:tasks`; to apply a changed parameter on an existing variant, use `npm run seed:tasks -- --refresh-params` (a plain run skips variants that already exist).
 - **Produce** and **query** are covered below.
 
 ---
@@ -83,7 +83,7 @@ To find the run you just produced, sort by recency (see [the runs query](#useful
 
 In dev and staging (never production), a small **variant picker** appears in the top-right corner of the assessment — a dropdown of the task's published variants. Selecting one reloads the page with that `variantId` (preserving your other URL parameters), so you can hop between seeded variants without hand-editing the URL.
 
-It lists the same published variants you seeded via `taskVariantParameters.json`, so pair it with `npm run seed:tasks`: add a variant, seed it, reload, and it's in the dropdown. If a variant you expect is missing, it wasn't seeded — re-check your config and re-run `npm run seed:tasks`.
+It lists the same published variants you seeded via `taskVariantParameters.json`, so pair it with `npm run seed:tasks`: add a variant, seed it, reload, and it's in the dropdown. If a variant you expect is missing, it wasn't seeded — re-check your config and re-run `npm run seed:tasks`. If a variant is there but runs with old parameters, re-run with `npm run seed:tasks -- --refresh-params`.
 
 **Scoped to the running assessment.** The picker queries `GET /tasks/:taskId/variants` for only the task ID(s) this assessment's dev server serves. So even though the shared database also holds every other assessment's variants once you've seeded them (see [switching between assessments](./ASSESSMENT_ENVIRONMENT.md#switching-between-assessments)), `roar-swr`'s picker never shows `roar-pa`'s variants. A multi-task or multi-language assessment shows all of _its own_ tasks' variants (e.g. `roar-swr` lists both English and Spanish), but never another assessment's.
 
@@ -104,7 +104,7 @@ brew install pgweb
 **Connect to `roar_core`** (users, tasks, variants):
 
 ```bash
-pgweb --url "postgres://postgres@localhost:5433/roar_core?sslmode=disable"
+pgweb --url "postgres://postgres:postgres@localhost:5433/roar_core?sslmode=disable"
 ```
 
 Open http://localhost:8081 in your browser.
@@ -112,7 +112,7 @@ Open http://localhost:8081 in your browser.
 **Connect to `roar_assessment`** (trials, scores) — on a second port so you can browse both at once:
 
 ```bash
-pgweb --url "postgres://postgres@localhost:5433/roar_assessment?sslmode=disable" --listen 8082
+pgweb --url "postgres://postgres:postgres@localhost:5433/roar_assessment?sslmode=disable" --listen 8082
 ```
 
 > The ephemeral database is on host port **5433**, not 5432 — see the [Connection reference](#connection-reference). (If you set `ASSESSMENT_PG_PORT` when starting the stack, use that port instead.)
@@ -328,7 +328,7 @@ Any query above can be exported to CSV — pick the option that fits how you're 
 **psql `\copy`** — scriptable, and it writes to the machine where `psql` runs (not the container), so the file lands in your current directory. The whole `\copy` command must be on **one physical line**:
 
 ```bash
-psql "postgres://postgres@localhost:5433/roar_assessment?sslmode=disable"
+psql "postgres://postgres:postgres@localhost:5433/roar_assessment?sslmode=disable"
 ```
 
 ```sql
@@ -338,7 +338,7 @@ psql "postgres://postgres@localhost:5433/roar_assessment?sslmode=disable"
 **One-liner from the shell** — same result without an interactive session, handy for repeatable exports:
 
 ```bash
-psql "postgres://postgres@localhost:5433/roar_assessment?sslmode=disable" --csv \
+psql "postgres://postgres:postgres@localhost:5433/roar_assessment?sslmode=disable" --csv \
   -c "SELECT trial_num_total, item, correct, response_time_ms
       FROM app.run_trials WHERE run_id = '<your-run-id>' ORDER BY trial_index" \
   > trials.csv
@@ -367,7 +367,7 @@ For a complete reset (tasks and variants too), use `npm restart` — but that de
 
 Assessments that capture audio or video — e.g. Read Aloud (`roar-readaloud`) — upload recordings through the SDK to the local **Firebase Storage emulator**, so dev needs no cloud credentials and touches no real bucket. Browse them in the **Emulator UI** — nothing extra to install.
 
-**Open the Emulator UI:** http://localhost:9000 → **Storage** tab.
+**Open the Emulator UI:** http://localhost:9002 → **Storage** tab.
 
 The Storage tab lists the emulated **`demo-roar.appspot.com`** bucket — project `demo-roar`, so the full reference root is **`gs://demo-roar.appspot.com/`** — created on the first upload. It lets you browse and download blobs. Recordings are written under a deterministic path within it:
 
@@ -394,7 +394,7 @@ Each recording's `gs://` reference is also written onto its trial. It isn't a st
 | Host                | `localhost`                   |
 | Port                | `5433` (`ASSESSMENT_PG_PORT`) |
 | Username            | `postgres`                    |
-| Password            | _(none)_                      |
+| Password            | `postgres`                    |
 | Core database       | `roar_core`                   |
 | Assessment database | `roar_assessment`             |
 | SSL mode            | `disable`                     |
@@ -405,10 +405,10 @@ Port **5433** (not the standard 5432) lets the ephemeral stack coexist with a pe
 
 ```bash
 # psql (no install needed if Postgres is already on your machine)
-psql "postgres://postgres@localhost:5433/roar_core?sslmode=disable"
+psql "postgres://postgres:postgres@localhost:5433/roar_core?sslmode=disable"
 
 # pgcli (autocomplete)
-pgcli postgres://postgres@localhost:5433/roar_assessment
+pgcli postgres://postgres:postgres@localhost:5433/roar_assessment
 ```
 
-**PgAdmin** (desktop GUI): create a server with host `localhost`, port `5433`, username `postgres`, and a blank password.
+**PgAdmin** (desktop GUI): create a server with host `localhost`, port `5433`, username `postgres`, and password `postgres`.
