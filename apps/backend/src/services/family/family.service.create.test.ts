@@ -21,6 +21,7 @@ import { FirebaseAuthClient } from '../../clients/firebase-auth.clients';
 import { createMockFamilyRepository } from '../../test-support/repositories/family.repository';
 import { createMockUserRepository } from '../../test-support/repositories/user.repository';
 import { createMockRosterProviderIdRepository } from '../../test-support/repositories/roster-provider-id.repository';
+import { createMockUserAgreementRepository } from '../../test-support/repositories/user-agreement.repository';
 import { createMockAuthorizationService } from '../../test-support/services/authorization.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -52,6 +53,7 @@ const validInput = {
   email: 'parent@example.com',
   password: 'password123',
   name: { first: 'Pat', last: 'Parent' },
+  optIns: { researchContact: true },
 };
 
 const FIREBASE_UID = 'fb-uid-abc';
@@ -62,6 +64,7 @@ describe('FamilyService.create', () => {
   let mockFamilyRepo: ReturnType<typeof createMockFamilyRepository>;
   let mockUserRepo: ReturnType<typeof createMockUserRepository>;
   let mockRosterRepo: ReturnType<typeof createMockRosterProviderIdRepository>;
+  let mockUserAgreementRepo: ReturnType<typeof createMockUserAgreementRepository>;
   let mockAuthorizationService: ReturnType<typeof createMockAuthorizationService>;
 
   beforeEach(() => {
@@ -69,6 +72,7 @@ describe('FamilyService.create', () => {
     mockFamilyRepo = createMockFamilyRepository();
     mockUserRepo = createMockUserRepository();
     mockRosterRepo = createMockRosterProviderIdRepository();
+    mockUserAgreementRepo = createMockUserAgreementRepository();
     mockAuthorizationService = createMockAuthorizationService();
 
     // Default: the email is fresh on both sides.
@@ -80,6 +84,7 @@ describe('FamilyService.create', () => {
     mockFamilyRepo.runTransaction.mockImplementation(async ({ fn }) => fn({} as CoreTransaction));
     mockFamilyRepo.createWithCaretaker.mockResolvedValue({ caretakerId: CARETAKER_ID, familyId: FAMILY_ID });
     mockRosterRepo.create.mockResolvedValue({ id: CARETAKER_ID });
+    mockUserAgreementRepo.createMany.mockResolvedValue([]);
   });
 
   function makeService() {
@@ -87,6 +92,7 @@ describe('FamilyService.create', () => {
       familyRepository: mockFamilyRepo,
       userRepository: mockUserRepo,
       rosterProviderIdRepository: mockRosterRepo,
+      userAgreementRepository: mockUserAgreementRepo,
       authorizationService: mockAuthorizationService,
     });
   }
@@ -102,6 +108,8 @@ describe('FamilyService.create', () => {
         displayName: 'Pat Parent',
       });
       expect(mockFamilyRepo.createWithCaretaker).toHaveBeenCalledTimes(1);
+      const [caretakerData] = mockFamilyRepo.createWithCaretaker.mock.calls[0]!;
+      expect(caretakerData).toMatchObject({ optinResearchContact: true });
       expect(mockRosterRepo.create).toHaveBeenCalledTimes(1);
       const rosterArgs = mockRosterRepo.create.mock.calls[0]![0];
       expect(rosterArgs.data).toMatchObject({
@@ -135,6 +143,34 @@ describe('FamilyService.create', () => {
         locationStateProvince: 'CA',
         locationCountry: 'US',
       });
+    });
+
+    it('normalizes the email before every lookup and write', async () => {
+      await makeService().create({ ...validInput, email: 'Parent@Example.COM' });
+
+      expect(mockUserRepo.existsByUniqueFields).toHaveBeenCalledWith({ email: 'parent@example.com' });
+      expect(mockAuth.getUserByEmail).toHaveBeenCalledWith('parent@example.com');
+      expect(mockAuth.createUser).toHaveBeenCalledWith(expect.objectContaining({ email: 'parent@example.com' }));
+      const [caretakerData] = mockFamilyRepo.createWithCaretaker.mock.calls[0]!;
+      expect(caretakerData.email).toBe('parent@example.com');
+    });
+
+    it('records validated agreements in the family transaction with a server timestamp', async () => {
+      const agreementVersionIds = ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002'];
+      mockUserAgreementRepo.createMany.mockResolvedValue([{ id: 'agreement-1' }, { id: 'agreement-2' }]);
+
+      await makeService().create({ ...validInput, agreementVersionIds });
+
+      expect(mockUserAgreementRepo.createMany).toHaveBeenCalledWith({
+        data: agreementVersionIds.map((agreementVersionId) => ({
+          userId: CARETAKER_ID,
+          agreementVersionId,
+          agreementTimestamp: expect.any(Date),
+        })),
+        transaction: expect.anything(),
+      });
+      const agreementRows = mockUserAgreementRepo.createMany.mock.calls[0]![0].data;
+      expect(agreementRows[0]!.agreementTimestamp).toBe(agreementRows[1]!.agreementTimestamp);
     });
   });
 
@@ -240,6 +276,7 @@ describe('FamilyService.create', () => {
       // The orphaned-account paper trail is logged
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
+          event: 'registration.firebase_compensation_failed',
           err: expect.any(Error),
           context: expect.objectContaining({ firebaseUid: FIREBASE_UID, reason: 'step 3 failure' }),
         }),
@@ -278,7 +315,7 @@ describe('FamilyService.create', () => {
       });
 
       // Tuple delete attempted
-      expect(mockAuthorizationService.deleteTuples).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.deleteTuplesOrThrow).toHaveBeenCalledTimes(1);
 
       // DB delete transaction opened
       expect(mockFamilyRepo.runTransaction).toHaveBeenCalledTimes(2);
@@ -294,6 +331,28 @@ describe('FamilyService.create', () => {
       expect(deleteSpy).toHaveBeenCalledTimes(3);
 
       // Firebase compensation
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(FIREBASE_UID);
+    });
+
+    it('logs a cleanup marker and continues rollback when tuple deletion fails', async () => {
+      const { tx } = makeMockTx();
+      mockFamilyRepo.runTransaction.mockImplementation(async ({ fn }) => fn(tx));
+      const tupleDeleteError = new Error('OpenFGA delete failed');
+      mockAuthorizationService.deleteTuplesOrThrow.mockRejectedValue(tupleDeleteError);
+
+      await expect(makeService().create(validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        {
+          err: tupleDeleteError,
+          context: { caretakerId: CARETAKER_ID, familyId: FAMILY_ID, firebaseUid: FIREBASE_UID },
+        },
+        'FGA tuple delete compensation failed — stale tuple requires manual cleanup',
+      );
+      expect(mockFamilyRepo.runTransaction).toHaveBeenCalledTimes(2);
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(FIREBASE_UID);
     });
 

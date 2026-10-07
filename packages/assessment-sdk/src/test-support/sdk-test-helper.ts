@@ -78,6 +78,8 @@ async function signInWithEmulator(email: string, password: string): Promise<stri
  * This is a real Firebase ID token from the emulator.
  */
 let cachedTestToken: string | null = null;
+let cachedTestEmail: string | null = null;
+let cachedTestPassword: string | null = null;
 
 /**
  * Cached test user ID that is populated by getBaseFixtureData().
@@ -110,10 +112,15 @@ export function createTestAuthContext() {
       }
       return cachedTestToken;
     },
+    // Re-mints a token via the emulator and updates the cache getToken reads
+    // from — returning the cached token here would satisfy the receiver's
+    // truthiness check with the same stale token and double every request
+    // into a guaranteed 401-refresh-retry cycle (see CommandContext docs).
     refreshToken: async () => {
-      if (!cachedTestToken) {
-        throw new Error('Test token not initialized. Call getBaseFixtureData() first.');
+      if (!cachedTestEmail || !cachedTestPassword) {
+        throw new Error('Test credentials not initialized. Call getBaseFixtureData() first.');
       }
+      cachedTestToken = await signInWithEmulator(cachedTestEmail, cachedTestPassword);
       return cachedTestToken;
     },
   };
@@ -130,11 +137,17 @@ export async function createTeacherAuthContext() {
     throw new Error('Teacher credentials not initialized. Call getBaseFixtureData() first.');
   }
 
-  const token = await signInWithEmulator(cachedTeacherEmail, cachedTeacherPassword);
+  const email = cachedTeacherEmail;
+  const password = cachedTeacherPassword;
+  let token = await signInWithEmulator(email, password);
 
   return {
     getToken: async () => token,
-    refreshToken: async () => token,
+    // Re-mints and rotates the token getToken reads — see createTestAuthContext.
+    refreshToken: async () => {
+      token = await signInWithEmulator(email, password);
+      return token;
+    },
   };
 }
 
@@ -221,6 +234,8 @@ export async function getBaseFixtureData(): Promise<TestFixture> {
 
   // Sign in via the Auth emulator to get a real Firebase ID token
   if (data.testUser?.email && data.testUser?.password) {
+    cachedTestEmail = data.testUser.email;
+    cachedTestPassword = data.testUser.password;
     cachedTestToken = await signInWithEmulator(data.testUser.email, data.testUser.password);
   } else {
     throw new Error(

@@ -1,9 +1,14 @@
-# Dependencies (rebuilt inside Docker)
+# Dependencies (rebuilt inside Docker). Unlike .gitignore, dockerignore
+# patterns are root-anchored — `node_modules/` alone matches only the top
+# level, so the nested copies need the `**/` form.
 node_modules/
+**/node_modules/
 
 # Build outputs (rebuilt inside Docker)
 dist/
+**/dist/
 coverage/
+**/.turbo/
 
 # Git
 .git/
@@ -12,8 +17,14 @@ coverage/
 # Frontend app
 apps/dashboard/
 
-# Environment / secrets
+# Assessments — never copied by assessment.Dockerfile, and their node_modules
+# and media assets dominate the context size.
+apps/assessments/
+
+# Environment / secrets. The `**/` form matters: a root-anchored `.env*` would
+# let `COPY apps/backend/` carry apps/backend/.env into the image.
 .env*
+**/.env*
 env-configs/
 certs/
 
