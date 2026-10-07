@@ -1,0 +1,10 @@
+{
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": { "host": "0.0.0.0", "port": 9097 },
+    "storage": { "host": "0.0.0.0", "port": 9197 },
+    "ui": { "enabled": true, "host": "0.0.0.0", "port": 9000 }
+  }
+}
