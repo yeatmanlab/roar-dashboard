@@ -9,6 +9,7 @@ import {
 } from 'firebase-admin/app';
 import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-platform/assessment-schema';
 import { logger } from '../logger';
+import { assertEmulatorNotEnabledOnDeployedService } from '../utils/emulator-guard.util';
 
 /**
  * FirebaseCoreClient
@@ -57,7 +58,19 @@ export class FirebaseCoreClient {
     // and does not validate credentials — no credential object needed.
     // The project ID must match the emulator's --project flag exactly; GOOGLE_CLOUD_PROJECT
     // may hold a real project ID and must not override it here.
-    if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+    if (emulatorHost) {
+      // Asserted at the branch itself, not only at boot in server.ts, so reaching the
+      // unverified-token path refuses rather than relying on every caller having come
+      // through a guarded entry point.
+      assertEmulatorNotEnabledOnDeployedService();
+
+      // Logged at warn so its presence in any log stream is worth noticing on its own.
+      logger.warn(
+        { projectId: FIREBASE_EMULATOR_PROJECT_ID, emulatorHost },
+        'Initializing Firebase Admin against the Auth emulator — tokens are not verified against Google',
+      );
+
       this.appInstance = initializeApp({ projectId: FIREBASE_EMULATOR_PROJECT_ID });
       return this.appInstance;
     }

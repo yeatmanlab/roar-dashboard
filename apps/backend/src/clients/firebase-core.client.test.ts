@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { FirebaseCoreClient } from './firebase-core.client';
+import { logger } from '../logger';
 import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-platform/assessment-schema';
 import {
   initializeApp,
@@ -27,6 +28,10 @@ const clearAuthEnv = () => {
 beforeEach(() => {
   FirebaseCoreClient.clearCache();
   clearAuthEnv();
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe('FirebaseCoreClient', () => {
@@ -143,6 +148,30 @@ describe('FirebaseCoreClient', () => {
     expect(certMock).not.toHaveBeenCalled();
     expect(initializeAppMock).toHaveBeenCalledWith({ projectId: FIREBASE_EMULATOR_PROJECT_ID });
     expect(app).toBe(mockApp);
+  });
+
+  it('warns when the emulator branch is taken, so the credential-free path is visible in logs', () => {
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+
+    getAppsMock.mockReturnValue([]);
+    initializeAppMock.mockReturnValue({ name: 'mock-emulator-app' });
+
+    FirebaseCoreClient.getApp();
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ emulatorHost: '127.0.0.1:9099', projectId: FIREBASE_EMULATOR_PROJECT_ID }),
+      expect.stringContaining('Auth emulator'),
+    );
+  });
+
+  it('refuses to initialize against the emulator on a deployed service', () => {
+    vi.stubEnv('K_SERVICE', 'roar-backend');
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+
+    getAppsMock.mockReturnValue([]);
+
+    expect(() => FirebaseCoreClient.getApp()).toThrow(/FIREBASE_AUTH_EMULATOR_HOST/);
+    expect(initializeAppMock).not.toHaveBeenCalled();
   });
 
   it('clearCache resets the cached app and allows re-initialization', () => {

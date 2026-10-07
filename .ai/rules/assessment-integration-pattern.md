@@ -16,7 +16,7 @@ tags: assessments, monorepo, build, integration, workspaces
 >
 > Written deliberately ahead of three changes expected to land alongside it, none of which were in that commit: declarative seed configs ([#1890](https://github.com/yeatmanlab/roar-dashboard/pull/1890)), the npm publishing manifest fields ([#2023](https://github.com/yeatmanlab/roar-dashboard/pull/2023)), and the last four `.json` scoring configs converting to `.ts`. If you're reading this after they merged, the note has served its purpose — delete this paragraph.
 
-Assessments live at `apps/assessments/<name>/` and are npm workspaces (`apps/assessments/*` is in the root `workspaces` array), built and orchestrated by Turbo. The package name is always `@roar-platform/<directory-name>` — the directory name is load-bearing: the seed registry, CI matrices, hosting targets, and the `ASSESSMENT_NAME` derived by `scripts/assessment-env-up.sh` all key off it.
+Assessments live at `apps/assessments/<name>/` and are npm workspaces (`apps/assessments/*` is in the root `workspaces` array), built and orchestrated by Turbo. The package name is always `@roar-platform/<directory-name>` — the directory name is load-bearing: the seed registry, CI matrices, hosting targets, and the `ASSESSMENT_NAME` derived by the assessment CLI (`packages/assessment-dev-cli`) all key off it.
 
 ### Every assessment is two artifacts from one directory
 
@@ -40,7 +40,7 @@ external: [
 
 The **standalone** build injects two globals via webpack's `DefinePlugin`, which `serve.js` and the shared helpers read:
 
-- `ROAR_API_BASE_URL` — an origin with no path; the version prefix comes from the contract. Defaults to `''`, so dev builds emit relative URLs that the dev server proxies to `BACKEND_URL` (`http://localhost:4000`) on `/v1`. In staging/production it is the real API origin.
+- `ROAR_API_BASE_URL` — an origin with no path; the version prefix comes from the contract. Defaults to `''`, so dev builds emit relative URLs that the dev server proxies to `BACKEND_URL` on `/v1` (default `https://localhost:4000`, the host-run TLS backend, with `secure: false`; `npm start` overrides it to the containerized HTTP backend). In staging/production it is the real API origin.
 - `ROAR_DB` — `development` | `staging` | `production`. Guards dev-only affordances such as the variant picker, and the guard is eliminated at build time in production.
 
 Both globals must be declared readonly in `eslint.config.mjs`, or lint fails on undefined globals.
@@ -54,7 +54,7 @@ import { getFirebaseConfig } from "../../shared/firebaseConfig";
 import { mountVariantPicker } from "../../shared/variantPicker.js";
 ```
 
-It provides `getFirebaseConfig()` (emulator config when `FIREBASE_AUTH_EMULATOR_HOST` is set, otherwise Firebase Hosting's `/__/firebase/init.json`), `mountVariantPicker()`, `initSentry()`, and the `firebase.json` / `storage.rules` the emulator container mounts. Anything genuinely common to every standalone harness belongs here rather than copied into each assessment.
+It provides `getFirebaseConfig()` (emulator config when `FIREBASE_AUTH_EMULATOR_HOST` is set, otherwise Firebase Hosting's `/__/firebase/init.json`), `mountVariantPicker()`, and `initSentry()`. Anything genuinely common to every standalone harness belongs here rather than copied into each assessment. (The emulator's `firebase.json` / `storage.rules` live in `docker/firebase-emulator/` — the shared emulator image both dev stacks build from.)
 
 ### The serve.js contract
 
@@ -102,11 +102,11 @@ Beyond the standard fields, an assessment's `package.json` carries two things th
 
 The minimum is three files, and it is genuinely small — `roav-ran` and `roar-readaloud` are both at this tier:
 
-| File          | Holds                                                                                                                |
-| ------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `config.ts`   | Canonical task IDs, and URL builders for any external asset (GCS stimuli buckets, lookup-table CSVs, config corpora) |
-| `variants.ts` | Task entries — `name`, `nameSimple`, `nameTechnical` — consumed by the seed config                                   |
-| `index.ts`    | Re-exports                                                                                                           |
+| File          | Holds                                                                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `config.ts`   | Canonical task IDs, scoring versions, and URL builders for external assets (GCS stimuli buckets, lookup-table CSVs, config corpora) |
+| `variants.ts` | Task entries — `name`, `nameSimple`, `nameTechnical` — consumed by the seed config                                                  |
+| `index.ts`    | Re-exports                                                                                                                          |
 
 ```typescript
 // config.ts — the task ID is the DB `tasks.slug`, so it must satisfy the check
@@ -115,12 +115,30 @@ The minimum is three files, and it is genuinely small — `roav-ran` and `roar-r
 export const SYMBOL_SEARCH_TASK_ID = "symbol-search" as const;
 export type SymbolSearchTaskId = typeof SYMBOL_SEARCH_TASK_ID;
 
-// Asset URLs belong here, not inlined in the assessment — the dashboard's CSP
-// allowlist and the assessment's fetches have to name the same bucket.
+// Asset URL *builders* belong here, not inlined in the assessment — the dashboard's
+// CSP allowlist and the assessment's fetches have to name the same bucket. But the
+// origin comes from constants/asset-origins.ts, and every builder takes an override
+// defaulting to it, so a host serving these assets itself is not bound to our buckets.
+import { GCS_ORIGIN } from "../constants/asset-origins.js";
+
 export const ROAV_APPS_BUCKET_NAME = "roav-mp" as const;
 export const ROAV_APPS_BUCKET_URL =
-  `https://storage.googleapis.com/${ROAV_APPS_BUCKET_NAME}` as const;
+  `${GCS_ORIGIN}/${ROAV_APPS_BUCKET_NAME}` as const;
+
+export function roavAppsBucketUri(
+  taskId: RoavAppsTaskId,
+  baseUrl: string = ROAV_APPS_BUCKET_URL,
+): string {
+  /* ... */
+}
 ```
+
+**Never put a ROAR infrastructure identifier in the namespace.** GCP project IDs and Firebase
+project names are deployment configuration, and this package publishes to npm. The one exception is `src/firebase-emulator.ts`, whose identifiers exist
+so the backend's Firebase Admin init and the assessments' client init agree on the same _local_
+emulator project; that is cross-party agreement, and the values are conventional emulator
+placeholders. See `packages/assessment-schema/README.md` for the full vocabulary / reference-data
+/ deployment-config split.
 
 **If the assessment produces scores, the namespace owns their vocabulary** — `domains.ts` (canonical `run_scores.domain` strings), `score-names.ts`, and `score-entries.ts` plus its test. This is true no matter _who_ computes them. The backend's scoring configs are consumers of that vocabulary, not a substitute for it: every config in `services/scoring/configs/` imports its task IDs and score names from here — none of them name anything itself — so a rename in the schema is a compile error in the backend rather than a silently mis-keyed score. `phonics.ts` says so in as many words. That's also why those configs are TypeScript and not JSON: a JSON config has no imports, so it could only ever hardcode.
 
@@ -205,7 +223,7 @@ Hosting resolution avoids that shape deliberately. `apps/assessments/hosting-tar
 
 ### Local development
 
-`npm start` in the assessment directory runs `scripts/assessment-env-up.sh`, which brings up the shared Docker stack (Postgres, migrations + seed, Firebase Auth/Storage emulators, backend) and then the assessment's dev server on `:8000`. The stack is shared across all assessments; only the dev server differs. `ASSESSMENT_NAME` is derived from the calling directory and drives `dev:seed:tasks -- --task ${ASSESSMENT_NAME}`, so **an unregistered assessment fails the migration container, not the dev server** — the error surfaces as a compose failure before anything starts, naming the available tasks.
+`npm start` in the assessment directory runs the assessment CLI (`packages/assessment-dev-cli`), which brings up the shared Docker stack (Postgres, migrations + seed, Firebase Auth/Storage emulators, backend) and then the assessment's dev server on `:8000`. The stack is shared across all assessments; only the dev server differs. `ASSESSMENT_NAME` is derived from the calling directory and drives `dev:seed:tasks -- --task ${ASSESSMENT_NAME}`, so **an unregistered assessment fails the migration container, not the dev server** — the error surfaces as a compose failure before anything starts, naming the available tasks.
 
 Each assessment reads `taskVariantParameters.json` to seed its variants. That file is **gitignored**; `taskVariantParameters.example.json` is committed and documents every parameter with its valid values. See [ASSESSMENT_ENVIRONMENT.md](../../apps/assessments/ASSESSMENT_ENVIRONMENT.md) for the full environment guide.
 

@@ -45,6 +45,10 @@ describe('app middleware wiring', () => {
     expect(res.headers['cross-origin-embedder-policy']).toBeUndefined();
   });
 
+  it('trusts exactly one ingress proxy hop', () => {
+    expect(app.get('trust proxy')).toBe(1);
+  });
+
   it('returns CORS headers for an allowed origin', async () => {
     const res = await request(app).get('/no-such-route').set('Origin', ALLOWED_ORIGIN);
 
@@ -102,5 +106,13 @@ describe('app JSON body limit', () => {
     // and crucially NOT 413. A 100kb default would have rejected this body.
     expect(res.status).not.toBe(413);
     expect(res.status).toBe(404);
+  });
+
+  it('applies a smaller JSON ceiling to the public auth surface', async () => {
+    const oversizedForAuth = { data: 'x'.repeat(20 * 1024) };
+
+    const res = await request(app).post('/v1/auth/registration').send(oversizedForAuth);
+
+    expect(res.status).toBe(413);
   });
 });

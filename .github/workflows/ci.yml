@@ -71,7 +71,7 @@ jobs:
       - name: Run OpenFGA model tests
         uses: openfga/action-openfga-test@v0.1.2
         with:
-          test_path: packages/authz/tests
+          test_path: packages/authz
 
       - name: Run all tests
         run: npm run test
@@ -393,8 +393,12 @@ jobs:
           spec: cypress/e2e/**/*
           ci-build-id: ${{ github.run_id }}-${{ matrix.assessment }}-${{ matrix.browser }}
         env:
-          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
-          BACKEND_URL: http://localhost:4000
+          # The assessment stack's shifted host ports (parallel to the platform
+          # stack) — must match apps/assessments/shared/devEmulatorHost.cjs and
+          # docker-compose.assessment.yml.
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9097
+          FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9197
+          BACKEND_URL: http://localhost:4002
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
           COMMIT_INFO_MESSAGE: "${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})"

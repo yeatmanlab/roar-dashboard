@@ -72,12 +72,6 @@ export type TaskSeedConfig = {
   >;
 
   /**
-   * Allowed parameter keys. If set, unknown keys are rejected.
-   * Derived from the assessment's serve.js gameParams.
-   */
-  allowedParamKeys?: Set<string>;
-
-  /**
    * Custom validation per variant. Throws on invalid input.
    *
    * @returns `void` to accept the variant, `false` to skip it gracefully (e.g., for

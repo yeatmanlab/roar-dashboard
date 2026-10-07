@@ -3,6 +3,7 @@ import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { ClassesContract } from '@roar-platform/api-contract';
 import { ClassesController } from '../controllers/classes.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
+import { asTsRestMiddleware } from '../middleware/auth-guard/as-ts-rest-middleware';
 
 const s = initServer();
 
@@ -15,16 +16,16 @@ const s = initServer();
 export function registerClassesRoutes(routerInstance: Router) {
   const ClassesRoutes = s.router(ClassesContract, {
     create: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, body }) => ClassesController.create(user!, body),
     },
     get: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req, params }) =>
         ClassesController.get({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.classId),
     },
     update: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req, params, body }) =>
         ClassesController.update(
           { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
@@ -33,8 +34,7 @@ export function registerClassesRoutes(routerInstance: Router) {
         ),
     },
     listUsers: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req, params, query }) =>
         ClassesController.listUsers(
           { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },

@@ -12,8 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@roar-platform/assessment-schema": "^0.1.0",
-    "@roar-platform/assessment-sdk": "^0.1.0",
+    "@roar-platform/assessment-sdk": "^1.0.0",
     "http-status-codes": "^2.3.0"
   },
   "peerDependencies": {
@@ -21,10 +20,12 @@
     "@sentry/integrations": ">=7"
   },
   "devDependencies": {
+    "@roar-platform/assessment-schema": "^1.0.0",
     "@roar-platform/eslint-config": "*",
     "eslint": "^9.0.0",
     "globals": "^16.0.0",
     "jsdom": "^29.1.1",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "webpack": "^5.74.0"
   }
 }

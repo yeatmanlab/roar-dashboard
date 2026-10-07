@@ -26,15 +26,16 @@
     "vue": "^3.0.0"
   },
   "scripts": {
-    "dev": "bash ../../../scripts/dev-platform.sh",
+    "predev": "node ../../../packages/assessment-dev-cli/src/index.mjs predev",
+    "dev": "vite --mode development",
     "dev:ci": "npx vite --mode development --port 8000",
-    "setup": "bash ../../../scripts/assessment-setup.sh",
-    "start": "bash ../../../scripts/assessment-env-up.sh",
-    "seed:tasks": "bash ../../../scripts/assessment-seed-tasks.sh",
-    "stop": "bash ../../../scripts/assessment-env-down.sh",
-    "restart": "bash ../../../scripts/assessment-restart.sh",
-    "rebuild": "bash ../../../scripts/assessment-env-build.sh",
-    "update": "npm --prefix ../../../packages/assessment-schema run build && npm --prefix ../../../packages/assessment-sdk run build",
+    "setup": "node ../../../packages/assessment-dev-cli/src/index.mjs setup",
+    "start": "node ../../../packages/assessment-dev-cli/src/index.mjs start",
+    "seed:tasks": "node ../../../packages/assessment-dev-cli/src/index.mjs seed-tasks",
+    "stop": "node ../../../packages/assessment-dev-cli/src/index.mjs stop",
+    "restart": "node ../../../packages/assessment-dev-cli/src/index.mjs restart",
+    "rebuild": "node ../../../packages/assessment-dev-cli/src/index.mjs rebuild",
+    "update": "npm --prefix ../../../ run build -- --filter=@roar-platform/api-contract --filter=@roar-platform/assessment-schema --filter=@roar-platform/scoring-tables --filter=@roar-platform/assessment-sdk",
     "build": "vite build --mode lib",
     "build:staging": "vite build --mode staging",
     "build:production": "vite build --mode production",
@@ -50,20 +51,20 @@
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
-    "@roar-platform/assessment-sdk": "^0.1.0",
-    "@roar-platform/assessment-schema": "^0.1.0",
-    "firebase": "^10.13.2",
+    "@roar-platform/assessment-sdk": "^1.0.0",
     "regenerator-runtime": "^0.14.1",
     "survey-core": "^2.0.8",
     "survey-vue3-ui": "^2.0.8"
   },
   "devDependencies": {
+    "@roar-platform/assessment-schema": "^1.0.0",
     "@roar-platform/eslint-config": "*",
     "@roar-platform/prettier-config": "*",
     "@vitejs/plugin-vue": "^5.2.3",
     "cypress": "^13.6.4",
     "eslint": "^9.0.0",
     "eslint-plugin-cypress": "^5.1.0",
+    "firebase": "^10.13.2",
     "prettier": "^3.0.0",
     "vite": "^6.3.5"
   }

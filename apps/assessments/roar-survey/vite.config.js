@@ -2,6 +2,13 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
 import { existsSync, readFileSync } from 'fs';
+import { FIREBASE_EMULATOR_AUTH_HOST, FIREBASE_EMULATOR_STORAGE_HOST } from '../shared/devEmulatorHost.cjs';
+
+// A bare `FIREBASE_AUTH_EMULATOR_HOST=` line in a .env makes the variable ''
+// (defined) — treat empty as unset so the defaults below apply.
+for (const key of ['FIREBASE_AUTH_EMULATOR_HOST', 'FIREBASE_STORAGE_EMULATOR_HOST']) {
+  if (process.env[key] === '') delete process.env[key];
+}
 
 const BUILD_MODES = new Set(['lib', 'staging', 'production']);
 
@@ -15,6 +22,11 @@ function getServerConfig(mode) {
   const certPath = path.resolve(__dirname, '../../../certs/roar-local.crt');
 
   return {
+    // Every assessment dev server binds 8000: predev's port gate, the backend's
+    // ALLOWED_ORIGINS, and the docs all assume it. strictPort fails loudly when
+    // the port is taken instead of silently binding 5174.
+    port: 8000,
+    strictPort: true,
     // Mirrors the webpack-dev-server https config used by other assessments.
     https:
       existsSync(keyPath) && existsSync(certPath)
@@ -42,7 +54,24 @@ export default defineConfig(({ mode }) => ({
           // Default to '' so dev builds emit relative URLs, which Vite proxies. The
           // version prefix comes from the contract, so ROAR_API_BASE_URL is an origin with no path.
           ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || ''),
-          'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(process.env.FIREBASE_AUTH_EMULATOR_HOST || ''),
+          // Development only — defaults to the local Auth emulator, since assessment
+          // development always runs against the emulator, never a real Firebase project.
+          // src/main.js calls connectAuthEmulator() on any non-empty value, so injecting
+          // this into a deployed build would point it at an emulator that issues
+          // unverified tokens. Staging and production resolve Firebase config from
+          // /__/firebase/init.json instead.
+          'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(
+            mode === 'development' ? process.env.FIREBASE_AUTH_EMULATOR_HOST || FIREBASE_EMULATOR_AUTH_HOST : '',
+          ),
+          // Storage defaults only when auth is un-overridden too — an
+          // auth-only override (platform context) must leave this empty so
+          // the SDK derives the storage emulator from the auth host.
+          'process.env.FIREBASE_STORAGE_EMULATOR_HOST': JSON.stringify(
+            mode === 'development'
+              ? process.env.FIREBASE_STORAGE_EMULATOR_HOST ||
+                  (process.env.FIREBASE_AUTH_EMULATOR_HOST ? '' : FIREBASE_EMULATOR_STORAGE_HOST)
+              : '',
+          ),
         }
       : {},
   server: getServerConfig(mode),
