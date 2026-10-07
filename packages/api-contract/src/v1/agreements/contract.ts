@@ -22,6 +22,9 @@ export const AgreementsContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(AgreementsListResponseSchema),
         401: ErrorEnvelopeSchema,
+        // Emitted by AuthGuardMiddleware for a user whose rostering has ended
+        // (`auth/rostering-ended`). Declared so the typed client has a 403 branch.
+        403: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -34,6 +37,7 @@ export const AgreementsContract = c.router(
         'Use ?locale=es-MX for other locales (BCP-47 format). ' +
         'Use ?embed=versions to include all historical versions for each agreement. ' +
         'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the caller is authenticated but their rostering has ended. ' +
         'Returns 500 if the database query fails.',
     },
     getVersionContent: {
@@ -43,6 +47,9 @@ export const AgreementsContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(AgreementVersionContentSchema),
         401: ErrorEnvelopeSchema,
+        // Emitted by AuthGuardMiddleware for a user whose rostering has ended
+        // (`auth/rostering-ended`). Declared so the typed client has a 403 branch.
+        403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
@@ -54,6 +61,7 @@ export const AgreementsContract = c.router(
         'The version must belong to the specified agreement (returns 404 if mismatched). ' +
         'Content is immutable per version (tied to a specific commit SHA), making it highly cacheable. ' +
         'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the caller is authenticated but their rostering has ended. ' +
         'Returns 404 if the agreement, version, or the relationship between them does not exist. ' +
         'Returns 500 if the GitHub content fetch fails.',
     },

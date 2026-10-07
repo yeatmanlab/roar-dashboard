@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const { merge } = require('webpack-merge');
+const { devConfig } = require('../shared/devWebpackConfig.cjs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
 const dotenv = require('dotenv');
@@ -114,6 +115,14 @@ const webConfig = merge(commonConfig, {
     new HtmlWebpackPlugin({
       title: 'ROAR — Levante Core Tasks',
     }),
+  ],
+});
+
+const productionConfig = merge(webConfig, {
+  mode: 'production',
+  // Sentry releases/source maps upload only from real (staging/production)
+  // builds — in dev the plugin has no auth token and only prints warnings.
+  plugins: [
     sentryWebpackPlugin({
       org: 'roar-89588e380',
       project: 'roar-levante-tasks',
@@ -124,10 +133,6 @@ const webConfig = merge(commonConfig, {
       },
     }),
   ],
-});
-
-const productionConfig = merge(webConfig, {
-  mode: 'production',
 });
 
 const developmentConfig = merge(webConfig, {
@@ -165,17 +170,9 @@ module.exports = async (env, args) => {
     ],
   };
 
-  const devFirebaseConfig = {
-    plugins: [
-      new webpack.EnvironmentPlugin({
-        FIREBASE_AUTH_EMULATOR_HOST: '',
-      }),
-    ],
-  };
-
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
+      return merge(developmentConfig, envDependentConfig, devConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:

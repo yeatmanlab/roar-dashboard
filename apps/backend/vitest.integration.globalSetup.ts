@@ -19,9 +19,8 @@ export default async function globalSetup() {
 
   // Provision FDW prerequisites before migrations (superuser-only operations).
   // Uses the same helper as the seed script so both bootstrap paths share one
-  // implementation. The TS helper replaces an earlier execFileSync on
-  // `scripts/setup-fdw-local.sh` so this works in any Node environment without
-  // requiring psql on the PATH (e.g., the cypress/browsers e2e container).
+  // implementation. The TS helper needs no psql on the PATH, so this works in
+  // any Node environment (e.g., the cypress/browsers e2e container).
   const { setupFdwForTests } = await import('./src/test-support/db/setup-fdw');
   await setupFdwForTests();
 

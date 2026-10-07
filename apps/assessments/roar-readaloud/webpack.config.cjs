@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const { merge } = require('webpack-merge');
+const { devConfig } = require('../shared/devWebpackConfig.cjs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
@@ -116,15 +117,6 @@ const webConfig = merge(commonConfig, {
     new HtmlWebpackPlugin({
       title: 'Rapid Online Assessment of Reading - Aloud',
     }),
-    sentryWebpackPlugin({
-      authToken: process.env.SENTRY_AUTH_TOKEN,
-      org: 'roar-89588e380',
-      project: 'roar-readaloud',
-      debug: true,
-      errorHandler: (err) => {
-        console.warn(err);
-      },
-    }),
     new CopyWebpackPlugin({
       patterns: [
         {
@@ -145,6 +137,19 @@ const webConfig = merge(commonConfig, {
 
 const productionConfig = merge(webConfig, {
   mode: 'production',
+  // Sentry releases/source maps upload only from real (staging/production)
+  // builds — in dev the plugin has no auth token and only prints warnings.
+  plugins: [
+    sentryWebpackPlugin({
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      org: 'roar-89588e380',
+      project: 'roar-readaloud',
+      debug: true,
+      errorHandler: (err) => {
+        console.warn(err);
+      },
+    }),
+  ],
 });
 
 const developmentConfig = merge(webConfig, {
@@ -160,7 +165,7 @@ const developmentConfig = merge(webConfig, {
     proxy: [
       {
         context: ['/v1'],
-        target: process.env.BACKEND_URL ?? 'http://localhost:4000',
+        target: process.env.BACKEND_URL ?? 'https://localhost:4000',
         secure: false,
         changeOrigin: true,
       },
@@ -175,33 +180,22 @@ const developmentConfig = merge(webConfig, {
 module.exports = async (env, args) => {
   const roarDB = env.dbmode ?? 'development';
 
-  const devFirebaseConfig =
-    roarDB === 'development'
-      ? {
-          FIREBASE_AUTH_EMULATOR_HOST: JSON.stringify(process.env.FIREBASE_AUTH_EMULATOR_HOST ?? ''),
-        }
-      : {};
-
   const envDependentConfig = {
     plugins: [
       new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
         ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? ''),
-        ...devFirebaseConfig,
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
-      }),
-      new webpack.EnvironmentPlugin({
-        FIREBASE_AUTH_EMULATOR_HOST: '',
       }),
     ],
   };
 
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig);
+      return merge(developmentConfig, envDependentConfig, devConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:
