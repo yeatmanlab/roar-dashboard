@@ -11,7 +11,9 @@ import { SCORE_DOMAIN } from '../../constants/run-scores';
  *
  * Assumes each `(domain, name)` exists under one `type` only, so leaving `type`
  * out can't make a read ambiguous. Nothing enforces that — it holds because the
- * `to*ScoreEntries` converters assign `type` from the score name.
+ * `to*ScoreEntries` converters assign `type` from the score name. Where a name
+ * does appear under both, the two are expected to carry the same value, so
+ * either row is acceptable.
  *
  * @returns A Drizzle `SQL` predicate matching composite-domain score rows
  */

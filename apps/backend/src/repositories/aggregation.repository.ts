@@ -60,11 +60,9 @@ export class AggregationRepository {
   }
 
   /**
-   * Composite computed score rows for the given runs, indexed `runId → name → value`.
+   * Composite score rows for the given runs, indexed `runId → name → value`.
    *
-   * Filtered to `(type, domain)` at the source because names are generic — PA
-   * emits `numCorrect` under FSM/LSM/DEL as well as composite, and a name-only
-   * read keeps an arbitrary one of the four.
+   * Filtered to the composite domain at the source because names can be duplicated across domains.
    *
    * Returned unresolved: which name holds a task's percentile or raw score
    * depends on its slug, grade, and scoring version, so the service resolves
