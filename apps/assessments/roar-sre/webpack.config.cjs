@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const { merge } = require('webpack-merge');
+const { devConfig } = require('../shared/devWebpackConfig.cjs');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
@@ -114,6 +115,14 @@ const webConfig = merge(commonConfig, {
     new HtmlWebpackPlugin({
       title: 'Rapid Online Assessment of Reading - SRE',
     }),
+  ],
+});
+
+const productionConfig = merge(webConfig, {
+  mode: 'production',
+  // Sentry releases/source maps upload only from real (staging/production)
+  // builds — in dev the plugin has no auth token and only prints warnings.
+  plugins: [
     sentryWebpackPlugin({
       org: 'roar-89588e380',
       project: 'sre',
@@ -124,10 +133,6 @@ const webConfig = merge(commonConfig, {
       },
     }),
   ],
-});
-
-const productionConfig = merge(webConfig, {
-  mode: 'production',
 });
 
 const developmentConfig = merge(webConfig, {
@@ -153,33 +158,22 @@ const developmentConfig = merge(webConfig, {
 module.exports = async (env, args) => {
   const roarDB = env.dbmode ?? 'development';
 
-  const devFirebaseConfig =
-    roarDB === 'development'
-      ? {
-          FIREBASE_AUTH_EMULATOR_HOST: JSON.stringify(process.env.FIREBASE_AUTH_EMULATOR_HOST ?? ''),
-        }
-      : {};
-
   const envDependentConfig = {
     plugins: [
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
         ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? ''),
-        ...devFirebaseConfig,
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
         Buffer: ['buffer', 'Buffer'],
-      }),
-      new webpack.EnvironmentPlugin({
-        FIREBASE_AUTH_EMULATOR_HOST: '',
       }),
     ],
   };
 
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig);
+      return merge(developmentConfig, envDependentConfig, devConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:

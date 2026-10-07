@@ -276,6 +276,7 @@ export const UsersContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(CreateUserResponseSchema),
         401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
         // 429 is intentionally absent: the project has no Express-level rate limiter yet.
         // createAnonymousUser makes no Firebase Auth Admin API calls, so Firebase's own
         // TOO_MANY_REQUESTS quota (which covers /users POST) cannot fire here. The endpoint
@@ -289,7 +290,9 @@ export const UsersContract = c.router(
         'Creates a minimal ROAR user record for an anonymous Firebase user, or returns the existing record if one was already created. ' +
         'Requires a valid Firebase anonymous ID token in the Authorization header. ' +
         'The call is idempotent — repeated calls for the same Firebase UID return the same ROAR user ID. ' +
-        'Used by standalone assessment apps that support guest (anonymous) play.',
+        'Used by standalone assessment apps that support guest (anonymous) play. ' +
+        'Returns 401 if the Authorization header is missing, malformed, or carries an invalid or expired token. ' +
+        'Returns 403 if the token is valid but not from an anonymous sign-in.',
     },
   },
   { pathPrefix: '/users' },

@@ -1,5 +1,5 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
-import { ApiContractV1 } from '@roar-platform/api-contract';
+import { ApiContractV1, ErrorEnvelopeSchema } from '@roar-platform/api-contract';
 import type { CommandContext, Logger } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';
@@ -19,10 +19,31 @@ export interface ApiClientConfig {
     refreshToken?(): Promise<string | undefined>;
   };
   requestId?: () => string;
+  /** @deprecated Never honored — the underlying ts-rest fetcher always uses the global
+   *  fetch. Stub the global in tests instead. Slated for removal in the next major. */
   fetchImpl?: typeof fetch;
-  /** Accepted for structural compatibility with CommandContext but not yet used by createApiClient.
-   *  Forward-compatibility field — will be wired into token injection debug logging in a follow-up. */
+  /** Used for token-refresh observability: a refresh attempt logs at debug, a failed refresh at warn. */
   logger?: Logger;
+}
+
+/**
+ * Backend auth error codes that a single forced token refresh can repair.
+ * Which codes are refreshable is client retry POLICY, so it is pinned here,
+ * not in the contract; the literals mirror the backend's `ApiErrorCode`
+ * enum (`auth/token-expired`, `auth/token-invalid`) — the same values the
+ * dashboard client pins in `utils/api-errors.js`.
+ */
+const REFRESHABLE_AUTH_ERROR_CODES = new Set(['auth/token-expired', 'auth/token-invalid']);
+
+/**
+ * Extracts the error code from a parsed 401 body by validating it against
+ * the contract's own envelope schema — the single source of the wire shape.
+ * Non-envelope bodies (a string, a blob, an HTML error page from an
+ * intermediary) yield undefined and fall through to the original response.
+ */
+function getAuthErrorCode(body: unknown): string | undefined {
+  const parsed = ErrorEnvelopeSchema.safeParse(body);
+  return parsed.success ? parsed.data.error.code : undefined;
 }
 
 /**
@@ -31,15 +52,45 @@ export interface ApiClientConfig {
  * The client automatically injects:
  * - Authorization header with Bearer token (when available)
  * - x-request-id header for request tracing (when requestId is defined)
- * - Custom fetch implementation (if provided in config)
+ *
+ * When `auth.refreshToken` is provided, a 401 response carrying the
+ * `auth/token-expired` or `auth/token-invalid` error code triggers one token
+ * refresh and one retry with the fresh token — mirroring the dashboard
+ * client's semantics. Concurrent 401s within this client share a single
+ * in-flight refresh; hosts that create several clients over the same
+ * callbacks must dedupe inside `refreshToken` itself (the dashboard's
+ * `forceIdTokenRefresh` does). Any other 401, a failed refresh, or a refresh
+ * resolving no token surfaces the original 401 unchanged for the caller to
+ * treat as terminal.
  *
  * Unlike the {@link RoarApi} constructor, this does not require a participantId, so it can
  * be used for unauthenticated/pre-provisioning calls such as anonymous-session bootstrap.
  *
- * @param config - baseUrl, auth callbacks, optional requestId, optional custom fetch, optional logger
+ * @param config - baseUrl, auth callbacks, optional requestId, optional logger
  * @returns Initialized ts-rest client for ApiContractV1
  */
 export function createApiClient(config: ApiClientConfig) {
+  // One in-flight refresh per client instance: trial writes are bursty, and a
+  // batch of near-simultaneous 401s must trigger a single refreshToken call.
+  let inflightRefresh: Promise<string | undefined> | null = null;
+
+  const refreshOnce = (refreshToken: () => Promise<string | undefined>): Promise<string | undefined> => {
+    if (!inflightRefresh) {
+      inflightRefresh = Promise.resolve()
+        .then(() => refreshToken())
+        // A failed refresh (revoked session, offline) resolves to undefined so
+        // the caller surfaces the original 401, not a thrown refresh internal.
+        .catch((error: unknown) => {
+          config.logger?.warn('[assessment-sdk] Token refresh failed', error);
+          return undefined;
+        })
+        .finally(() => {
+          inflightRefresh = null;
+        });
+    }
+    return inflightRefresh;
+  };
+
   return initClient(ApiContractV1, {
     baseUrl: config.baseUrl,
     baseHeaders: {},
@@ -47,15 +98,47 @@ export function createApiClient(config: ApiClientConfig) {
       const token = await config.auth.getToken();
       const requestId = config.requestId?.();
 
-      args.headers = {
+      const headers = {
         ...args.headers,
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(requestId ? { 'x-request-id': requestId } : {}),
       };
 
+      const response = await tsRestFetchApi({ ...args, headers });
+
+      const { refreshToken } = config.auth;
+      if (response.status !== 401 || !refreshToken) {
+        return response;
+      }
+
+      const errorCode = getAuthErrorCode(response.body);
+      if (errorCode === undefined || !REFRESHABLE_AUTH_ERROR_CODES.has(errorCode)) {
+        return response;
+      }
+
+      config.logger?.debug('[assessment-sdk] 401 with refreshable auth error code, refreshing token', { errorCode });
+
+      // Deliberately no getToken() recheck before refreshing: Firebase rotates
+      // tokens on its own, so a different-looking token is not evidence the
+      // refresh side effects can be skipped — a rotated-but-still-rejected
+      // token would silently bypass refreshToken forever. One redundant
+      // refresh is absorbed by the in-flight dedup above and by host-level
+      // dedup inside refreshToken itself.
+      const freshToken = await refreshOnce(refreshToken);
+      // No fresh token (signed out mid-request, refresh failed): a retry
+      // without a valid Authorization header is a guaranteed 401 — skip the
+      // round-trip and surface the original response as the terminal error.
+      if (!freshToken) {
+        return response;
+      }
+
+      // Retry once with the fresh token. A failure here propagates as a
+      // network error instead of masquerading as a terminal auth 401. The
+      // x-request-id is reused so the retry correlates with the original
+      // request in backend traces.
       return tsRestFetchApi({
         ...args,
-        ...(config.fetchImpl ? { fetchApi: config.fetchImpl } : {}),
+        headers: { ...headers, Authorization: `Bearer ${freshToken}` },
       });
     },
   });
@@ -66,7 +149,7 @@ export type RoarApiClient = ReturnType<typeof createApiClient>;
 /**
  * Creates a ts-rest client for command execution, enforcing that a participantId is present.
  *
- * @param ctx - CommandContext with baseUrl, auth callbacks, participant context, optional logger, and optional custom fetch
+ * @param ctx - CommandContext with baseUrl, auth callbacks, participant context, and optional logger
  * @returns Initialized ts-rest client for ApiContractV1
  */
 function createClient(ctx: CommandContext): RoarApiClient {

@@ -29,6 +29,8 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
+import { UserType } from '../../enums/user-type.enum';
+import { UserFamilyRole } from '../../enums/user-family-role.enum';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { logger } from '../../logger';
 
@@ -957,9 +959,17 @@ describe('UserService', () => {
         expect(result).toEqual({ id: createdAgreement.id });
       });
 
-      it('should throw FORBIDDEN when minor tries to consent to TOS agreement', async () => {
+      it('should throw FORBIDDEN when minor student tries to consent to TOS agreement', async () => {
         const authContext = AuthContextFactory.build({ userId: 'user-123' });
-        const minorUser = UserFactory.build({ id: authContext.userId, dob: '2015-01-01', grade: '3' });
+        // userType pinned: the TOS role override (#2244) would let an
+        // admin/educator/caregiver-parent minor through.
+        const minorUser = UserFactory.build({
+          id: authContext.userId,
+          dob: '2015-01-01',
+          grade: '3',
+          userType: UserType.STUDENT,
+          isSuperAdmin: false,
+        });
         const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
         const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
 
@@ -973,6 +983,185 @@ describe('UserService', () => {
           userAgreementRepository: mockUserAgreementRepository,
           agreementVersionRepository: mockAgreementVersionRepository,
           agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, authContext.userId, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+
+      it('should allow minor-classified educator to consent to TOS agreement (#2244)', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        // Mis-rostered educator with a student-like grade: /me asks them to
+        // sign the TOS, so recording it must succeed despite the age category.
+        const minorEducator = UserFactory.build({
+          id: authContext.userId,
+          dob: '2015-01-01',
+          grade: '3',
+          userType: UserType.EDUCATOR,
+          isSuperAdmin: false,
+        });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: minorEducator.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(minorEducator); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(minorEducator); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+      });
+
+      it('should allow minor-classified admin to consent to TOS agreement (#2244)', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const minorAdmin = UserFactory.build({
+          id: authContext.userId,
+          dob: '2015-01-01',
+          grade: '3',
+          userType: UserType.ADMIN,
+          isSuperAdmin: false,
+        });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: minorAdmin.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(minorAdmin); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(minorAdmin); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+      });
+
+      it('should allow minor-classified super admin to consent to TOS agreement regardless of user type (#2244)', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const minorSuperAdmin = UserFactory.build({
+          id: authContext.userId,
+          dob: '2015-01-01',
+          grade: '3',
+          userType: UserType.STUDENT,
+          isSuperAdmin: true,
+        });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: minorSuperAdmin.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(minorSuperAdmin); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(minorSuperAdmin); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+      });
+
+      it('should allow minor-classified caregiver with a parent family role to consent to TOS agreement (#2244)', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const minorParent = UserFactory.build({
+          id: authContext.userId,
+          dob: '2010-01-01',
+          grade: null,
+          userType: UserType.CAREGIVER,
+          isSuperAdmin: false,
+        });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: minorParent.id });
+        const mockFamilyRepository = createMockFamilyRepository();
+
+        mockUserRepository.getById.mockResolvedValueOnce(minorParent); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(minorParent); // Requesting user
+        mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([
+          { familyId: 'family-1', role: UserFamilyRole.PARENT },
+        ]);
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+          familyRepository: mockFamilyRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+      });
+
+      it('should throw FORBIDDEN when minor caregiver without a parent family role tries to consent to TOS agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const minorCaregiver = UserFactory.build({
+          id: authContext.userId,
+          dob: '2010-01-01',
+          grade: null,
+          userType: UserType.CAREGIVER,
+          isSuperAdmin: false,
+        });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const mockFamilyRepository = createMockFamilyRepository();
+
+        mockUserRepository.getById.mockResolvedValueOnce(minorCaregiver); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(minorCaregiver); // Requesting user
+        mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([
+          { familyId: 'family-1', role: UserFamilyRole.CHILD },
+        ]);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+          familyRepository: mockFamilyRepository,
         });
 
         await expect(
@@ -1250,6 +1439,10 @@ describe('UserService', () => {
   });
 
   describe('getUnsignedTosAgreements', () => {
+    // The TOS requirement applies to admin-profile users; an educator is the
+    // simplest such caller for the mapping/error tests below.
+    const educator = UserFactory.build({ id: 'user-123', userType: UserType.EDUCATOR, isSuperAdmin: false });
+
     it('returns empty array when user has signed all TOS agreements', async () => {
       const mockAgreementRepository = createMockAgreementRepository();
       mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([]);
@@ -1259,10 +1452,73 @@ describe('UserService', () => {
         agreementRepository: mockAgreementRepository,
       });
 
-      const result = await userService.getUnsignedTosAgreements('user-123');
+      const result = await userService.getUnsignedTosAgreements(educator, []);
 
       expect(mockAgreementRepository.getUnsignedTosAgreements).toHaveBeenCalledWith('user-123');
       expect(result).toEqual([]);
+    });
+
+    it('returns empty array for a student without querying agreements (#2244)', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const student = UserFactory.build({ id: 'user-123', userType: UserType.STUDENT, isSuperAdmin: false });
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements(student, []);
+
+      expect(result).toEqual([]);
+      expect(mockAgreementRepository.getUnsignedTosAgreements).not.toHaveBeenCalled();
+    });
+
+    it('returns empty array for a caregiver without a parent family role', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const caregiver = UserFactory.build({ id: 'user-123', userType: UserType.CAREGIVER, isSuperAdmin: false });
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements(caregiver, [{ role: UserFamilyRole.CHILD }]);
+
+      expect(result).toEqual([]);
+      expect(mockAgreementRepository.getUnsignedTosAgreements).not.toHaveBeenCalled();
+    });
+
+    it('returns unsigned TOS agreements for a caregiver with a parent family role', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS, name: 'ROAR Terms of Service' });
+      const version = AgreementVersionFactory.build({ agreementId: agreement.id, locale: 'en-US', isCurrent: true });
+      const caregiver = UserFactory.build({ id: 'user-123', userType: UserType.CAREGIVER, isSuperAdmin: false });
+      mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([{ agreement, currentVersions: [version] }]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements(caregiver, [{ role: UserFamilyRole.PARENT }]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.agreementId).toBe(agreement.id);
+    });
+
+    it('requires the TOS from a super admin regardless of user type', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const superAdmin = UserFactory.build({ id: 'user-123', userType: UserType.STUDENT, isSuperAdmin: true });
+      mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      await userService.getUnsignedTosAgreements(superAdmin, []);
+
+      expect(mockAgreementRepository.getUnsignedTosAgreements).toHaveBeenCalledWith('user-123');
     });
 
     it('returns unsigned TOS agreements with all locale variants', async () => {
@@ -1288,7 +1544,7 @@ describe('UserService', () => {
         agreementRepository: mockAgreementRepository,
       });
 
-      const result = await userService.getUnsignedTosAgreements('user-123');
+      const result = await userService.getUnsignedTosAgreements(educator, []);
 
       expect(result).toEqual([
         {
@@ -1319,7 +1575,7 @@ describe('UserService', () => {
         agreementRepository: mockAgreementRepository,
       });
 
-      const result = await userService.getUnsignedTosAgreements('user-123');
+      const result = await userService.getUnsignedTosAgreements(educator, []);
 
       expect(result).toHaveLength(2);
       expect(result[0]!.agreementId).toBe(agreement1.id);
@@ -1339,7 +1595,7 @@ describe('UserService', () => {
         agreementRepository: mockAgreementRepository,
       });
 
-      await expect(userService.getUnsignedTosAgreements('user-123')).rejects.toThrow(apiError);
+      await expect(userService.getUnsignedTosAgreements(educator, [])).rejects.toThrow(apiError);
     });
 
     it('wraps unexpected errors in ApiError with 500/DATABASE_QUERY_FAILED', async () => {
@@ -1351,7 +1607,7 @@ describe('UserService', () => {
         agreementRepository: mockAgreementRepository,
       });
 
-      await expect(userService.getUnsignedTosAgreements('user-123')).rejects.toMatchObject({
+      await expect(userService.getUnsignedTosAgreements(educator, [])).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
