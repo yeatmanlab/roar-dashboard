@@ -3,9 +3,12 @@
 //
 // The assessment stack publishes the emulators on 9097/9197 — deliberately NOT
 // the canonical 9099/9199 the platform stack uses — so both dev environments
-// run in parallel with no port overlap. The container-internal ports stay
-// canonical (docker/firebase-emulator/firebase.json); only the host mappings
-// in docker-compose.assessment.yml shift, and they must match these values.
+// run in parallel with no port overlap. The ports are shifted in the emulator
+// config itself (docker/firebase-emulator/firebase.assessment.json) and mapped
+// 1:1 in docker-compose.assessment.yml — the Emulator UI builds browser-side
+// URLs from the advertised config ports, so a Docker-level remap would point
+// it at the platform stack. All three must match these values;
+// emulatorPortConfig.test.js asserts the agreement.
 // Platform-context dev (assessment served against the platform stack) opts in
 // explicitly: FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npm run dev.
 //

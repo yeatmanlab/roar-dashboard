@@ -99,11 +99,19 @@ services:
 
   # ────────────────────────────────────────────────────────────────────────────
   # Firebase Auth + Storage emulators.
-  # Uses the shared emulator image (docker/firebase-emulator). The HOST ports are
-  # deliberately shifted from the canonical ones (9097/9197/9002 instead of
-  # 9099/9199/9999) so this stack runs in parallel with the platform dev stack;
-  # the container-internal ports stay canonical. The host values must match
-  # apps/assessments/shared/devEmulatorHost.cjs, which dev bundles default to.
+  # Uses the shared emulator image (docker/firebase-emulator) with this stack's
+  # own config, firebase.assessment.json. The ports are deliberately shifted
+  # from the canonical ones (9097/9197/9002 instead of 9099/9199/9999) so this
+  # stack runs in parallel with the platform dev stack.
+  #
+  # The auth/storage ports must be shifted IN THE CONFIG, not remapped at the
+  # Docker boundary (9097:9099): the Emulator UI is a browser-side app that
+  # builds emulator URLs from the ports firebase.json advertises, so under a
+  # shifted mapping the UI at :9002 would query 127.0.0.1:9099 — the platform
+  # stack's emulator — and show the wrong stack's users. Only the UI's own port
+  # stays internal-canonical (9002:9000); its API calls are relative. The host
+  # values must match apps/assessments/shared/devEmulatorHost.cjs, which dev
+  # bundles default to. emulatorPortConfig.test.js asserts all of this agrees.
   # Assessments connect via FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9097 (auth) and
   # upload recordings to the Storage emulator on 127.0.0.1:9197, viewable in the
   # Emulator UI on :9002.
@@ -117,8 +125,8 @@ services:
     # rebuilds an existing image on its own.
     pull_policy: build
     volumes:
-      - ./docker/firebase-emulator/firebase.json:/firebase.json:ro
-      # firebase.json references storage.rules; mount it so the Storage emulator can load it.
+      - ./docker/firebase-emulator/firebase.assessment.json:/firebase.json:ro
+      # The config references storage.rules; mount it so the Storage emulator can load it.
       - ./docker/firebase-emulator/storage.rules:/storage.rules:ro
     command: >
       emulators:start
@@ -126,18 +134,20 @@ services:
         --project demo-roar
         --config /firebase.json
     ports:
-      - "127.0.0.1:9097:9099"
+      # Identity mappings — the container ports already carry the shifted values
+      # from firebase.assessment.json (see the service comment above for why).
+      - "127.0.0.1:9097:9097"
       # Storage emulator (recording uploads) and the Emulator UI (view recordings
       # at :9002).
-      - "127.0.0.1:9197:9199"
+      - "127.0.0.1:9197:9197"
       - "127.0.0.1:9002:9000"
     healthcheck:
-      # curl returns 0 on any HTTP response — checks that both the auth (9099) and storage
-      # (9199) emulators are accepting connections so `--wait` doesn't proceed before uploads work.
+      # curl returns 0 on any HTTP response — checks that both the auth (9097) and storage
+      # (9197) emulators are accepting connections so `--wait` doesn't proceed before uploads work.
       test:
         [
           "CMD-SHELL",
-          "curl --silent http://localhost:9099/ --output /dev/null && curl --silent http://localhost:9199/ --output /dev/null",
+          "curl --silent http://localhost:9097/ --output /dev/null && curl --silent http://localhost:9197/ --output /dev/null",
         ]
       interval: 5s
       timeout: 5s
@@ -165,7 +175,7 @@ services:
       # Canonical project identifier for emulated Firebase projects
       # Should match FIREBASE_EMULATOR_PROJECT_ID constant in @assessment-schema/src/firebase-emulator.ts
       GOOGLE_CLOUD_PROJECT: demo-roar
-      FIREBASE_AUTH_EMULATOR_HOST: firebase-emulator:9099
+      FIREBASE_AUTH_EMULATOR_HOST: firebase-emulator:9097
       # The webpack dev server proxies /v1 to the backend so CORS never applies
       # in this environment. This value just satisfies the production boot check
       # (ALLOWED_ORIGINS must be set when NODE_ENV=production).

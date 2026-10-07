@@ -92,9 +92,14 @@ export async function start(ui) {
   const backendCurrent = capture(['docker', 'port', 'assessment-backend', '4000/tcp']).stdout.endsWith(
     `:${ASSESSMENT_BACKEND_PORT}`,
   );
-  const emulatorCurrent = capture(['docker', 'port', 'firebase-emulator', '9099/tcp'])
+  // The container-internal auth port equals the published host port — the
+  // emulator config shifts the port itself (firebase.assessment.json) because
+  // the Emulator UI advertises config ports to the browser, so a Docker-level
+  // remap would point the UI at the platform stack.
+  const emulatorPort = ASSESSMENT_AUTH_EMULATOR_HOST.split(':')[1];
+  const emulatorCurrent = capture(['docker', 'port', 'firebase-emulator', `${emulatorPort}/tcp`])
     .stdout.split('\n')[0]
-    .endsWith(`:${ASSESSMENT_AUTH_EMULATOR_HOST.split(':')[1]}`);
+    .endsWith(`:${emulatorPort}`);
   if (
     containerRunning('assessment-backend') &&
     containerRunning('firebase-emulator') &&
