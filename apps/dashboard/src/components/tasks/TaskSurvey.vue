@@ -1,16 +1,15 @@
 <template>
-  <div v-if="!sdkInitialized || !surveyJson" class="text-center col-full">
+  <div v-if="!sdkContext" class="text-center col-full">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
-  <SurveyRunner v-else :survey-data="surveyJson" @complete-survey="handleCompleteSurvey" />
+  <SurveyRunner v-else :sdk-context="sdkContext" :language="language" @complete-survey="handleCompleteSurvey" />
 </template>
 
 <script setup>
 import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { SURVEY_TASK_ID } from '@roar-platform/assessment-schema/roar-survey';
 import { useAuthStore } from '@/store/auth';
 import useAssessmentAuthCallbacks from '@/composables/useAssessmentAuthCallbacks';
@@ -30,8 +29,9 @@ const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isAuthReady } = storeToRefs(authStore);
 
-const sdkInitialized = ref(false);
-const surveyJson = ref(null);
+// Handed to SurveyRunner, which owns SDK initialization, variant resolution, and fetching its
+// own content. Non-null is also the signal that the survey is ready to mount.
+const sdkContext = ref(null);
 const taskStarted = ref(false);
 
 // Resolves the proxy-launch id or the launching user's own `/me` id. The watcher below is
@@ -85,35 +85,19 @@ async function startTask(selectedAdmin) {
 
     if (!surveyTaskVariant) throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
 
-    initFirekitCompat(
-      {
+    sdkContext.value = {
+      ctx: {
         baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
         auth: useAssessmentAuthCallbacks(),
         participant: { participantId: participantId.value },
       },
-      {
+      taskInfo: {
         variantId: surveyTaskVariant.variantId,
         taskVersion: version,
         administrationId: administration.id,
         isAnonymous: false,
       },
-    );
-
-    // Source the survey's variant parameters from the assessment SDK now that
-    // initFirekitCompat has run. The seeded variant carries the required `survey`
-    // key (the GCS filename), which getVariantById round-trips verbatim.
-    const { variantParams } = await getVariantById(surveyTaskVariant.variantId);
-    const gameParams = { ...variantParams };
-
-    // Fetch survey JSON from GCS using the survey file name from variant params.
-    // The bucket URL matches src/constants/bucketBaseUrl.js in the assessment source.
-    const surveyFile = gameParams.survey ?? 'survey';
-    const bucketUrl = `https://storage.googleapis.com/roar-survey-app/${props.language}/`;
-    const response = await fetch(`${bucketUrl}${surveyFile}.json`);
-    if (!response.ok) throw new Error(`Survey fetch failed: ${response.statusText}`);
-    surveyJson.value = await response.json();
-
-    sdkInitialized.value = true;
+    };
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
     alert(
