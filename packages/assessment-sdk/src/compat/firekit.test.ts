@@ -51,7 +51,7 @@ function createMockLogger() {
   };
 }
 
-function createMockContext(fetchImpl?: typeof fetch): CommandContext {
+function createMockContext(): CommandContext {
   return {
     baseUrl: 'http://localhost:3000',
     auth: {
@@ -61,7 +61,6 @@ function createMockContext(fetchImpl?: typeof fetch): CommandContext {
       participantId: 'participant-123',
     },
     logger: createMockLogger(),
-    ...(fetchImpl ? { fetchImpl } : {}),
   };
 }
 
@@ -1661,16 +1660,64 @@ describe('firekit compat', () => {
       expect(connectStorageEmulator).toHaveBeenCalledWith(expect.anything(), '127.0.0.1', 9199);
     });
 
-    it('does not reconnect the emulator after a facade reset', () => {
-      // storageEmulatorConnected is module-level, so it persists across facade resets.
-      // The emulator test above already triggered the connection; after reset it should not reconnect.
+    it('honors FIREBASE_STORAGE_EMULATOR_HOST over the auth-derived address', async () => {
+      // The connect-once flag is module-level, so this path needs a fresh
+      // module instance; the file-level vi.mock declarations re-apply to it.
+      vi.resetModules();
+      const fresh = await import('./firekit');
+      vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9097');
+      vi.stubEnv('FIREBASE_STORAGE_EMULATOR_HOST', '127.0.0.1:9197');
+      vi.stubGlobal('fetch', setupFetchMock('run-storage-var-test'));
+      fresh.initFirekitCompat(createMockContext(), {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      fresh.getFirekitCompat()._getStorageBucket();
+
+      expect(connectStorageEmulator).toHaveBeenCalledWith(expect.anything(), '127.0.0.1', 9197);
+      fresh._resetFirekitCompat();
+    });
+
+    it('tolerates a scheme-prefixed FIREBASE_STORAGE_EMULATOR_HOST', async () => {
+      vi.resetModules();
+      const fresh = await import('./firekit');
       vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
-      _resetFirekitCompat();
-      initializeFirekit('run-emulator-reset-test');
+      vi.stubEnv('FIREBASE_STORAGE_EMULATOR_HOST', 'http://127.0.0.1:9199');
+      vi.stubGlobal('fetch', setupFetchMock('run-storage-scheme-test'));
+      fresh.initFirekitCompat(createMockContext(), {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
 
-      getFirekitCompat()._getStorageBucket();
+      fresh.getFirekitCompat()._getStorageBucket();
 
-      expect(connectStorageEmulator).not.toHaveBeenCalled();
+      expect(connectStorageEmulator).toHaveBeenCalledWith(expect.anything(), '127.0.0.1', 9199);
+      fresh._resetFirekitCompat();
+    });
+
+    it('does not reconnect the emulator after a facade reset', async () => {
+      // storageEmulatorConnected is module-level, so it persists across facade
+      // resets — prove that on a fresh module instance: connect once, reset the
+      // facade, fetch the bucket again, and the connection count stays at one.
+      vi.resetModules();
+      const fresh = await import('./firekit');
+      vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
+      vi.stubGlobal('fetch', setupFetchMock('run-emulator-reset-test'));
+      const taskInfo = { variantId: 'variant-123', taskVersion: '1.0.0', isAnonymous: true };
+
+      fresh.initFirekitCompat(createMockContext(), taskInfo);
+      fresh.getFirekitCompat()._getStorageBucket();
+      expect(connectStorageEmulator).toHaveBeenCalledTimes(1);
+
+      fresh._resetFirekitCompat();
+      fresh.initFirekitCompat(createMockContext(), taskInfo);
+      fresh.getFirekitCompat()._getStorageBucket();
+
+      expect(connectStorageEmulator).toHaveBeenCalledTimes(1);
+      fresh._resetFirekitCompat();
     });
 
     it('uses the prod recordings bucket when projectId is gse-roar-admin', () => {
