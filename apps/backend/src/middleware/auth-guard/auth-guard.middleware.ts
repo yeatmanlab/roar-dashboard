@@ -49,6 +49,19 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
     // Verify Firebase token
     const decodedUser = await AuthService.verifyToken(token);
 
+    // A verified token must carry a uid. A blank one would trip the blank-authId
+    // invariant in UserRepository.findByAuthId and surface as a 500 — reject it
+    // here as an invalid token instead.
+    if (!decodedUser.uid) {
+      logger.warn('Verified Firebase token carried a blank uid');
+      return next(
+        new ApiError(ApiErrorMessage.UNAUTHORIZED, {
+          statusCode: StatusCodes.UNAUTHORIZED,
+          code: ApiErrorCode.AUTH_TOKEN_INVALID,
+        }),
+      );
+    }
+
     // Look up user in PostgreSQL by Firebase auth ID
     const user = await userService.findByAuthId(decodedUser.uid);
     if (!user) {

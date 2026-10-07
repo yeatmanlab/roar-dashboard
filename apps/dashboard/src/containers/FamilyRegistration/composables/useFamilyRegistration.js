@@ -12,8 +12,10 @@ import { mapParentFormToCreateFamily } from '@/helpers/registration/mapParentFor
  * Registration does NO agreement work. The legacy firekit call also recorded a
  * behavioral-consent document at sign-up; under the migrated design that is
  * wrong. Terms-of-service acceptance is handled AFTER login by the existing
- * `/me.unsignedAgreements` gate (which prompts non-student users for any
- * unsigned TOS), and consent/assent are administration-specific and handled
+ * `/me.unsignedAgreements` gate (which prompts the users the TOS applies to —
+ * admins, educators, and caregivers with a parent family role; the caretaker
+ * registered here holds that role, so the gate covers this flow), and
+ * consent/assent are administration-specific and handled
  * post-auth by the per-administration consent gate. So registration is purely:
  *
  *   1. `POST /v1/families/` — create the caretaker + family (public, no token).

@@ -3,6 +3,7 @@ import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { DistrictsContract } from '@roar-platform/api-contract';
 import { DistrictsController } from '../controllers/districts.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
+import { asTsRestMiddleware } from '../middleware/auth-guard/as-ts-rest-middleware';
 
 const s = initServer();
 
@@ -15,31 +16,28 @@ const s = initServer();
 export function registerDistrictsRoutes(routerInstance: Router) {
   const DistrictsRoutes = s.router(DistrictsContract, {
     create: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, body }) => DistrictsController.create(user!, body),
     },
     list: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, query }) => DistrictsController.list(user!, query),
     },
     get: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id } }) => DistrictsController.getById(user!, id),
     },
     update: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { id }, body }) => DistrictsController.update(user!, id, body),
     },
     listSchools: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { districtId }, query }) =>
         DistrictsController.listSchools(user!, districtId, query),
     },
     listUsers: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { districtId }, query }) =>
         DistrictsController.listUsers(user!, districtId, query),
     },

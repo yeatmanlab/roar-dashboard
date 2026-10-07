@@ -102,7 +102,7 @@ export const AgreementsController = {
    * Get agreement version content.
    *
    * Fetches the raw markdown content for a specific agreement version from GitHub.
-   * Cache headers are applied by route-level middleware (setCacheControlHeaderMiddleware),
+   * Cache headers are applied by route-level middleware (ImmutablePublicCacheControlMiddleware),
    * not by this controller.
    *
    * @param authContext - User's authentication context

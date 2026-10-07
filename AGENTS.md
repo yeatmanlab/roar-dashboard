@@ -109,6 +109,29 @@ packages/assessment-sdk/      # Assessment client SDK
 - **Auth**: Firebase Authentication
 - **Testing**: Vitest (unit + integration with separate projects), Cypress (E2E + component), Fishery (test factories)
 
+## AI Agents, Commands, and Skills
+
+Custom agents, commands, rules, and skills are defined in the `.ai/` directory and fanned out to tools via symlinks (`.claude/{agents,commands,rules,skills}`, `.cursor/rules`).
+
+### Agents (`.ai/agents/`)
+
+- **backend-reviewer**: Reviews backend/contract changes for 5-layer architecture, layer boundaries, error handling, and contract conventions
+- **frontend-reviewer**: Reviews dashboard changes for container/presentational split, state ownership, composable patterns, and API client usage
+- **security-authz-reviewer**: Reviews FGA/authorization correctness, error-message security, and student-data isolation
+- **test-coverage-reviewer**: Reviews whether changes carry tests at the right layer and depth, per the risk tiers
+- **code-quality-reviewer**: Reviews TypeScript/Vue quality, naming, constants, logging, and utility placement
+
+### Commands (`.ai/commands/`)
+
+- **review-pr**: Comprehensive PR review fanning out to the five agents
+- **commit-and-pr**: Run checks, commit, push, and create a draft PR with structured description
+
+### Skills (`.ai/skills/`)
+
+Vendored third-party skills from official publisher repos, pinned by content hash in `skills-lock.json` (repo root): `openfga`, `cypress-author`, `firebase-auth-basics`, `firebase-hosting-basics`, `supabase-postgres-best-practices`.
+
+To add or update a skill: run `npx skills add <owner/repo> -s <skill> -a claude-code -y`, which installs through the `.claude/skills` symlink into `.ai/skills/` and updates `skills-lock.json`. Only install from official publisher repos, and review the skill content (markdown only, no scripts) before committing. If the CLI ever materializes an `.agents/` directory instead, move its contents into `.ai/skills/` and delete it.
+
 ## Extended Documentation
 
 - **[.ai/commands.md](.ai/commands.md)**: Complete command reference
