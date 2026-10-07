@@ -12,7 +12,7 @@
  * The 500 error path is covered at the controller unit test layer
  * (agreements.controller.test.ts: 'returns 500 when service throws an ApiError').
  */
-import { describe, it, expect, beforeAll } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type express from 'express';
 import { createTestApp, createRouteHelper, createTierUsers } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
@@ -39,6 +39,10 @@ beforeAll(async () => {
   app = createTestApp(registerAgreementsRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -213,22 +217,46 @@ describe('GET /v1/agreements', () => {
 
 describe('GET /v1/agreements/:agreementId/versions/:versionId/content', () => {
   describe('cache headers', () => {
-    it('sets Cache-Control header with public, max-age, and immutable directives', async () => {
+    it('sets immutable public caching on successful version content', async () => {
       const agreement = await AgreementFactory.create({ agreementType: AgreementType.TOS });
       const version = await AgreementVersionFactory.create(
-        { isCurrent: true, locale: 'en-US', githubFilename: 'TOS.md', githubOrgRepo: 'roar-org/legal-docs' },
+        {
+          isCurrent: true,
+          locale: 'en-US',
+          githubFilename: 'cache-header-success.md',
+          githubOrgRepo: 'roar-org/legal-docs',
+          githubCommitSha: 'cache-header-success-sha',
+        },
         { transient: { agreementId: agreement.id } },
       );
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('# Immutable agreement content')));
 
-      // The handler will return 500 in tests because GitHub is unreachable,
-      // but the cache middleware runs before the handler so the header is set regardless.
+      const res = await expectRoute('GET', `/v1/agreements/${agreement.id}/versions/${version.id}/content`)
+        .as(tiers.admin)
+        .toReturn(200);
+
+      expect(res.headers['cache-control']).toBe('public, max-age=86400, immutable');
+    });
+
+    it('does not mark failed version content responses as cacheable', async () => {
+      const agreement = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+      const version = await AgreementVersionFactory.create(
+        {
+          isCurrent: true,
+          locale: 'en-US',
+          githubFilename: 'cache-header-failure.md',
+          githubOrgRepo: 'roar-org/legal-docs',
+          githubCommitSha: 'cache-header-failure-sha',
+        },
+        { transient: { agreementId: agreement.id } },
+      );
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }));
+
       const res = await expectRoute('GET', `/v1/agreements/${agreement.id}/versions/${version.id}/content`)
         .as(tiers.admin)
         .toReturn(500);
 
-      // Cache-Control is set by middleware before the handler executes
-      const cacheControl = res.headers['cache-control'];
-      expect(cacheControl).toBe('public, max-age=86400, immutable');
+      expect(res.headers['cache-control']).toBeUndefined();
     });
   });
 
