@@ -3,16 +3,20 @@ import { StatusCodes } from 'http-status-codes';
 import type { AgreementsListOptions } from './agreement.service';
 import { AgreementService } from './agreement.service';
 import { createMockAgreementRepository } from '../../test-support/repositories/agreement.repository';
+import { createMockAgreementVersionRepository } from '../../test-support/repositories/agreement-version.repository';
 import { AuthContextFactory } from '../../test-support/factories/user.factory';
 import { AgreementFactory } from '../../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import type { AgreementEmbedOptionType } from '../../enums/agreement-embed-option.enum';
+import { logger } from '../../logger';
 
 describe('AgreementService', () => {
   let mockRepository: ReturnType<typeof createMockAgreementRepository>;
+  let mockVersionRepository: ReturnType<typeof createMockAgreementVersionRepository>;
   let mockFetchContent: ReturnType<typeof vi.fn>;
   let service: ReturnType<typeof AgreementService>;
 
@@ -28,8 +32,426 @@ describe('AgreementService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRepository = createMockAgreementRepository();
+    mockVersionRepository = createMockAgreementVersionRepository();
     mockFetchContent = vi.fn();
-    service = AgreementService({ agreementRepository: mockRepository, fetchContent: mockFetchContent });
+    service = AgreementService({
+      agreementRepository: mockRepository,
+      agreementVersionRepository: mockVersionRepository,
+      fetchContent: mockFetchContent,
+    });
+  });
+
+  describe('getRegistrationAgreements', () => {
+    it('returns current adult-signable agreements with inline content', async () => {
+      const agreementId = '00000000-0000-4000-8000-000000000001';
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([
+        {
+          agreementId,
+          agreementVersionId: '00000000-0000-4000-8000-000000000002',
+          agreementType: AgreementType.CONSENT,
+          name: 'Research consent',
+          locale: 'en-US',
+          isCurrent: true,
+          githubFilename: 'consent.md',
+          githubOrgRepo: 'yeatmanlab/roar-legal',
+          githubCommitSha: 'abc123',
+        },
+      ]);
+      mockFetchContent.mockResolvedValue('# Research consent');
+
+      const result = await service.getRegistrationAgreements('en-US');
+
+      expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenCalledWith('en-US', [
+        AgreementType.CONSENT,
+        AgreementType.TOS,
+      ]);
+      expect(mockFetchContent).toHaveBeenCalledWith('yeatmanlab/roar-legal', 'abc123', 'consent.md');
+      expect(result).toEqual([
+        {
+          agreementId: '00000000-0000-4000-8000-000000000001',
+          agreementVersionId: '00000000-0000-4000-8000-000000000002',
+          agreementType: AgreementType.CONSENT,
+          name: 'Research consent',
+          locale: 'en-US',
+          content: '# Research consent',
+        },
+      ]);
+    });
+
+    it('reuses cached GitHub content across requests for the same immutable version', async () => {
+      const agreementId = '00000000-0000-4000-8000-000000000010';
+      const version = {
+        agreementId,
+        agreementVersionId: '00000000-0000-4000-8000-000000000011',
+        agreementType: AgreementType.CONSENT,
+        name: 'Cached research consent',
+        locale: 'en-US',
+        isCurrent: true,
+        githubFilename: 'cached-consent.md',
+        githubOrgRepo: 'yeatmanlab/roar-legal',
+        githubCommitSha: 'cache-test-sha',
+      };
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([version]);
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(new Response('# Cached research consent', { status: StatusCodes.OK }));
+      const cachedService = AgreementService({
+        agreementRepository: mockRepository,
+        agreementVersionRepository: mockVersionRepository,
+      });
+
+      try {
+        const firstResult = await cachedService.getRegistrationAgreements('en-US');
+        const secondResult = await cachedService.getRegistrationAgreements('en-US');
+
+        expect(firstResult[0]?.content).toBe('# Cached research consent');
+        expect(secondResult).toEqual(firstResult);
+        expect(fetchSpy).toHaveBeenCalledExactlyOnceWith(
+          'https://raw.githubusercontent.com/yeatmanlab/roar-legal/cache-test-sha/cached-consent.md',
+          expect.objectContaining({ signal: expect.any(AbortSignal) }),
+        );
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it('evicts a failed GitHub fetch so a later request can retry', async () => {
+      const version = {
+        agreementId: '00000000-0000-4000-8000-000000000012',
+        agreementVersionId: '00000000-0000-4000-8000-000000000013',
+        agreementType: AgreementType.CONSENT,
+        name: 'Retryable research consent',
+        locale: 'en-US',
+        isCurrent: true,
+        githubFilename: 'retry-consent.md',
+        githubOrgRepo: 'yeatmanlab/roar-legal',
+        githubCommitSha: 'cache-retry-test-sha',
+      };
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([version]);
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(new Response('unavailable', { status: StatusCodes.SERVICE_UNAVAILABLE }))
+        .mockResolvedValueOnce(new Response('# Retried research consent', { status: StatusCodes.OK }));
+      const cachedService = AgreementService({
+        agreementRepository: mockRepository,
+        agreementVersionRepository: mockVersionRepository,
+      });
+
+      try {
+        await expect(cachedService.getRegistrationAgreements('en-US')).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          cause: {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+            context: {
+              url: 'https://raw.githubusercontent.com/yeatmanlab/roar-legal/cache-retry-test-sha/retry-consent.md',
+              status: StatusCodes.SERVICE_UNAVAILABLE,
+            },
+          },
+        });
+        await expect(cachedService.getRegistrationAgreements('en-US')).resolves.toEqual([
+          expect.objectContaining({ content: '# Retried research consent' }),
+        ]);
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it('rejects empty GitHub content and evicts the failed cache entry', async () => {
+      const version = {
+        agreementId: '00000000-0000-4000-8000-000000000016',
+        agreementVersionId: '00000000-0000-4000-8000-000000000017',
+        agreementType: AgreementType.CONSENT,
+        name: 'Empty research consent',
+        locale: 'en-US',
+        isCurrent: true,
+        githubFilename: 'empty-consent.md',
+        githubOrgRepo: 'yeatmanlab/roar-legal',
+        githubCommitSha: 'cache-empty-test-sha',
+      };
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([version]);
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(new Response('', { status: StatusCodes.OK }))
+        .mockResolvedValueOnce(new Response('# Restored consent', { status: StatusCodes.OK }));
+      const cachedService = AgreementService({
+        agreementRepository: mockRepository,
+        agreementVersionRepository: mockVersionRepository,
+      });
+
+      try {
+        await expect(cachedService.getRegistrationAgreements('en-US')).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          cause: {
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+            context: {
+              url: 'https://raw.githubusercontent.com/yeatmanlab/roar-legal/cache-empty-test-sha/empty-consent.md',
+            },
+          },
+        });
+        await expect(cachedService.getRegistrationAgreements('en-US')).resolves.toEqual([
+          expect.objectContaining({ content: '# Restored consent' }),
+        ]);
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it('rejects GitHub content larger than the configured byte limit', async () => {
+      const version = {
+        agreementId: '00000000-0000-4000-8000-000000000020',
+        agreementVersionId: '00000000-0000-4000-8000-000000000021',
+        agreementType: AgreementType.CONSENT,
+        name: 'Oversized research consent',
+        locale: 'en-US',
+        isCurrent: true,
+        githubFilename: 'oversized-consent.md',
+        githubOrgRepo: 'yeatmanlab/roar-legal',
+        githubCommitSha: 'content-size-test-sha',
+      };
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([version]);
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async () => new Response(new Uint8Array(1024 * 1024 + 1)));
+      const cachedService = AgreementService({
+        agreementRepository: mockRepository,
+        agreementVersionRepository: mockVersionRepository,
+      });
+
+      try {
+        await expect(cachedService.getRegistrationAgreements('en-US')).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          cause: {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+            context: {
+              url: 'https://raw.githubusercontent.com/yeatmanlab/roar-legal/content-size-test-sha/oversized-consent.md',
+              maxBytes: 1024 * 1024,
+            },
+          },
+        });
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it('does not evict an in-flight GitHub fetch when the cache reaches capacity', async () => {
+      const inFlightVersion = {
+        agreementId: '00000000-0000-4000-8000-000000000014',
+        agreementVersionId: '00000000-0000-4000-8000-000000000015',
+        agreementType: AgreementType.CONSENT,
+        name: 'In-flight research consent',
+        locale: 'en-US',
+        isCurrent: true,
+        githubFilename: 'in-flight-consent.md',
+        githubOrgRepo: 'yeatmanlab/roar-legal',
+        githubCommitSha: 'cache-in-flight-test-sha',
+      };
+      let currentVersion = inFlightVersion;
+      mockVersionRepository.listCurrentForRegistration.mockImplementation(async () => [currentVersion]);
+
+      let releaseInFlightFetch!: () => void;
+      const inFlightGate = new Promise<void>((resolve) => {
+        releaseInFlightFetch = resolve;
+      });
+      let markInFlightFetchStarted!: () => void;
+      const inFlightFetchStarted = new Promise<void>((resolve) => {
+        markInFlightFetchStarted = resolve;
+      });
+      const inFlightUrl =
+        'https://raw.githubusercontent.com/yeatmanlab/roar-legal/cache-in-flight-test-sha/in-flight-consent.md';
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        if (input === inFlightUrl) {
+          markInFlightFetchStarted();
+          await inFlightGate;
+        }
+        return new Response('# Agreement content', { status: StatusCodes.OK });
+      });
+      const cachedService = AgreementService({
+        agreementRepository: mockRepository,
+        agreementVersionRepository: mockVersionRepository,
+      });
+
+      try {
+        const firstRequest = cachedService.getRegistrationAgreements('en-US');
+        await inFlightFetchStarted;
+
+        for (let index = 0; index < 256; index += 1) {
+          currentVersion = {
+            ...inFlightVersion,
+            agreementId: `00000000-0000-4000-8001-${index.toString().padStart(12, '0')}`,
+            agreementVersionId: `00000000-0000-4000-8002-${index.toString().padStart(12, '0')}`,
+            githubCommitSha: `cache-fill-${index}`,
+          };
+          await cachedService.getRegistrationAgreements('en-US');
+        }
+
+        currentVersion = inFlightVersion;
+        const coalescedRequest = cachedService.getRegistrationAgreements('en-US');
+        expect(fetchSpy.mock.calls.filter(([url]) => url === inFlightUrl)).toHaveLength(1);
+
+        releaseInFlightFetch();
+        await expect(Promise.all([firstRequest, coalescedRequest])).resolves.toHaveLength(2);
+      } finally {
+        releaseInFlightFetch();
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it('evicts the least-recently-inserted settled content at capacity', async () => {
+      const oldestVersion = {
+        agreementId: '00000000-0000-4000-8000-000000000018',
+        agreementVersionId: '00000000-0000-4000-8000-000000000019',
+        agreementType: AgreementType.CONSENT,
+        name: 'Oldest cached consent',
+        locale: 'en-US',
+        isCurrent: true,
+        githubFilename: 'oldest-consent.md',
+        githubOrgRepo: 'yeatmanlab/roar-legal',
+        githubCommitSha: 'cache-oldest-test-sha',
+      };
+      let currentVersion = oldestVersion;
+      mockVersionRepository.listCurrentForRegistration.mockImplementation(async () => [currentVersion]);
+      const oldestUrl =
+        'https://raw.githubusercontent.com/yeatmanlab/roar-legal/cache-oldest-test-sha/oldest-consent.md';
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async () => new Response('# Agreement content', { status: StatusCodes.OK }));
+      const cachedService = AgreementService({
+        agreementRepository: mockRepository,
+        agreementVersionRepository: mockVersionRepository,
+      });
+
+      try {
+        await cachedService.getRegistrationAgreements('en-US');
+
+        for (let index = 0; index < 256; index += 1) {
+          currentVersion = {
+            ...oldestVersion,
+            agreementId: `00000000-0000-4000-8003-${index.toString().padStart(12, '0')}`,
+            agreementVersionId: `00000000-0000-4000-8004-${index.toString().padStart(12, '0')}`,
+            githubCommitSha: `cache-eviction-fill-${index}`,
+          };
+          await cachedService.getRegistrationAgreements('en-US');
+        }
+
+        currentVersion = oldestVersion;
+        await cachedService.getRegistrationAgreements('en-US');
+
+        expect(fetchSpy.mock.calls.filter(([url]) => url === oldestUrl)).toHaveLength(2);
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it('fills gaps in the requested locale with current en-US versions', async () => {
+      const localizedAgreementId = '00000000-0000-4000-8000-000000000001';
+      const fallbackAgreementId = '00000000-0000-4000-8000-000000000003';
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValueOnce([
+        {
+          agreementId: localizedAgreementId,
+          agreementVersionId: '00000000-0000-4000-8000-000000000002',
+          agreementType: AgreementType.CONSENT,
+          name: 'Research consent',
+          locale: 'es-MX',
+          isCurrent: true,
+          githubFilename: 'consent.md',
+          githubOrgRepo: 'yeatmanlab/roar-legal',
+          githubCommitSha: 'abc123',
+        },
+      ]);
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValueOnce([
+        {
+          agreementId: fallbackAgreementId,
+          agreementVersionId: '00000000-0000-4000-8000-000000000004',
+          agreementType: AgreementType.TOS,
+          name: 'Terms of service',
+          locale: 'en-US',
+          isCurrent: true,
+          githubFilename: 'tos.md',
+          githubOrgRepo: 'yeatmanlab/roar-legal',
+          githubCommitSha: 'def456',
+        },
+      ]);
+      mockFetchContent.mockResolvedValueOnce('# Research consent').mockResolvedValueOnce('# Terms of service');
+
+      const result = await service.getRegistrationAgreements('es-MX');
+
+      expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenNthCalledWith(1, 'es-MX', [
+        AgreementType.CONSENT,
+        AgreementType.TOS,
+      ]);
+      expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenNthCalledWith(2, 'en-US', [
+        AgreementType.CONSENT,
+        AgreementType.TOS,
+      ]);
+      expect(result).toEqual([
+        expect.objectContaining({ agreementId: localizedAgreementId, locale: 'es-MX' }),
+        expect.objectContaining({ agreementId: fallbackAgreementId, locale: 'en-US' }),
+      ]);
+    });
+
+    it('returns 500 when no registration agreements are configured', async () => {
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([]);
+
+      await expect(service.getRegistrationAgreements('en-US')).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.INTERNAL,
+      });
+      expect(mockFetchContent).not.toHaveBeenCalled();
+    });
+
+    it('logs and wraps repository failures as database errors', async () => {
+      const databaseError = new Error('database unavailable');
+      mockVersionRepository.listCurrentForRegistration.mockRejectedValue(databaseError);
+
+      await expect(service.getRegistrationAgreements('en-US')).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      expect(logger.error).toHaveBeenCalledWith(
+        { err: databaseError, context: { locale: 'en-US' } },
+        'Failed to query registration agreements',
+      );
+    });
+
+    it('logs and wraps 500-coded external content errors', async () => {
+      const agreementId = '00000000-0000-4000-8000-000000000001';
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([
+        {
+          agreementId,
+          agreementVersionId: '00000000-0000-4000-8000-000000000002',
+          agreementType: AgreementType.CONSENT,
+          name: 'Research consent',
+          locale: 'en-US',
+          isCurrent: true,
+          githubFilename: 'missing.md',
+          githubOrgRepo: 'yeatmanlab/roar-legal',
+          githubCommitSha: 'abc123',
+        },
+      ]);
+      const githubError = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+      mockFetchContent.mockRejectedValue(githubError);
+
+      await expect(service.getRegistrationAgreements('en-US')).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        cause: githubError,
+      });
+      expect(logger.error).toHaveBeenCalledWith(
+        { err: githubError, context: { locale: 'en-US' } },
+        'Failed to resolve registration agreement content',
+      );
+    });
   });
 
   describe('list', () => {
