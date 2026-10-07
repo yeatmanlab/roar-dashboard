@@ -195,6 +195,32 @@ describe('getSupportLevel', () => {
       );
     });
 
+    it('pa v5 uses [40, 20] cutoffs', () => {
+      expect(getSupportLevel({ grade: '3', percentile: 40, rawScore: 480, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 39, rawScore: 480, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 20, rawScore: 480, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'needsExtraSupport',
+      );
+    });
+
+    it('pa v3 and null scoring version use legacy [50, 25] cutoffs', () => {
+      for (const scoringVersion of [null, 3]) {
+        expect(getSupportLevel({ grade: '3', percentile: 50, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'achievedSkill',
+        );
+        expect(getSupportLevel({ grade: '3', percentile: 49, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'developingSkill',
+        );
+        expect(getSupportLevel({ grade: '3', percentile: 25, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'needsExtraSupport',
+        );
+      }
+    });
+
     it('swr v1 uses legacy [50, 25] cutoffs', () => {
       expect(getSupportLevel({ grade: '3', percentile: 50, rawScore: 500, taskSlug: 'swr', scoringVersion: 1 })).toBe(
         'achievedSkill',
@@ -388,32 +414,18 @@ describe('getSupportLevel', () => {
       );
     });
 
-    it('pa legacy (v0-v2): above=55, some=45', () => {
-      expect(
-        getSupportLevel({ grade: '8', percentile: null, rawScore: 55, taskSlug: 'pa', scoringVersion: null }),
-      ).toBe('achievedSkill');
-      expect(
-        getSupportLevel({ grade: '8', percentile: null, rawScore: 50, taskSlug: 'pa', scoringVersion: null }),
-      ).toBe('developingSkill');
-      expect(
-        getSupportLevel({ grade: '8', percentile: null, rawScore: 45, taskSlug: 'pa', scoringVersion: null }),
-      ).toBe('needsExtraSupport');
-    });
-
-    it('pa v3-v4: above=480, some=420', () => {
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 480, taskSlug: 'pa', scoringVersion: 3 })).toBe(
-        'achievedSkill',
-      );
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 450, taskSlug: 'pa', scoringVersion: 3 })).toBe(
-        'developingSkill',
-      );
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 420, taskSlug: 'pa', scoringVersion: 3 })).toBe(
-        'needsExtraSupport',
-      );
-      // v4 also uses the same thresholds
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 480, taskSlug: 'pa', scoringVersion: 4 })).toBe(
-        'achievedSkill',
-      );
+    it('pa v3 and null scoring version: above=55, some=45', () => {
+      for (const scoringVersion of [null, 3]) {
+        expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'achievedSkill',
+        );
+        expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 50, taskSlug: 'pa', scoringVersion })).toBe(
+          'developingSkill',
+        );
+        expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 45, taskSlug: 'pa', scoringVersion })).toBe(
+          'needsExtraSupport',
+        );
+      }
     });
 
     it('pa v5: above=480, some=420', () => {
@@ -629,14 +641,13 @@ describe('getRawScoreThreshold', () => {
     expect(getRawScoreThreshold('sre-es', null)).toBeNull();
   });
 
-  it('returns pa legacy thresholds', () => {
+  it('returns pa total-correct thresholds through v3', () => {
     expect(getRawScoreThreshold('pa', null)).toEqual({ above: 55, some: 45 });
     expect(getRawScoreThreshold('pa', 2)).toEqual({ above: 55, some: 45 });
+    expect(getRawScoreThreshold('pa', 3)).toEqual({ above: 55, some: 45 });
   });
 
-  it('returns pa updated thresholds for v >= 3', () => {
-    expect(getRawScoreThreshold('pa', 3)).toEqual({ above: 480, some: 420 });
-    expect(getRawScoreThreshold('pa', 4)).toEqual({ above: 480, some: 420 });
+  it('returns pa scaled-IRT thresholds for v5', () => {
     expect(getRawScoreThreshold('pa', 5)).toEqual({ above: 480, some: 420 });
   });
 
@@ -680,10 +691,12 @@ describe('getSupportThreshold', () => {
   });
 
   it('resolves the support range for other percentile-then-rawscore tasks', () => {
-    // swr flips at v7, pa at v4 — both use developing 25 (legacy) → 75, 20 (updated) → 80.
+    // swr flips at v7, pa at v5 — both use developing 25 (legacy) → 75, 20 (updated) → 80.
     expect(getSupportThreshold('swr', null)).toBe(75);
     expect(getSupportThreshold('swr', 7)).toBe(80);
     expect(getSupportThreshold('pa', null)).toBe(75);
+    expect(getSupportThreshold('pa', 3)).toBe(75);
+    expect(getSupportThreshold('pa', 5)).toBe(80);
   });
 
   it('returns null for tasks without a percentile-then-rawscore classification', () => {
@@ -720,6 +733,27 @@ describe('resolveScoreFieldNames', () => {
       expect(result.standardScoreFieldNames).toContain('standardScore');
       expect(result.standardScoreFieldNames).toContain('sprStandardScore');
       expect(result.rawScoreFieldNames).toContain('sreScore');
+    });
+  });
+
+  describe('grade normalization', () => {
+    // The grade argument accepts what `getSupportLevel` accepts, so callers can
+    // hand both the same value instead of converting for one and not the other.
+    it('accepts a numeric grade string', () => {
+      expect(resolveScoreFieldNames('sre', '3', 3).percentileFieldNames).toEqual(
+        resolveScoreFieldNames('sre', 3, 3).percentileFieldNames,
+      );
+    });
+
+    it('accepts a grade enum string, mapping it through getGradeAsNumber', () => {
+      // Kindergarten maps to 0, i.e. below the grade-6 branch.
+      expect(resolveScoreFieldNames('sre', 'Kindergarten', 3).percentileFieldNames).toEqual(['tosrecPercentile']);
+    });
+
+    it('treats a non-numeric grade the same as null', () => {
+      expect(resolveScoreFieldNames('sre', 'Ungraded', 3).percentileFieldNames).toEqual(
+        resolveScoreFieldNames('sre', null, 3).percentileFieldNames,
+      );
     });
   });
 
@@ -825,7 +859,7 @@ describe('resolveScoreFieldNames', () => {
     const result = resolveScoreFieldNames('cva', 3);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
-    expect(result.rawScoreFieldNames).toContain('totalCorrect');
+    expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('resolves roar-inference fields', () => {
@@ -839,7 +873,7 @@ describe('resolveScoreFieldNames', () => {
     const result = resolveScoreFieldNames('morphology', 3);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
-    expect(result.rawScoreFieldNames).toContain('totalCorrect');
+    expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('resolves trog fields', () => {
@@ -1060,6 +1094,67 @@ describe('getScoreDisplay', () => {
       value: 85,
       label: 'percentCorrect',
       range: { min: 0, max: 100 },
+    });
+  });
+
+  // Force raw-score fallback to test the raw score value range for different scoring versions
+  const paRawScoreAt = (scoringVersion: number) =>
+    getScoreDisplay({
+      taskSlug: 'pa',
+      gradeLevel: 8,
+      scoringVersion,
+      scores: { rawScore: 200, percentile: null, standardScore: null },
+    });
+
+  it('resolves the raw score range for the scoring version of the run', () => {
+    expect(paRawScoreAt(4)).toMatchObject({ scoreType: 'rawScore', range: { min: 0, max: 57 } });
+    expect(paRawScoreAt(5)).toMatchObject({ scoreType: 'rawScore', range: { min: 40, max: 733 } });
+  });
+
+  describe('sre display ranges', () => {
+    const sreDisplayAt = (args: {
+      scoringVersion: number | null;
+      gradeLevel: number | null;
+      scores: { rawScore: number | null; percentile: number | null; standardScore: number | null };
+    }) => getScoreDisplay({ taskSlug: 'sre', ...args });
+
+    // Force the raw-score fallback (grade >= 6, no standard score) so the
+    // version-keyed rawScore range is the thing under test.
+    const sreRawScoreAt = (scoringVersion: number | null) =>
+      sreDisplayAt({
+        scoringVersion,
+        gradeLevel: 8,
+        scores: { rawScore: 480, percentile: null, standardScore: null },
+      });
+
+    it('resolves the unversioned percentile and standard score ranges', () => {
+      const scores = { rawScore: 500, percentile: 45, standardScore: 98 };
+      expect(sreDisplayAt({ scoringVersion: 5, gradeLevel: 3, scores })).toEqual({
+        scoreType: 'percentile',
+        value: 45,
+        label: 'percentile',
+        range: { min: 0, max: 99 },
+      });
+      expect(sreDisplayAt({ scoringVersion: 5, gradeLevel: 6, scores })).toEqual({
+        scoreType: 'standardScore',
+        value: 98,
+        label: 'standardScore',
+        range: { min: 0, max: 180 },
+      });
+    });
+
+    it('resolves the raw score range for the scoring version of the run', () => {
+      expect(sreRawScoreAt(5)).toMatchObject({ scoreType: 'rawScore', range: { min: 300, max: 967 } });
+      expect(sreRawScoreAt(4)).toMatchObject({ scoreType: 'rawScore', range: { min: 0, max: 130 } });
+      expect(sreRawScoreAt(null)).toMatchObject({ scoreType: 'rawScore', range: { min: 0, max: 130 } });
+
+      expect(
+        sreDisplayAt({
+          scoringVersion: 5,
+          gradeLevel: 8,
+          scores: { rawScore: null, percentile: null, standardScore: null },
+        }),
+      ).toEqual({ scoreType: 'rawScore', value: null, label: 'rawScore', range: { min: 300, max: 967 } });
     });
   });
 });
