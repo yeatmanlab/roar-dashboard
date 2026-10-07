@@ -41,9 +41,10 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import useAuthReady from '@/composables/useAuthReady';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationQuery from '@/composables/queries/useAdministrationQuery';
@@ -80,7 +81,7 @@ const props = defineProps({
   },
 });
 
-const initialized = ref(false);
+const { ready: initialized } = useAuthReady();
 const reportView = ref(REPORT_VIEWS[0]);
 const pageLimit = ref(DEFAULT_PAGE_LIMIT);
 
@@ -190,23 +191,5 @@ const getScoringVersions = computed(() => {
     ]),
   );
   return scoringVersions;
-});
-
-// Initialization
-let unsubscribe;
-const refreshing = ref(false);
-const refresh = () => {
-  refreshing.value = true;
-  if (unsubscribe) unsubscribe();
-  refreshing.value = false;
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) refresh();
-});
-
-onMounted(async () => {
-  if (authStore.isAuthReady) refresh();
 });
 </script>

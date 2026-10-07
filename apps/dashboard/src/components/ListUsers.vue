@@ -192,7 +192,7 @@ import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvPassword from 'primevue/password';
 import _get from 'lodash/get';
-import { useAuthStore } from '@/store/auth';
+import useAuthReady from '@/composables/useAuthReady';
 import useOrgUsersQuery from '@/composables/queries/useOrgUsersQuery';
 import useUserProfileQuery from '@/composables/queries/useUserProfileQuery';
 import useUpdateUserMutation from '@/composables/mutations/useUpdateUserMutation';
@@ -205,10 +205,9 @@ import RoarModal from './modals/RoarModal.vue';
 import { usePermissions } from '@/composables/usePermissions';
 const { userCan, Permissions } = usePermissions();
 
-const authStore = useAuthStore();
 const queryClient = useQueryClient();
 
-const initialized = ref(false);
+const { ready: initialized } = useAuthReady();
 const toast = useToast();
 
 // Server-driven pagination state. `first` is the 0-indexed row offset PrimeVue's
@@ -479,18 +478,7 @@ async function updatePassword() {
   }
 }
 
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
-
 onMounted(() => {
-  if (authStore.isAuthReady) init();
   isModalEnabled.value = false;
 });
 </script>

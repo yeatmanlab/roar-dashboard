@@ -87,9 +87,8 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted, watch, nextTick, toValue } from 'vue';
+import { computed, ref, onUnmounted, watch, nextTick, toValue } from 'vue';
 import { useRoute } from 'vue-router';
-import { useAuthStore } from '@/store/auth';
 import { useI18n } from 'vue-i18n';
 import useUserProfileQuery from '@/composables/queries/useUserProfileQuery';
 import useAdministrationQuery from '@/composables/queries/useAdministrationQuery';
@@ -99,6 +98,7 @@ import useAdministrationIndividualScoreReportQuery from '@/composables/queries/u
 import useGuardianStudentReportQuery from '@/composables/queries/useGuardianStudentReportQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import usePagedPreview from '@/composables/usePagedPreview';
+import useAuthReady from '@/composables/useAuthReady';
 import PdfExportService from '@/services/PdfExport.service';
 import {
   taskDisplayNames,
@@ -127,7 +127,6 @@ const props = defineProps({
   orgId: { type: String, required: true },
 });
 
-const authStore = useAuthStore();
 const route = useRoute();
 
 const isPrintMode = computed(() => route.query.print !== undefined);
@@ -140,7 +139,7 @@ const isParentPath = computed(() => props.orgType === SINGULAR_ORG_TYPES.FAMILIE
 const expanded = ref(false);
 const exportLoading = ref(false);
 
-const initialized = ref(false);
+const { ready: initialized } = useAuthReady();
 const isLoading = computed(
   () =>
     isLoadingStudentData.value ||
@@ -338,30 +337,11 @@ const handleExportToPdf = async () => {
   }
 };
 
-// Initialization
-const refreshing = ref(false);
-let unsubscribe;
-
-const refresh = async () => {
-  if (refreshing.value) return;
-  refreshing.value = true;
-  initialized.value = true;
-  refreshing.value = false;
-};
-
 watch([isLoading, isPrintMode], ([loading, print]) => {
   if (!loading && print) runPaged();
 });
 
-onMounted(() => {
-  unsubscribe = authStore.$subscribe(async (mutation, state) => {
-    if (state.accessToken) refresh();
-  });
-  refresh();
-});
-
 onUnmounted(() => {
-  if (unsubscribe) unsubscribe();
   clearPaged();
 });
 

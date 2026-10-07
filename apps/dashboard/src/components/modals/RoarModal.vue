@@ -28,9 +28,8 @@
   </PvDialog>
 </template>
 <script setup>
-import { watch, ref, onMounted } from 'vue';
+import { watch, ref } from 'vue';
 import PvDialog from 'primevue/dialog';
-import { useAuthStore } from '@/store/auth';
 
 const props = defineProps({
   isEnabled: {
@@ -63,9 +62,6 @@ const props = defineProps({
 // Handle modal opening / closing
 const emit = defineEmits(['modalClosed']);
 
-const authStore = useAuthStore();
-const initialized = ref(false);
-
 watch(
   () => props.isEnabled,
   (isEnabled) => {
@@ -79,20 +75,6 @@ watch(
 );
 
 const isOpen = ref(false);
-
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
-
-onMounted(() => {
-  if (authStore.isAuthReady) init();
-});
 </script>
 <style lang="scss">
 .modal-header {

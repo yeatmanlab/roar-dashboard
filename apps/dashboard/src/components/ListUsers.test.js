@@ -78,10 +78,9 @@ vi.mock('@/composables/usePermissions', () => ({
   }),
 }));
 
-// Auth store: ListUsers gates `init()` on `isAuthReady` (onMounted) and on
-// `accessToken` (the `$subscribe` callback). Provide both so `init()` flips
-// `initialized` to true; `$subscribe` is a no-op. The component no longer reads
-// `roarfirekit` or calls `storeToRefs`, so no pinia override is needed.
+// Auth store: ListUsers now gates its queries on `useAuthReady`, which reads
+// `isAuthReady` (via onMounted) and subscribes for the token's arrival. Provide
+// a ready store with a no-op `$subscribe` so readiness resolves immediately.
 const mockAuthStore = {
   accessToken: 'mock-token',
   isAuthReady: true,

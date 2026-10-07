@@ -338,7 +338,6 @@
 <script setup>
 import { computed, ref, onMounted, nextTick, watch } from 'vue';
 import { useQueries } from '@tanstack/vue-query';
-import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -360,6 +359,7 @@ import PvTabPanels from 'primevue/tabpanels';
 import PvProgressBar from 'primevue/progressbar';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
+import useAuthReady from '@/composables/useAuthReady';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
@@ -424,7 +424,6 @@ let TaskReport;
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -441,7 +440,7 @@ const props = defineProps({
   },
 });
 
-const initialized = ref(false);
+const { ready: initialized } = useAuthReady();
 
 // Modal step constants for export dialog
 const EXPORT_MODAL_STEP = Object.freeze({
@@ -1742,8 +1741,6 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   csvExportLoading.value = false;
 };
 
-const refreshing = ref(false);
-
 const getTaskStyle = (taskId, backgroundColor, tasks) => {
   const taskGroups = {
     primary: ['swr', 'sre', 'pa', 'letter', 'letter-en-ca'],
@@ -2180,22 +2177,8 @@ const sortedAndFilteredSubscoreTaskIds = computed(() => {
   return filteredTaskIds;
 });
 
-let unsubscribe;
-const refresh = () => {
-  refreshing.value = true;
-  if (unsubscribe) unsubscribe();
-
-  refreshing.value = false;
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) refresh();
-});
-
 onMounted(async () => {
   TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
-  if (roarfirekit.value.restConfig?.()) refresh();
 });
 </script>
 

@@ -112,7 +112,7 @@
   <PvConfirmDialog />
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { storeToRefs } from 'pinia';
@@ -133,24 +133,6 @@ const providerIds = computed(() => {
   return providerData.map((provider) => {
     return provider.providerId;
   });
-});
-
-// +-------------------------+
-// | Firekit Inititalization |
-// +-------------------------+
-const initialized = ref(false);
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
-
-onMounted(() => {
-  if (authStore.isAuthReady) init();
 });
 
 // +-----------------------+

@@ -118,24 +118,22 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import PvBlockUI from 'primevue/blockui';
 import PvButton from 'primevue/button';
 import PvDataView from 'primevue/dataview';
 import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
-import { useAuthStore } from '@/store/auth';
 import { getTitle } from '@/helpers/query/administrations';
 import _debounce from 'lodash/debounce';
+import useAuthReady from '@/composables/useAuthReady';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 
 const SEARCH_DEBOUNCE_MS = 300;
-
-const initialized = ref(false);
 
 // Server-driven pagination state. `first` is the 0-indexed row offset PrimeVue's
 // DataView tracks; `rows` is the page size; `page` is the 1-indexed page the backend
@@ -160,21 +158,7 @@ const applySearch = _debounce((value) => {
 }, SEARCH_DEBOUNCE_MS);
 watch(searchInput, (value) => applySearch(value));
 
-const authStore = useAuthStore();
-
-let unsubscribeInitializer;
-const init = () => {
-  if (unsubscribeInitializer) unsubscribeInitializer();
-  initialized.value = true;
-};
-
-unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
-
-onMounted(() => {
-  if (authStore.isAuthReady) init();
-});
+const { ready: initialized } = useAuthReady();
 
 const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,

@@ -39,7 +39,7 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
@@ -106,22 +106,4 @@ async function updatePassword() {
       });
   }
 }
-
-// +------------------------+
-// | Firekit initialization |
-// +------------------------+
-const initialized = ref(false);
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.updateUserData) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value.updateUserData) init();
-});
 </script>
