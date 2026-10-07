@@ -172,4 +172,71 @@ describe('AgreementVersionRepository Integration', () => {
       expect(esResult!.agreementId).toBe(agreement.id);
     });
   });
+
+  describe('listCurrentForRegistration', () => {
+    it('filters by current status, locale, and registration agreement type', async () => {
+      const consent = await AgreementFactory.create({
+        name: 'Repository registration consent',
+        agreementType: AgreementType.CONSENT,
+      });
+      const assent = await AgreementFactory.create({
+        name: 'Repository registration assent',
+        agreementType: AgreementType.ASSENT,
+      });
+      const currentFrenchConsent = await AgreementVersionFactory.create(
+        { locale: 'fr-FR', isCurrent: true },
+        { transient: { agreementId: consent.id } },
+      );
+      const staleFrenchConsent = await AgreementVersionFactory.create(
+        { locale: 'fr-FR', isCurrent: false },
+        { transient: { agreementId: consent.id } },
+      );
+      const currentEnglishConsent = await AgreementVersionFactory.create(
+        { locale: 'en-US', isCurrent: true },
+        { transient: { agreementId: consent.id } },
+      );
+      const currentFrenchAssent = await AgreementVersionFactory.create(
+        { locale: 'fr-FR', isCurrent: true },
+        { transient: { agreementId: assent.id } },
+      );
+
+      const result = await repository.listCurrentForRegistration('fr-FR', [AgreementType.CONSENT, AgreementType.TOS]);
+      const resultIds = result.map(({ agreementVersionId }) => agreementVersionId);
+
+      expect(resultIds).toContain(currentFrenchConsent.id);
+      expect(resultIds).not.toContain(staleFrenchConsent.id);
+      expect(resultIds).not.toContain(currentEnglishConsent.id);
+      expect(resultIds).not.toContain(currentFrenchAssent.id);
+    });
+  });
+
+  describe('getRegistrationCandidatesByIds', () => {
+    it('returns requested registration metadata without filtering stale versions', async () => {
+      const agreement = await AgreementFactory.create({
+        name: 'Repository submitted consent',
+        agreementType: AgreementType.CONSENT,
+      });
+      const staleVersion = await AgreementVersionFactory.create(
+        { locale: 'es-MX', isCurrent: false },
+        { transient: { agreementId: agreement.id } },
+      );
+      const unrelatedVersion = await AgreementVersionFactory.create(
+        { locale: 'en-US', isCurrent: true },
+        { transient: { agreementId: agreement.id } },
+      );
+
+      const result = await repository.getRegistrationCandidatesByIds([staleVersion.id]);
+
+      expect(result).toEqual([
+        expect.objectContaining({
+          agreementId: agreement.id,
+          agreementVersionId: staleVersion.id,
+          agreementType: AgreementType.CONSENT,
+          locale: 'es-MX',
+          isCurrent: false,
+        }),
+      ]);
+      expect(result.map(({ agreementVersionId }) => agreementVersionId)).not.toContain(unrelatedVersion.id);
+    });
+  });
 });
