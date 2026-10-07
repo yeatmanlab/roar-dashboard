@@ -9,17 +9,18 @@ import {
   pageTitlesBR,
 } from '@/translations/exports';
 import { APP_ROUTES, APP_ROUTE_NAMES, GAME_ROUTES } from '@/constants/routes';
-import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { AUTH_READY_TIMEOUT_MS, AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
-import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
+import { AUTH_LOG_MESSAGES, NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 import { fetchMe } from '@/composables/queries/useMeQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { useGlobalError } from '@/composables/useGlobalError';
+import { getAuthService } from '@/services/AuthService';
 import { queryClient, setProvisioningContextCheck } from '@/queryClient';
 const { Permissions } = usePermissions();
-const { logNavEvent } = useSentryLogging();
+const { logNavEvent, logAuthEvent } = useSentryLogging();
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -1051,7 +1052,62 @@ setProvisioningContextCheck(() => {
   }
 });
 
+/**
+ * Block the first navigation until the session is known.
+ *
+ * Before auth resolves, "no user" is ambiguous between "signed out" and
+ * "Firebase has not reported yet", and the `isAuthenticated` check below
+ * reads the second case as the first — bouncing a signed-in user to SignIn.
+ * Awaiting readiness once removes the ambiguity for every check downstream,
+ * which is what lets the SSO landing page drop its grace timer.
+ *
+ * Fail-open on timeout, matching the `/me` race further down: a hung
+ * Firebase init degrades to signed-out with a warning and re-evaluates on
+ * the next navigation, rather than freezing the router forever.
+ *
+ * @param {import('vue-router').RouteLocationNormalized} to - Navigation target, for the timeout log.
+ * @returns {Promise<void>}
+ */
+const awaitAuthReady = async (to) => {
+  try {
+    // Fail fast if the service was never created. It is created in `mountApp`
+    // (setup.js) before the router is installed, so this only trips on the
+    // Cypress component-test path (which loads `plugins.js` directly and never
+    // calls `mountApp`). Nothing to await there; the store's `isAuthenticated`
+    // is false either way, and the guard re-runs.
+    getAuthService();
+  } catch {
+    return;
+  }
+
+  const store = useAuthStore();
+
+  let timeoutId;
+  // Await the STORE's readiness, not `authService.authReady()` directly. Both
+  // resolve from the same memoized promise, but `awaitAuthReady` writes
+  // `accessToken` in its continuation — awaiting it here makes "gate resolved
+  // ⟹ accessToken written" structural rather than dependent on which awaiter
+  // wins the microtask race. It never rejects (mirrors the service contract),
+  // so no catch is needed around it.
+  const timedOut = await Promise.race([
+    store.awaitAuthReady().then(() => false),
+    new Promise((resolve) => {
+      timeoutId = setTimeout(() => resolve(true), AUTH_READY_TIMEOUT_MS);
+    }),
+  ]);
+  clearTimeout(timeoutId);
+
+  if (timedOut) {
+    logAuthEvent(AUTH_LOG_MESSAGES.AUTH_READY_TIMED_OUT, {
+      level: 'warning',
+      data: { timeoutMs: AUTH_READY_TIMEOUT_MS, to: to.fullPath },
+    });
+  }
+};
+
 router.beforeEach(async (to, from, next) => {
+  await awaitAuthReady(to);
+
   const store = useAuthStore();
   const { userCan } = usePermissions();
   const { globalError, clearGlobalError } = useGlobalError();

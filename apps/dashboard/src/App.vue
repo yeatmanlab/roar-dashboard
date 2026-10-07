@@ -53,7 +53,6 @@ const VueQueryDevtools = defineAsyncComponent(() =>
 );
 
 import { useAuthStore } from '@/store/auth';
-import { createAuthService } from '@/services/AuthService';
 import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { i18n } from '@/translations/i18n';
 import useCurrentUser from '@/composables/useCurrentUser';
@@ -145,56 +144,59 @@ useGlobalErrorRedirect();
 
 onBeforeMount(async () => {
   try {
-    // 1. Create the AuthService singleton — owns Firebase Auth directly.
-    createAuthService({
-      projectId: import.meta.env.VITE_FIREBASE_ADMIN_PROJECT_ID,
-      apiKey: import.meta.env.VITE_FIREBASE_ADMIN_API_KEY,
-      authDomain: import.meta.env.VITE_FIREBASE_ADMIN_AUTH_DOMAIN,
-      emulatorAuthHost: import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST || undefined,
-    });
-
-    // 2. Initialize Auth (Firebase app + emulator + token listener).
+    // The AuthService singleton is created in `mountApp` (setup.js), before the
+    // router is installed, so the first navigation's readiness gate has a
+    // service to await. Here we only drive initialization.
+    //
+    // 1. Initialize Auth, then await readiness: Firebase app + emulator +
+    //    token listener, any pending SSO redirect consumed, and the first
+    //    token emission observed. The router's `beforeEach` awaits the same
+    //    memoized promise, so no route resolves on unknown auth state.
     await authStore.initAuth();
 
-    // 3. Initialize Firekit for non-auth operations (Firestore, assessments).
+    // 2. Initialize Firekit for non-auth operations (Firestore, assessments).
     await authStore.initFirekit();
 
-    // 4. Check for pending SSO redirect results.
-    await authStore.initStateFromRedirect().then(() => {
-      // Claims are derived from the backend `/me` response on all builds (see
-      // `resolveUserClaims`) and copied onto the auth store for the legacy
-      // consumers that still read `authStore.userClaims` (`useUserType`,
-      // `usePermissions`, the `roarUid` getter). The `useMeQuery` composable
-      // (above) is the canonical source for the authenticated user — new
-      // consumers should read from `useCurrentUser` (which wraps it). The
-      // remaining `authStore.userData` consumers are tracked in #2219.
-      //
-      // The chain is deliberately NOT awaited: claims populate the store copy
-      // asynchronously, and app readiness must not wait on `/me` retries (up
-      // to ~7s of backoff on transient failures). Error surfacing is tracked
-      // in #2205.
-      if (authStore.uid) {
-        const uidAtStart = authStore.uid;
-        resolveUserClaims()
-          .then((userClaims) => {
-            // The user may have switched while the fetch was in flight; a
-            // stale write would undo the listener's identity reset.
-            if (authStore.uid !== uidAtStart) return;
-            authStore.userClaims = userClaims;
-          })
-          .catch((error) => {
-            console.error('[App] failed to resolve user claims from /me', error);
-          });
-      }
-    });
+    // 3. Claims are derived from the backend `/me` response on all builds (see
+    // `resolveUserClaims`) and copied onto the auth store for the legacy
+    // consumers that still read `authStore.userClaims` (`useUserType`,
+    // `usePermissions`, the `roarUid` getter). The `useMeQuery` composable
+    // (above) is the canonical source for the authenticated user — new
+    // consumers should read from `useCurrentUser` (which wraps it). The
+    // remaining `authStore.userData` consumers are tracked in #2219.
+    //
+    // Deliberately NOT awaited: claims populate the store copy
+    // asynchronously, and app readiness must not wait on `/me` retries (up
+    // to ~7s of backoff on transient failures). Error surfacing is tracked
+    // in #2205.
+    //
+    // `authStore.uid` is authoritative here rather than merely likely —
+    // readiness has resolved, so the listener has already written the
+    // restored session (or confirmed there is none).
+    if (authStore.uid) {
+      const uidAtStart = authStore.uid;
+      resolveUserClaims()
+        .then((userClaims) => {
+          // The user may have switched while the fetch was in flight; a
+          // stale write would undo the listener's identity reset.
+          if (authStore.uid !== uidAtStart) return;
+          authStore.userClaims = userClaims;
+        })
+        .catch((error) => {
+          console.error('[App] failed to resolve user claims from /me', error);
+        });
+    }
 
     isAuthStoreReady.value = true;
   } catch (error) {
-    // `initFirekit` and `initStateFromRedirect` catch internally, so this
-    // boundary guards the steps with none of their own — `createAuthService`
-    // and `initAuth` (missing Firebase config, persistence setup, emulator
-    // init). Without it a rejection escapes the lifecycle hook: no error
-    // page, no readiness, an app stuck on whatever painted first.
+    // `initFirekit` catches internally and `initAuth`'s readiness step never
+    // rejects (a redirect failure comes back as state), so this boundary
+    // guards the one step with none of its own — `initAuth`'s `initialize()`
+    // (persistence setup, emulator init). Without it a rejection escapes the
+    // lifecycle hook: no error page, no readiness, an app stuck on whatever
+    // painted first. (`createAuthService` itself runs earlier in `mountApp`,
+    // outside this hook; a missing-config throw there fails the mount loudly
+    // rather than landing here.)
     //
     // `isAuthStoreReady` intentionally stays false — it only gates the
     // session timer, and a session that never bootstrapped has nothing to
