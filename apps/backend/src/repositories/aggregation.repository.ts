@@ -8,7 +8,7 @@ import { runDemographics } from '../db/schema/core/run-demographics';
 import { userClasses } from '../db/schema/core/user-classes';
 import { classes } from '../db/schema/core/classes';
 import { orgs } from '../db/schema/core/orgs';
-import { compositeComputedScoreFilter } from './utils/composite-score-filter.utils';
+import { compositeScoreFilter } from './utils/composite-score-filter.utils';
 
 interface RunRecord {
   id: string;
@@ -78,7 +78,7 @@ export class AggregationRepository {
         value: fdwRunScores.value,
       })
       .from(fdwRunScores)
-      .where(and(inArray(fdwRunScores.runId, runIds), compositeComputedScoreFilter()));
+      .where(and(inArray(fdwRunScores.runId, runIds), compositeScoreFilter()));
 
     const scoresByRunId = new Map<string, Map<string, string>>();
     for (const runId of runIds) {

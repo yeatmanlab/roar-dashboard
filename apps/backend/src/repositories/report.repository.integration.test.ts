@@ -32,6 +32,7 @@ import { UserGroupFactory } from '../test-support/factories/user-group.factory';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import type { Grade } from '../enums/grade.enum';
+import { ASSESSMENT_STAGE, SCORE_DOMAIN, SCORE_TYPE } from '../constants/run-scores';
 
 let repo: ReportRepository;
 
@@ -2107,5 +2108,89 @@ describe('ReportRepository.getStudentScores — supportLevel filtering', () => {
       const achieved = await filterPaBySupportLevel('3');
       expect(achieved.items.map((r) => r.userId)).not.toContain(collidingStudentId);
     });
+  });
+});
+
+describe('ReportRepository — composite-domain score filter', () => {
+  /**
+   * Some configs point `scoreFields` at names written as `type='raw'` (phonics
+   * `totalCorrect`, swr-it `numCorrect`), so reads must not constrain `type`.
+   */
+  it('returns raw-typed composite score rows alongside computed ones', async () => {
+    const run = await RunFactory.create({
+      userId: baseFixture.schoolAStudent.id,
+      taskId,
+      taskVariantId: allGradesVariantId,
+      administrationId,
+      useForReporting: true,
+      completedAt: new Date('2025-06-25T10:00:00Z'),
+    });
+    // `type='raw'` requires a stage per the run_scores CHECK constraint.
+    await RunScoreFactory.create({
+      runId: run.id,
+      type: SCORE_TYPE.RAW,
+      domain: SCORE_DOMAIN.COMPOSITE,
+      name: 'totalCorrect',
+      value: '42',
+      assessmentStage: ASSESSMENT_STAGE.TEST,
+    });
+    await RunScoreFactory.create({ runId: run.id, name: 'scoringVersion', value: '1' });
+
+    const byRunId = await repo.getScoresForRunIds([run.id]);
+    expect(byRunId.find((r) => r.scoreName === 'totalCorrect')?.scoreValue).toBe('42');
+
+    const studentScores = await repo.getStudentScores(
+      administrationId,
+      districtScope,
+      baseAdminWindow,
+      [
+        {
+          taskId,
+          taskVariantId: allGradesVariantId,
+          taskSlug: 'phonics',
+          taskName: 'ROAR - Phonics',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+      ],
+      { ...defaultOptions, perPage: 100 },
+    );
+
+    const row = studentScores.items.find((r) => r.userId === baseFixture.schoolAStudent.id)!;
+    expect(row.scores.get(allGradesVariantId)?.get('totalCorrect')).toBe('42');
+  });
+
+  /** PA emits `numCorrect` under FSM/LSM/DEL as well as composite. */
+  it('excludes non-composite domain rows from the composite reads', async () => {
+    const run = await RunFactory.create({
+      userId: baseFixture.schoolBStudent.id,
+      taskId,
+      taskVariantId: allGradesVariantId,
+      administrationId,
+      useForReporting: true,
+      completedAt: new Date('2025-06-26T10:00:00Z'),
+    });
+    await RunScoreFactory.create({
+      runId: run.id,
+      type: SCORE_TYPE.RAW,
+      domain: 'FSM',
+      name: 'numCorrect',
+      value: '7',
+      assessmentStage: ASSESSMENT_STAGE.TEST,
+    });
+    await RunScoreFactory.create({
+      runId: run.id,
+      type: SCORE_TYPE.RAW,
+      domain: SCORE_DOMAIN.COMPOSITE,
+      name: 'numCorrect',
+      value: '19',
+      assessmentStage: ASSESSMENT_STAGE.TEST,
+    });
+
+    const byRunId = await repo.getScoresForRunIds([run.id]);
+    const numCorrect = byRunId.filter((r) => r.scoreName === 'numCorrect');
+    expect(numCorrect).toHaveLength(1);
+    expect(numCorrect[0]!.scoreValue).toBe('19');
   });
 });
