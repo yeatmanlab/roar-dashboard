@@ -10,19 +10,15 @@ import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
  * @param {(payload: Object) => Promise<void>} options.registration.submit Account-creation operation.
  * @param {import('vue').Ref<boolean>} options.registration.isSubmitting Registration loading state.
  * @param {import('vue').Ref<Error|null>} options.registration.error Registration failure state.
- * @param {Function} [options.redirect] Post-registration navigation operation.
  * @param {Function} [options.t] Translation function for user-facing errors.
  * @returns {Object} Reactive workflow state and registration actions.
  */
-export function useSelfRegistration({
-  registration = useFamilyRegistration(),
-  redirect = () => window.location.assign('/'),
-  t = (_key, fallback) => fallback,
-} = {}) {
+export function useSelfRegistration({ registration = useFamilyRegistration(), t = (_key, fallback) => fallback } = {}) {
   const { isSubmitting, error } = registration;
   const errorMessage = computed(() =>
     error.value ? t('pageRegister.errors.generic', ACCOUNT_CREATION_ERROR_MESSAGE) : '',
   );
+  const isSuccess = ref(false);
   const verificationToken = ref('');
 
   function dismissError() {
@@ -41,9 +37,10 @@ export function useSelfRegistration({
     if (isSubmitting.value) return false;
 
     error.value = null;
+    isSuccess.value = false;
     try {
       await registration.submit(payload);
-      redirect();
+      isSuccess.value = true;
       return true;
     } catch (caughtError) {
       error.value = error.value ?? (caughtError instanceof Error ? caughtError : new Error(String(caughtError)));
@@ -54,6 +51,7 @@ export function useSelfRegistration({
   return {
     isSubmitting,
     errorMessage,
+    isSuccess,
     verificationToken,
     submit,
     dismissError,
