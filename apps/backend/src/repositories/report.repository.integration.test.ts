@@ -32,6 +32,7 @@ import { UserGroupFactory } from '../test-support/factories/user-group.factory';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import type { Grade } from '../enums/grade.enum';
+import { ASSESSMENT_STAGE, SCORE_DOMAIN, SCORE_TYPE } from '../constants/run-scores';
 
 let repo: ReportRepository;
 
@@ -1886,7 +1887,7 @@ describe('ReportRepository.getStudentScores — supportLevel filtering', () => {
     ...SWR_CUTOFFS,
     percentileBelowGrade: 6,
     percentileFieldNames: ['percentile', 'wjPercentile'],
-    rawScoreFieldNames: ['rawScore'],
+    rawScoreFieldNames: ['roarScore'],
     standardScoreFieldNames: ['standardScore'],
   };
 
@@ -1921,7 +1922,7 @@ describe('ReportRepository.getStudentScores — supportLevel filtering', () => {
     nameLast: string;
     grade: Grade;
     runGrade?: Grade;
-    scores: { name: string; value: string }[];
+    scores: { name: string; value: string; domain?: string }[];
   }) {
     const student = await UserFactory.create({ nameLast: opts.nameLast, grade: opts.grade });
     await UserOrgFactory.create({ userId: student.id, orgId: districtId, role: UserRole.STUDENT });
@@ -1937,7 +1938,12 @@ describe('ReportRepository.getStudentScores — supportLevel filtering', () => {
       await RunDemographicsFactory.create({ runId: run.id, grade: opts.runGrade });
     }
     for (const score of opts.scores) {
-      await RunScoreFactory.create({ runId: run.id, name: score.name, value: score.value });
+      await RunScoreFactory.create({
+        runId: run.id,
+        name: score.name,
+        value: score.value,
+        ...(score.domain ? { domain: score.domain } : {}),
+      });
     }
     return student.id;
   }
@@ -2021,7 +2027,7 @@ describe('ReportRepository.getStudentScores — supportLevel filtering', () => {
         runGrade: '5',
         scores: [
           { name: 'percentile', value: '45' },
-          { name: 'rawScore', value: '300' },
+          { name: 'roarScore', value: '300' },
           { name: 'scoringVersion', value: '7' },
         ],
       });
@@ -2038,5 +2044,153 @@ describe('ReportRepository.getStudentScores — supportLevel filtering', () => {
 
       expect(result.items.map((r) => r.userId)).not.toContain(promotedStudentId);
     });
+  });
+
+  describe('reads are addressed by domain', () => {
+    const SUBTASK_DOMAIN = 'FSM';
+
+    /** pa-shaped rules; values mirror `configs/pa.ts` so the arithmetic below reads true. */
+    const paRules: ResolvedScoringRules = {
+      assessmentSupportLevelField: null,
+      percentileCutoffsByVersion: [
+        { minVersion: 5, cutoffs: { achieved: 40, developing: 20 } },
+        { minVersion: 0, cutoffs: { achieved: 50, developing: 25 } },
+      ],
+      rawScoreThresholdsByVersion: [
+        { minVersion: 5, thresholds: { above: 480, some: 420 } },
+        { minVersion: 0, thresholds: { above: 55, some: 45 } },
+      ],
+      percentileBelowGrade: 6,
+      percentileFieldNames: ['percentile', 'sprPercentile'],
+      rawScoreFieldNames: ['roarScore'],
+      standardScoreFieldNames: ['standardScore'],
+    };
+
+    const filterPaBySupportLevel = (priority: string) =>
+      repo.getStudentScores(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskMetas,
+        defaultOptions,
+        undefined,
+        null,
+        [
+          {
+            taskVariantId: allGradesVariantId,
+            taskSlug: 'pa',
+            fieldType: 'supportLevel',
+            operator: 'eq',
+            values: [priority],
+          },
+        ],
+        new Map([[allGradesVariantId, paRules]]),
+      );
+
+    let collidingStudentId: string;
+    beforeAll(async () => {
+      collidingStudentId = await seedStudent({
+        nameLast: 'DomainCollision',
+        grade: '8',
+        scores: [
+          { name: 'roarScore', value: '450' },
+          { name: 'scoringVersion', value: '5' },
+          { name: 'roarScore', value: '600', domain: SUBTASK_DOMAIN },
+          { name: 'scoringVersion', value: '5', domain: SUBTASK_DOMAIN },
+        ],
+      });
+    });
+
+    it('classifies on the composite row, not the subtask row that repeats the name', async () => {
+      const developing = await filterPaBySupportLevel('2');
+      expect(developing.items.map((r) => r.userId)).toContain(collidingStudentId);
+
+      const achieved = await filterPaBySupportLevel('3');
+      expect(achieved.items.map((r) => r.userId)).not.toContain(collidingStudentId);
+    });
+  });
+});
+
+describe('ReportRepository — composite-domain score filter', () => {
+  /**
+   * Some configs point `scoreFields` at names written as `type='raw'` (phonics
+   * `totalCorrect`, swr-it `numCorrect`), so reads must not constrain `type`.
+   */
+  it('returns raw-typed composite score rows alongside computed ones', async () => {
+    const run = await RunFactory.create({
+      userId: baseFixture.schoolAStudent.id,
+      taskId,
+      taskVariantId: allGradesVariantId,
+      administrationId,
+      useForReporting: true,
+      completedAt: new Date('2025-06-25T10:00:00Z'),
+    });
+    // `type='raw'` requires a stage per the run_scores CHECK constraint.
+    await RunScoreFactory.create({
+      runId: run.id,
+      type: SCORE_TYPE.RAW,
+      domain: SCORE_DOMAIN.COMPOSITE,
+      name: 'totalCorrect',
+      value: '42',
+      assessmentStage: ASSESSMENT_STAGE.TEST,
+    });
+    await RunScoreFactory.create({ runId: run.id, name: 'scoringVersion', value: '1' });
+
+    const byRunId = await repo.getScoresForRunIds([run.id]);
+    expect(byRunId.find((r) => r.scoreName === 'totalCorrect')?.scoreValue).toBe('42');
+
+    const studentScores = await repo.getStudentScores(
+      administrationId,
+      districtScope,
+      baseAdminWindow,
+      [
+        {
+          taskId,
+          taskVariantId: allGradesVariantId,
+          taskSlug: 'phonics',
+          taskName: 'ROAR - Phonics',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+      ],
+      { ...defaultOptions, perPage: 100 },
+    );
+
+    const row = studentScores.items.find((r) => r.userId === baseFixture.schoolAStudent.id)!;
+    expect(row.scores.get(allGradesVariantId)?.get('totalCorrect')).toBe('42');
+  });
+
+  /** PA emits `numCorrect` under FSM/LSM/DEL as well as composite. */
+  it('excludes non-composite domain rows from the composite reads', async () => {
+    const run = await RunFactory.create({
+      userId: baseFixture.schoolBStudent.id,
+      taskId,
+      taskVariantId: allGradesVariantId,
+      administrationId,
+      useForReporting: true,
+      completedAt: new Date('2025-06-26T10:00:00Z'),
+    });
+    await RunScoreFactory.create({
+      runId: run.id,
+      type: SCORE_TYPE.RAW,
+      domain: 'FSM',
+      name: 'numCorrect',
+      value: '7',
+      assessmentStage: ASSESSMENT_STAGE.TEST,
+    });
+    await RunScoreFactory.create({
+      runId: run.id,
+      type: SCORE_TYPE.RAW,
+      domain: SCORE_DOMAIN.COMPOSITE,
+      name: 'numCorrect',
+      value: '19',
+      assessmentStage: ASSESSMENT_STAGE.TEST,
+    });
+
+    const byRunId = await repo.getScoresForRunIds([run.id]);
+    const numCorrect = byRunId.filter((r) => r.scoreName === 'numCorrect');
+    expect(numCorrect).toHaveLength(1);
+    expect(numCorrect[0]!.scoreValue).toBe('19');
   });
 });

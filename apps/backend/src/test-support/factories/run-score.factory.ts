@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import type { RunScore, NewRunScore } from '../../db/schema/assessment';
 import { AssessmentDbClient } from '../../db/clients';
 import { runScores } from '../../db/schema/assessment';
-import { SCORE_TYPE } from '../../constants/run-scores';
+import { SCORE_DOMAIN, SCORE_TYPE } from '../../constants/run-scores';
 
 /**
  * Factory for creating RunScore test objects in the assessment database.
@@ -37,7 +37,9 @@ export const RunScoreFactory = Factory.define<RunScore>(({ onCreate }) => {
     id: faker.string.uuid(),
     runId: faker.string.uuid(),
     type: SCORE_TYPE.COMPUTED,
-    domain: 'default',
+    // Composite is where every registered scoring config reads from; the report
+    // path filters to it, so it's the only default that produces readable scores.
+    domain: SCORE_DOMAIN.COMPOSITE,
     name: 'score',
     value: '0',
     assessmentStage: null,
