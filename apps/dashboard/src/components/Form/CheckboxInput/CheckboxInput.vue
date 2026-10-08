@@ -1,55 +1,50 @@
 <template>
-  <label
-    :for="id"
-    class="flex flex-row align-items-center gap-2 p-3 lg:p-0 lg:py-1 lg:bg-white bg-gray-100 rounded"
-    :data-testid="testId"
-  >
-    <PvCheckbox
-      v-model="model"
-      :input-id="id"
-      :binary="true"
-      :pt="{
-        root: {
-          'data-testid': 'checkboxinput__input-wrapper',
-        },
-        box: {
-          'data-testid': 'checkboxinput__input-box',
-        },
-      }"
-    />
-    <span v-if="$slots.default" data-testid="checkboxinput__label">
-      <slot />
-    </span>
-    <span v-else data-testid="checkboxinput__label">
-      {{ label }}
-    </span>
-  </label>
+  <div class="roar-checkbox-control" :data-testid="testId">
+    <div class="roar-checkbox-control__row">
+      <input
+        v-bind="$attrs"
+        :id="id"
+        v-model="model"
+        type="checkbox"
+        :required="required"
+        :disabled="disabled"
+        :aria-invalid="isInvalid"
+        :aria-describedby="descriptionIds"
+        class="roar-checkbox-control__input"
+      />
+      <label :for="id" class="roar-checkbox-control__label">
+        <slot>{{ label }}</slot>
+        <span v-if="required" class="roar-form-control__required" aria-hidden="true">*</span>
+        <span v-if="required" class="sr-only">(required)</span>
+      </label>
+    </div>
+    <small v-if="error" :id="errorId" class="roar-checkbox-control__error">{{ error }}</small>
+  </div>
 </template>
 
 <script setup>
+import { computed, useAttrs } from 'vue';
 import { nanoid } from 'nanoid';
-import PvCheckbox from 'primevue/checkbox';
 
-const model = defineModel({ required: true, type: Boolean });
+defineOptions({ name: 'FormCheckboxInput', inheritAttrs: false });
 
-defineProps({
-  id: {
-    type: String,
-    default: () => `checkbox-${nanoid()}`,
-  },
-  label: {
-    type: String,
-    default: null,
-  },
-  testId: {
-    type: String,
-    default: 'checkboxinput',
-  },
+const model = defineModel({ type: Boolean, default: false });
+const attrs = useAttrs();
+const props = defineProps({
+  id: { type: String, default: () => `checkbox-${nanoid()}` },
+  label: { type: String, default: '' },
+  required: { type: Boolean, default: false },
+  disabled: { type: Boolean, default: false },
+  invalid: { type: Boolean, default: false },
+  error: { type: String, default: '' },
+  testId: { type: String, default: 'checkbox-input' },
 });
+
+const errorId = computed(() => `${props.id}-error`);
+const isInvalid = computed(() => props.invalid || Boolean(props.error));
+const descriptionIds = computed(
+  () => [attrs['aria-describedby'], props.error ? errorId.value : ''].filter(Boolean).join(' ') || undefined,
+);
 </script>
 
-<style scoped>
-label {
-  cursor: pointer;
-}
-</style>
+<style scoped src="../form-controls.scss" lang="scss"></style>
