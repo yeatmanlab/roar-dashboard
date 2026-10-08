@@ -68,9 +68,12 @@ const startDate = defineModel('startDate', { type: Date });
 const endDate = defineModel('endDate', { type: Date });
 
 defineProps({
+  // Null means "no lower bound", which is what the parent passes when editing or duplicating an
+  // existing administration so its original start date stays selectable. Matches the optional
+  // `minDate` contract on the DateInput this is forwarded to.
   minStartDate: {
     type: Date,
-    required: true,
+    default: null,
   },
   minEndDate: {
     type: Date,
