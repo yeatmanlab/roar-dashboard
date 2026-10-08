@@ -6,13 +6,17 @@
  * through the FDW foreign tables in the core DB.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ReportRepository, toReportAdminWindow } from './report.repository';
+import { ReportRepository, toReportAdminWindow, REPORT_CONDITION_FIELD_MAP } from './report.repository';
 import type {
   ReportScope,
   ReportTaskMeta,
   ProgressOverviewCountsResult,
   ResolvedScoringRules,
 } from './report.repository';
+import { SortOrder } from '@roar-platform/api-contract';
+import { conditionToSql } from '../utils/condition-to-sql';
+import { Operator } from '../types/condition';
+import type { Condition } from '../types/condition';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
 import { RunDemographicsFactory } from '../test-support/factories/run-demographics.factory';
@@ -2192,5 +2196,273 @@ describe('ReportRepository — composite-domain score filter', () => {
     const numCorrect = byRunId.filter((r) => r.scoreName === 'numCorrect');
     expect(numCorrect).toHaveLength(1);
     expect(numCorrect[0]!.scoreValue).toBe('19');
+  });
+});
+
+describe('ReportRepository dynamic sorts — #2289', () => {
+  let testRepo: ReportRepository;
+
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+  const daysAgo = (n: number) => new Date(Date.now() - n * ONE_DAY_MS);
+  const daysFromNow = (n: number) => new Date(Date.now() + n * ONE_DAY_MS);
+
+  type StudentAttrs = NonNullable<Parameters<typeof UserFactory.create>[0]>;
+
+  beforeAll(() => {
+    testRepo = new ReportRepository();
+  });
+
+  /** Create an isolated district + active administration with one task variant assigned. */
+  async function setupSortAdmin(name: string) {
+    const district = await OrgFactory.create({ orgType: OrgType.DISTRICT, name: `${name} District` });
+    const admin = await AdministrationFactory.create({
+      name,
+      createdBy: baseFixture.districtAdmin.id,
+      dateStart: daysAgo(30),
+      dateEnd: daysFromNow(30),
+    });
+    await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: district.id });
+    await AdministrationTaskVariantFactory.create({
+      administrationId: admin.id,
+      taskVariantId: baseFixture.variantForAllGrades.id,
+      orderIndex: 0,
+    });
+
+    return {
+      admin,
+      district,
+      adminWindow: toReportAdminWindow(admin),
+      scope: { scopeType: 'district', scopeId: district.id } as ReportScope,
+      taskMetas: await testRepo.getTaskMetadata(admin.id),
+    };
+  }
+
+  /** Enroll a student in the district as a district-level student. */
+  async function enrollStudent(districtId: string, attrs: StudentAttrs) {
+    const user = await UserFactory.create(attrs);
+    await UserOrgFactory.create({ userId: user.id, orgId: districtId, role: UserRole.STUDENT });
+    return user;
+  }
+
+  describe('getProgressStudents — progress status sort', () => {
+    /**
+     * Grade 5 non-ELL with a completed run, grade 5 ELL with a started run, and
+     * grade 3 with no run. Their relative order changes with the conditions, so
+     * each case pins a different expected order rather than just "no error".
+     */
+    async function setupStatusSortFixture(name: string) {
+      const ctx = await setupSortAdmin(name);
+
+      const completed = await enrollStudent(ctx.district.id, { nameLast: 'StatusCompleted', grade: '5' });
+      const started = await enrollStudent(ctx.district.id, {
+        nameLast: 'StatusStarted',
+        grade: '5',
+        statusEll: 'active',
+      });
+      const noRun = await enrollStudent(ctx.district.id, { nameLast: 'StatusNoRun', grade: '3' });
+
+      await RunFactory.create({
+        userId: completed.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: ctx.admin.id,
+        useForReporting: true,
+        completedAt: daysAgo(1),
+      });
+      await RunFactory.create({
+        userId: started.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: ctx.admin.id,
+        useForReporting: true,
+        completedAt: null,
+      });
+
+      return { ...ctx, completed, started, noRun };
+    }
+
+    /** Run the status sort descending and return the resulting user IDs. */
+    async function sortByStatusDesc(
+      ctx: Awaited<ReturnType<typeof setupStatusSortFixture>>,
+      conditions: { assignment?: Condition; optionalIf?: Condition } = {},
+    ) {
+      const result = await testRepo.getProgressStudents(
+        ctx.admin.id,
+        ctx.scope,
+        ctx.adminWindow,
+        [baseFixture.variantForAllGrades.id],
+        { page: 1, perPage: 25, sortDirection: SortOrder.DESC },
+        undefined,
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          assignmentSql: conditionToSql(conditions.assignment ?? null, REPORT_CONDITION_FIELD_MAP),
+          optionalIfSql: conditionToSql(conditions.optionalIf ?? null, REPORT_CONDITION_FIELD_MAP),
+        },
+      );
+      return result.items.map((item) => item.userId);
+    }
+
+    const GRADE_5 = { field: 'studentData.grade', op: Operator.EQUAL, value: '5' } as const;
+    const ELL_ACTIVE = { field: 'studentData.statusEll', op: Operator.EQUAL, value: 'active' } as const;
+
+    it('sorts by status when the variant has no conditions', async () => {
+      const ctx = await setupStatusSortFixture('Status sort — no conditions');
+
+      // completed (5) > started (3) > assigned (1)
+      await expect(sortByStatusDesc(ctx)).resolves.toEqual([ctx.completed.id, ctx.started.id, ctx.noRun.id]);
+    });
+
+    it('sorts by status when the variant has an assignment condition', async () => {
+      const ctx = await setupStatusSortFixture('Status sort — assignment');
+
+      // completed-assigned (5) > started-assigned (3) > not assigned (-1)
+      await expect(sortByStatusDesc(ctx, { assignment: GRADE_5 })).resolves.toEqual([
+        ctx.completed.id,
+        ctx.started.id,
+        ctx.noRun.id,
+      ]);
+    });
+
+    it('sorts by status when the variant has an optional_if condition', async () => {
+      const ctx = await setupStatusSortFixture('Status sort — optional_if');
+
+      // completed-required (5) > started-optional (2, the ELL student's task is
+      // optional for them) > assigned-required (1)
+      await expect(sortByStatusDesc(ctx, { optionalIf: ELL_ACTIVE })).resolves.toEqual([
+        ctx.completed.id,
+        ctx.started.id,
+        ctx.noRun.id,
+      ]);
+    });
+
+    it('sorts by status when the variant has both conditions', async () => {
+      const ctx = await setupStatusSortFixture('Status sort — both conditions');
+
+      // completed-required (5) > started-optional (2) > not assigned (-1)
+      await expect(sortByStatusDesc(ctx, { assignment: GRADE_5, optionalIf: ELL_ACTIVE })).resolves.toEqual([
+        ctx.completed.id,
+        ctx.started.id,
+        ctx.noRun.id,
+      ]);
+    });
+  });
+
+  describe('getStudentScores — supportLevel sort', () => {
+    const PERCENTILE_FIELD = 'percentile';
+    const SUPPORT_LEVEL_FIELD = 'supportLevel';
+
+    async function enrollStudentWithScore(
+      ctx: Awaited<ReturnType<typeof setupSortAdmin>>,
+      nameLast: string,
+      grade: NonNullable<StudentAttrs['grade']>,
+      score: { name: string; value: string },
+    ) {
+      const student = await enrollStudent(ctx.district.id, { nameLast, grade });
+      const run = await RunFactory.create({
+        userId: student.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: ctx.admin.id,
+        useForReporting: true,
+        completedAt: daysAgo(1),
+      });
+      await RunScoreFactory.create({ runId: run.id, name: score.name, value: score.value });
+      return student;
+    }
+
+    /** Sort by supportLevel on the fixture variant and return the resulting user IDs. */
+    async function sortBySupportLevel(
+      ctx: Awaited<ReturnType<typeof setupSortAdmin>>,
+      rules: ResolvedScoringRules,
+      sortDirection: SortOrder,
+    ) {
+      const result = await testRepo.getStudentScores(
+        ctx.admin.id,
+        ctx.scope,
+        ctx.adminWindow,
+        ctx.taskMetas,
+        { page: 1, perPage: 25, sortDirection },
+        undefined,
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          taskSlug: baseFixture.task.slug,
+          fieldType: 'supportLevel',
+        },
+        undefined,
+        new Map([[baseFixture.variantForAllGrades.id, rules]]),
+      );
+      return result.items.map((item) => item.userId);
+    }
+
+    it('sorts by supportLevel on a percentile-then-rawscore task', async () => {
+      // The regression: the cutoffs below are values in the CASE, so the two
+      // copies of it no longer matched and the query failed outright.
+      const ctx = await setupSortAdmin('SupportLevel sort — percentile');
+      const rules: ResolvedScoringRules = {
+        assessmentSupportLevelField: null,
+        percentileCutoffsByVersion: [{ minVersion: 0, cutoffs: { achieved: 50, developing: 25 } }],
+        rawScoreThresholdsByVersion: [{ minVersion: 0, thresholds: { some: 20, above: 40 } }],
+        percentileBelowGrade: 6,
+        percentileFieldNames: [PERCENTILE_FIELD],
+        rawScoreFieldNames: [],
+        standardScoreFieldNames: [],
+      };
+
+      const achieved = await enrollStudentWithScore(ctx, 'ScoreAchieved', '3', {
+        name: PERCENTILE_FIELD,
+        value: '90',
+      });
+      const developing = await enrollStudentWithScore(ctx, 'ScoreDeveloping', '3', {
+        name: PERCENTILE_FIELD,
+        value: '30',
+      });
+      const needsSupport = await enrollStudentWithScore(ctx, 'ScoreNeedsSupport', '3', {
+        name: PERCENTILE_FIELD,
+        value: '10',
+      });
+
+      await expect(sortBySupportLevel(ctx, rules, SortOrder.DESC)).resolves.toEqual([
+        achieved.id,
+        developing.id,
+        needsSupport.id,
+      ]);
+      await expect(sortBySupportLevel(ctx, rules, SortOrder.ASC)).resolves.toEqual([
+        needsSupport.id,
+        developing.id,
+        achieved.id,
+      ]);
+    });
+
+    it('sorts by supportLevel on an assessment-computed task', async () => {
+      const ctx = await setupSortAdmin('SupportLevel sort — assessment-computed');
+      const rules: ResolvedScoringRules = {
+        assessmentSupportLevelField: SUPPORT_LEVEL_FIELD,
+        percentileCutoffsByVersion: [{ minVersion: 0, cutoffs: { achieved: 50, developing: 25 } }],
+        rawScoreThresholdsByVersion: [{ minVersion: 0, thresholds: { some: 20, above: 40 } }],
+        percentileBelowGrade: null,
+        percentileFieldNames: [],
+        rawScoreFieldNames: [],
+        standardScoreFieldNames: [],
+      };
+
+      const achieved = await enrollStudentWithScore(ctx, 'AssessedAchieved', '3', {
+        name: SUPPORT_LEVEL_FIELD,
+        value: 'achievedSkill',
+      });
+      const developing = await enrollStudentWithScore(ctx, 'AssessedDeveloping', '3', {
+        name: SUPPORT_LEVEL_FIELD,
+        value: 'developingSkill',
+      });
+      const needsSupport = await enrollStudentWithScore(ctx, 'AssessedNeedsSupport', '3', {
+        name: SUPPORT_LEVEL_FIELD,
+        value: 'needsExtraSupport',
+      });
+
+      await expect(sortBySupportLevel(ctx, rules, SortOrder.DESC)).resolves.toEqual([
+        achieved.id,
+        developing.id,
+        needsSupport.id,
+      ]);
+    });
   });
 });
