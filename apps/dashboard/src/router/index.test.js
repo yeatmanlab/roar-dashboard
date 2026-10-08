@@ -38,7 +38,11 @@ vi.mock('@/composables/useSentryLogging', () => ({
   default: () => ({ logNavEvent: vi.fn() }),
 }));
 
-import { routes } from './index';
+vi.mock('@/composables/queries/useMeQuery', () => ({
+  fetchMe: vi.fn(),
+}));
+
+import { isUnauthenticatedRouteAllowed, routes } from './index';
 
 describe('router launch routes', () => {
   it('defines a proxy-launch route for every game route', () => {
@@ -58,5 +62,18 @@ describe('router launch routes', () => {
         'child-user-uuid',
       );
     }
+  });
+});
+
+describe('router unauthenticated routes', () => {
+  it('allows the account-owner registration route without authentication', () => {
+    const registrationRoute = routes.find((route) => route.path === APP_ROUTES.REGISTER);
+
+    expect(registrationRoute).toBeDefined();
+    expect(isUnauthenticatedRouteAllowed(registrationRoute)).toBe(true);
+  });
+
+  it('does not allow a protected route without authentication', () => {
+    expect(isUnauthenticatedRouteAllowed({ name: 'Protected', meta: {} })).toBe(false);
   });
 });
