@@ -40,8 +40,8 @@ import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
 import { COMPOSITE_RUN_TASK_ID } from '../constants/run';
 import { SCORE_DOMAIN, SCORE_NAME } from '../constants/run-scores';
-import { compositeComputedScoreFilter } from './utils/composite-score-filter.utils';
 import { GRADE_MAP } from '../utils/get-grade-as-number.util';
+import { compositeScoreFilter } from './utils/composite-score-filter.utils';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
 import {
@@ -2240,7 +2240,7 @@ export class ReportRepository {
           .from(fdwRuns)
           // Nothing guarantees a snapshot row (no cross-DB FK) so we left join.
           .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
-          .leftJoin(fdwRunScores, and(eq(fdwRunScores.runId, fdwRuns.id), compositeComputedScoreFilter()))
+          .leftJoin(fdwRunScores, and(eq(fdwRunScores.runId, fdwRuns.id), compositeScoreFilter()))
           .where(
             and(
               eq(fdwRuns.administrationId, administrationId),
@@ -2505,7 +2505,7 @@ export class ReportRepository {
           })
           .from(fdwRuns)
           .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
-          .where(and(inArray(fdwRuns.id, selectedRunIds), compositeComputedScoreFilter()));
+          .where(and(inArray(fdwRuns.id, selectedRunIds), compositeScoreFilter()));
 
         for (const row of scoreRows) {
           if (!scoresByStudent.has(row.userId)) scoresByStudent.set(row.userId, new Map());
@@ -3108,7 +3108,7 @@ export class ReportRepository {
         scoreValue: fdwRunScores.value,
       })
       .from(fdwRunScores)
-      .where(and(inArray(fdwRunScores.runId, runIds), compositeComputedScoreFilter()));
+      .where(and(inArray(fdwRunScores.runId, runIds), compositeScoreFilter()));
 
     return rows;
   }

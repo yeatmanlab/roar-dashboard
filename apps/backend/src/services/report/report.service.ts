@@ -114,7 +114,7 @@ import { getGradeAsNumber, getGradesInRange } from '../../utils/get-grade-as-num
 import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../../types/condition';
 import type { AuthContext } from '../../types/auth-context';
-import { SCORE_NAME } from '../../constants/run-scores';
+import { SCORE_DOMAIN, SCORE_NAME } from '../../constants/run-scores';
 
 /** Map sortBy field strings to Drizzle column references for progress students. */
 const PROGRESS_SORT_COLUMNS: Record<ProgressStudentsSortField, Column> = {
@@ -2258,15 +2258,25 @@ function selectLatestRunRows(rows: RunScoreRow[]): RunScoreRow[] {
 }
 
 /**
+ * Keep composite-domain rows for the name-keyed folds below.
+ *
+ * Subtask domains reuse composite score names (SRE writes `sreScore` per block,
+ * PA writes `numCorrect` under FSM/LSM/DEL), so a name-keyed map needs them out.
+ */
+function compositeRowsOnly(rows: RunScoreRow[]): RunScoreRow[] {
+  return rows.filter((row) => !row.scoreDomain || row.scoreDomain === SCORE_DOMAIN.COMPOSITE);
+}
+
+/**
  * Build a nested lookup: userId → taskVariantId → { runGrade, scores }.
- * For duplicate score names within the same user-task-variant, the last value wins.
+ * Narrowed to the composite domain — see {@link compositeRowsOnly}.
  *
  * Callers pass rows already narrowed by {@link selectLatestRunRows}, so every row
  * for a given (user, variant) belongs to one run.
  */
 function buildScoreLookup(scoreRows: RunScoreRow[]): ScoreLookup {
   const lookup: ScoreLookup = new Map();
-  for (const row of scoreRows) {
+  for (const row of compositeRowsOnly(scoreRows)) {
     let userScores = lookup.get(row.userId);
     if (!userScores) {
       userScores = new Map();
@@ -3280,10 +3290,13 @@ function evaluateAcrossVariants(
 
 // --- Individual student report helpers ---
 
-/** Index per-variant raw run_scores rows: variantId → scoreName → scoreValue. */
+/**
+ * Index per-variant raw run_scores rows: variantId → scoreName → scoreValue.
+ * Narrowed to the composite domain — see {@link compositeRowsOnly}.
+ */
 function buildVariantScoreLookup(rows: RunScoreRow[]): Map<string, Map<string, string>> {
   const out = new Map<string, Map<string, string>>();
-  for (const r of rows) {
+  for (const r of compositeRowsOnly(rows)) {
     if (!out.has(r.taskVariantId)) out.set(r.taskVariantId, new Map());
     out.get(r.taskVariantId)!.set(r.scoreName, r.scoreValue);
   }

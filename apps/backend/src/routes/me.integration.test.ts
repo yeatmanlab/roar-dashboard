@@ -33,6 +33,8 @@ import { eq } from 'drizzle-orm';
 // Test setup
 // ═══════════════════════════════════════════════════════════════════════════
 
+const ONE_YEAR_IN_MS = 365 * 24 * 60 * 60 * 1000;
+
 let app: express.Application;
 let expectRoute: ReturnType<typeof createRouteHelper>;
 let tiers: TierUsers;
@@ -216,6 +218,32 @@ describe('GET /v1/me', () => {
       const res = await expectRoute('GET', '/v1/me').unauthenticated().toReturn(401);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    // AuthGuardMiddleware blocks a user whose rostering has ended before the route runs.
+    // The contract declares 403 so the typed client has a branch for it.
+    it("returns 403 when the caller's rostering has ended", async () => {
+      const user = await UserFactory.create({
+        userType: UserType.STUDENT,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      const res = await expectRoute('GET', '/v1/me').as({ id: user.id, authId: user.authId! }).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_ROSTERING_ENDED);
+      expect(res.body.error.traceId).toEqual(expect.any(String));
+    });
+
+    // The guard rejects only a rosteringEnded in the past, so a future date must still pass.
+    it('allows a user whose rosteringEnded is in the future', async () => {
+      const user = await UserFactory.create({
+        userType: UserType.STUDENT,
+        rosteringEnded: new Date(Date.now() + ONE_YEAR_IN_MS),
+      });
+
+      const res = await expectRoute('GET', '/v1/me').as({ id: user.id, authId: user.authId! }).toReturn(200);
+
+      expect(res.body.data.id).toBe(user.id);
     });
   });
 });
