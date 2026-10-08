@@ -44,11 +44,38 @@ import { insertResponsiveClasses, hideRequiredIndicator, openFullscreen } from '
 /** Content file used when neither the variant nor the host names one. */
 const DEFAULT_SURVEY_FILE = 'survey';
 
+/** Locale used when the host supplies none, or one that is not a plausible locale. */
+const DEFAULT_LANGUAGE = 'en';
+
+/** `en`, or `pt-BR` — anything else, notably `../`, must not reach the content path. */
+const LOCALE_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/;
+
+/**
+ * Returns `language` if it is a plausible locale, otherwise the default.
+ *
+ * The value becomes a path segment in the content URL, so an unchecked one escapes the
+ * bucket entirely — `../../other-bucket` normalises to a request against `other-bucket`.
+ * Validated here rather than in the host because this component is published and builds
+ * the URL, so every consumer gets the guard.
+ *
+ * @param {string} language - Locale supplied by the host
+ * @returns {string} A safe locale directory name
+ */
+function safeLanguage(language) {
+  if (LOCALE_PATTERN.test(language)) return language;
+  console.warn(`[roar-survey] Ignoring unrecognised language "${language}"; falling back to ${DEFAULT_LANGUAGE}.`);
+  return DEFAULT_LANGUAGE;
+}
+
 const props = defineProps({
   /**
-   * Host-supplied SDK wiring, `{ ctx, taskInfo }`. When present this component owns SDK
-   * initialization, variant resolution, and fetching its own content. When absent the host
-   * must have called `initFirekitCompat` already — the pre-#2016 contract.
+   * Host-supplied SDK wiring, `{ ctx, taskInfo }`. The component owns SDK initialization,
+   * variant resolution, and fetching its own content from it.
+   *
+   * Required in practice: without it there is no variant to resolve and so no content to
+   * run, and the component renders its error state. It stays optional only so a host that
+   * fails to establish a session can still mount and show that state rather than a blank
+   * page — see `main.js`.
    */
   sdkContext: { type: Object, default: null },
   /** Locale directory the survey content is read from. */
@@ -113,9 +140,11 @@ const loadSurvey = async () => {
   // `surveyFile` is only ever set by standalone play, where it is the researcher's explicit
   // choice of instrument and so outranks the variant's default. The dashboard never sets it,
   // so there the assigned variant always decides.
-  const file = props.surveyFile ?? variantParams.survey ?? DEFAULT_SURVEY_FILE;
+  // `||`, not `??`: `?survey=` with no value yields an empty string, which `??` would keep
+  // and turn into a request for `<lang>/.json`.
+  const file = props.surveyFile || variantParams.survey || DEFAULT_SURVEY_FILE;
 
-  const response = await fetch(`${getBucketUrl(props.language)}${file}.json`);
+  const response = await fetch(`${getBucketUrl(safeLanguage(props.language))}${file}.json`);
   if (!response.ok) throw new Error(`Survey fetch failed: ${response.statusText}`);
   return response.json();
 };

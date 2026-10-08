@@ -74,6 +74,7 @@ describe('SurveyRunner', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.mocked(getVariantById).mockResolvedValue({ variantParams: { survey: VARIANT_SURVEY_FILE } });
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue(SURVEY_JSON) });
   });
@@ -124,6 +125,16 @@ describe('SurveyRunner', () => {
       wrapper.unmount();
     });
 
+    it('treats an empty surveyFile as absent rather than fetching an unnamed file', async () => {
+      // `?survey=` with no value arrives as '', which would otherwise request `<lang>/.json`.
+      const wrapper = mountRunner({ surveyFile: '', language: 'en' });
+      await flushPromises();
+
+      expect(fetchedUrl()).toBe(`https://example.test/en/${VARIANT_SURVEY_FILE}.json`);
+
+      wrapper.unmount();
+    });
+
     it('falls back to the default file when neither names one', async () => {
       vi.mocked(getVariantById).mockResolvedValue({ variantParams: {} });
 
@@ -144,6 +155,29 @@ describe('SurveyRunner', () => {
       await flushPromises();
 
       expect(fetchedUrl()).toBe(`https://example.test/es/${VARIANT_SURVEY_FILE}.json`);
+
+      wrapper.unmount();
+    });
+  });
+
+  describe('locale handling', () => {
+    it('accepts a region-qualified locale', async () => {
+      const wrapper = mountRunner({ language: 'pt-BR' });
+      await flushPromises();
+
+      expect(fetchedUrl()).toBe(`https://example.test/pt-BR/${VARIANT_SURVEY_FILE}.json`);
+
+      wrapper.unmount();
+    });
+
+    it('refuses a traversal attempt and falls back to English', async () => {
+      // Unchecked, this escapes the bucket: `.../roar-survey-app/../../other/` normalises to
+      // a request against `other`.
+      const wrapper = mountRunner({ language: '../../other-bucket' });
+      await flushPromises();
+
+      expect(fetchedUrl()).toBe(`https://example.test/en/${VARIANT_SURVEY_FILE}.json`);
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('Ignoring unrecognised language'));
 
       wrapper.unmount();
     });
