@@ -62,6 +62,6 @@ export default {
   displayRanges: {
     percentCorrect: { min: 0, max: 100 },
     // Raw-score breakdown range, matching the dashboard's getRawScoreRange for phonics.
-    rawScore: { min: 0, max: 150 },
+    rawScore: [{ minVersion: 0, range: { min: 0, max: 150 } }],
   },
 };

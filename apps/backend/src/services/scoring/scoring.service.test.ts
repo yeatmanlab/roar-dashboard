@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { SCORE_NAME } from '../../constants/run-scores';
 import {
   parseScoreValue,
+  parseScoringVersion,
+  resolveRunScoringVersion,
   getSupportLevel,
   getScoreDisplay,
   getRawScoreThreshold,
@@ -8,6 +11,10 @@ import {
   resolveScoreFieldNames,
   resolveScoreFieldName,
   getSupportLevelFieldName,
+  getScoreRange,
+  extractScoringVersions,
+  resolveNumericScore,
+  resolveVersionedEntry,
 } from './scoring.service';
 
 describe('parseScoreValue', () => {
@@ -45,6 +52,48 @@ describe('parseScoreValue', () => {
   it('returns null for non-numeric strings', () => {
     expect(parseScoreValue('abc')).toBeNull();
     expect(parseScoreValue('')).toBeNull();
+  });
+});
+
+describe('parseScoringVersion', () => {
+  it('parses integer strings and numbers', () => {
+    expect(parseScoringVersion('7')).toBe(7);
+    expect(parseScoringVersion(7)).toBe(7);
+    expect(parseScoringVersion(0)).toBe(0);
+  });
+
+  it('returns null for every way of being absent', () => {
+    expect(parseScoringVersion(undefined)).toBeNull();
+    expect(parseScoringVersion(null)).toBeNull();
+    expect(parseScoringVersion('')).toBeNull();
+    expect(parseScoringVersion('   ')).toBeNull();
+  });
+
+  it('returns null for non-integer values', () => {
+    expect(parseScoringVersion('7.5')).toBeNull();
+    expect(parseScoringVersion(7.5)).toBeNull();
+    expect(parseScoringVersion('abc')).toBeNull();
+    expect(parseScoringVersion(true)).toBeNull();
+    expect(parseScoringVersion({})).toBeNull();
+  });
+
+  it('returns null for angle-bracket strings, unlike parseScoreValue', () => {
+    expect(parseScoringVersion('>7')).toBeNull();
+    expect(parseScoreValue('>7')).toBe(7);
+  });
+});
+
+describe('resolveRunScoringVersion', () => {
+  it('reads the run scoring version', () => {
+    expect(resolveRunScoringVersion(new Map([[SCORE_NAME.SCORING_VERSION, '7']]))).toBe(7);
+  });
+
+  it('returns null for missing scoring version', () => {
+    expect(resolveRunScoringVersion(new Map([['roarScore', '500']]))).toBeNull();
+  });
+
+  it('returns null for a non-integer scoring version', () => {
+    expect(resolveRunScoringVersion(new Map([[SCORE_NAME.SCORING_VERSION, '>7']]))).toBeNull();
   });
 });
 
@@ -193,6 +242,32 @@ describe('getSupportLevel', () => {
       expect(getSupportLevel({ grade: '3', percentile: 50, rawScore: 500, taskSlug: 'swr', scoringVersion: 6 })).toBe(
         'achievedSkill',
       );
+    });
+
+    it('pa v5 uses [40, 20] cutoffs', () => {
+      expect(getSupportLevel({ grade: '3', percentile: 40, rawScore: 480, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 39, rawScore: 480, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 20, rawScore: 480, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'needsExtraSupport',
+      );
+    });
+
+    it('pa v3 and null scoring version use legacy [50, 25] cutoffs', () => {
+      for (const scoringVersion of [null, 3]) {
+        expect(getSupportLevel({ grade: '3', percentile: 50, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'achievedSkill',
+        );
+        expect(getSupportLevel({ grade: '3', percentile: 49, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'developingSkill',
+        );
+        expect(getSupportLevel({ grade: '3', percentile: 25, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'needsExtraSupport',
+        );
+      }
     });
 
     it('swr v1 uses legacy [50, 25] cutoffs', () => {
@@ -388,32 +463,18 @@ describe('getSupportLevel', () => {
       );
     });
 
-    it('pa legacy (v0-v2): above=55, some=45', () => {
-      expect(
-        getSupportLevel({ grade: '8', percentile: null, rawScore: 55, taskSlug: 'pa', scoringVersion: null }),
-      ).toBe('achievedSkill');
-      expect(
-        getSupportLevel({ grade: '8', percentile: null, rawScore: 50, taskSlug: 'pa', scoringVersion: null }),
-      ).toBe('developingSkill');
-      expect(
-        getSupportLevel({ grade: '8', percentile: null, rawScore: 45, taskSlug: 'pa', scoringVersion: null }),
-      ).toBe('needsExtraSupport');
-    });
-
-    it('pa v3-v4: above=480, some=420', () => {
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 480, taskSlug: 'pa', scoringVersion: 3 })).toBe(
-        'achievedSkill',
-      );
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 450, taskSlug: 'pa', scoringVersion: 3 })).toBe(
-        'developingSkill',
-      );
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 420, taskSlug: 'pa', scoringVersion: 3 })).toBe(
-        'needsExtraSupport',
-      );
-      // v4 also uses the same thresholds
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 480, taskSlug: 'pa', scoringVersion: 4 })).toBe(
-        'achievedSkill',
-      );
+    it('pa v3 and null scoring version: above=55, some=45', () => {
+      for (const scoringVersion of [null, 3]) {
+        expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'achievedSkill',
+        );
+        expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 50, taskSlug: 'pa', scoringVersion })).toBe(
+          'developingSkill',
+        );
+        expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 45, taskSlug: 'pa', scoringVersion })).toBe(
+          'needsExtraSupport',
+        );
+      }
     });
 
     it('pa v5: above=480, some=420', () => {
@@ -629,14 +690,13 @@ describe('getRawScoreThreshold', () => {
     expect(getRawScoreThreshold('sre-es', null)).toBeNull();
   });
 
-  it('returns pa legacy thresholds', () => {
+  it('returns pa total-correct thresholds through v3', () => {
     expect(getRawScoreThreshold('pa', null)).toEqual({ above: 55, some: 45 });
     expect(getRawScoreThreshold('pa', 2)).toEqual({ above: 55, some: 45 });
+    expect(getRawScoreThreshold('pa', 3)).toEqual({ above: 55, some: 45 });
   });
 
-  it('returns pa updated thresholds for v >= 3', () => {
-    expect(getRawScoreThreshold('pa', 3)).toEqual({ above: 480, some: 420 });
-    expect(getRawScoreThreshold('pa', 4)).toEqual({ above: 480, some: 420 });
+  it('returns pa scaled-IRT thresholds for v5', () => {
     expect(getRawScoreThreshold('pa', 5)).toEqual({ above: 480, some: 420 });
   });
 
@@ -680,10 +740,12 @@ describe('getSupportThreshold', () => {
   });
 
   it('resolves the support range for other percentile-then-rawscore tasks', () => {
-    // swr flips at v7, pa at v4 — both use developing 25 (legacy) → 75, 20 (updated) → 80.
+    // swr flips at v7, pa at v5 — both use developing 25 (legacy) → 75, 20 (updated) → 80.
     expect(getSupportThreshold('swr', null)).toBe(75);
     expect(getSupportThreshold('swr', 7)).toBe(80);
     expect(getSupportThreshold('pa', null)).toBe(75);
+    expect(getSupportThreshold('pa', 3)).toBe(75);
+    expect(getSupportThreshold('pa', 5)).toBe(80);
   });
 
   it('returns null for tasks without a percentile-then-rawscore classification', () => {
@@ -720,6 +782,27 @@ describe('resolveScoreFieldNames', () => {
       expect(result.standardScoreFieldNames).toContain('standardScore');
       expect(result.standardScoreFieldNames).toContain('sprStandardScore');
       expect(result.rawScoreFieldNames).toContain('sreScore');
+    });
+  });
+
+  describe('grade normalization', () => {
+    // The grade argument accepts what `getSupportLevel` accepts, so callers can
+    // hand both the same value instead of converting for one and not the other.
+    it('accepts a numeric grade string', () => {
+      expect(resolveScoreFieldNames('sre', '3', 3).percentileFieldNames).toEqual(
+        resolveScoreFieldNames('sre', 3, 3).percentileFieldNames,
+      );
+    });
+
+    it('accepts a grade enum string, mapping it through getGradeAsNumber', () => {
+      // Kindergarten maps to 0, i.e. below the grade-6 branch.
+      expect(resolveScoreFieldNames('sre', 'Kindergarten', 3).percentileFieldNames).toEqual(['tosrecPercentile']);
+    });
+
+    it('treats a non-numeric grade the same as null', () => {
+      expect(resolveScoreFieldNames('sre', 'Ungraded', 3).percentileFieldNames).toEqual(
+        resolveScoreFieldNames('sre', null, 3).percentileFieldNames,
+      );
     });
   });
 
@@ -825,7 +908,7 @@ describe('resolveScoreFieldNames', () => {
     const result = resolveScoreFieldNames('cva', 3);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
-    expect(result.rawScoreFieldNames).toContain('totalCorrect');
+    expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('resolves roar-inference fields', () => {
@@ -839,7 +922,7 @@ describe('resolveScoreFieldNames', () => {
     const result = resolveScoreFieldNames('morphology', 3);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
-    expect(result.rawScoreFieldNames).toContain('totalCorrect');
+    expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('resolves trog fields', () => {
@@ -1061,5 +1144,203 @@ describe('getScoreDisplay', () => {
       label: 'percentCorrect',
       range: { min: 0, max: 100 },
     });
+  });
+
+  // Force raw-score fallback to test the raw score value range for different scoring versions
+  const paRawScoreAt = (scoringVersion: number) =>
+    getScoreDisplay({
+      taskSlug: 'pa',
+      gradeLevel: 8,
+      scoringVersion,
+      scores: { rawScore: 200, percentile: null, standardScore: null },
+    });
+
+  it('resolves the raw score range for the scoring version of the run', () => {
+    expect(paRawScoreAt(4)).toMatchObject({ scoreType: 'rawScore', range: { min: 0, max: 57 } });
+    expect(paRawScoreAt(5)).toMatchObject({ scoreType: 'rawScore', range: { min: 40, max: 733 } });
+  });
+
+  describe('sre display ranges', () => {
+    const sreDisplayAt = (args: {
+      scoringVersion: number | null;
+      gradeLevel: number | null;
+      scores: { rawScore: number | null; percentile: number | null; standardScore: number | null };
+    }) => getScoreDisplay({ taskSlug: 'sre', ...args });
+
+    // Force the raw-score fallback (grade >= 6, no standard score) so the
+    // version-keyed rawScore range is the thing under test.
+    const sreRawScoreAt = (scoringVersion: number | null) =>
+      sreDisplayAt({
+        scoringVersion,
+        gradeLevel: 8,
+        scores: { rawScore: 480, percentile: null, standardScore: null },
+      });
+
+    it('resolves the unversioned percentile and standard score ranges', () => {
+      const scores = { rawScore: 500, percentile: 45, standardScore: 98 };
+      expect(sreDisplayAt({ scoringVersion: 5, gradeLevel: 3, scores })).toEqual({
+        scoreType: 'percentile',
+        value: 45,
+        label: 'percentile',
+        range: { min: 0, max: 99 },
+      });
+      expect(sreDisplayAt({ scoringVersion: 5, gradeLevel: 6, scores })).toEqual({
+        scoreType: 'standardScore',
+        value: 98,
+        label: 'standardScore',
+        range: { min: 0, max: 180 },
+      });
+    });
+
+    it('resolves the raw score range for the scoring version of the run', () => {
+      expect(sreRawScoreAt(5)).toMatchObject({ scoreType: 'rawScore', range: { min: 300, max: 967 } });
+      expect(sreRawScoreAt(4)).toMatchObject({ scoreType: 'rawScore', range: { min: 0, max: 130 } });
+      expect(sreRawScoreAt(null)).toMatchObject({ scoreType: 'rawScore', range: { min: 0, max: 130 } });
+
+      expect(
+        sreDisplayAt({
+          scoringVersion: 5,
+          gradeLevel: 8,
+          scores: { rawScore: null, percentile: null, standardScore: null },
+        }),
+      ).toEqual({ scoreType: 'rawScore', value: null, label: 'rawScore', range: { min: 300, max: 967 } });
+    });
+  });
+});
+
+describe('getScoreRange', () => {
+  describe('rawScore (versioned)', () => {
+    it('resolves the range for the scoring version', () => {
+      expect(getScoreRange('sre', 'rawScore', 0)).toEqual({ min: 0, max: 130 });
+      expect(getScoreRange('sre', 'rawScore', 5)).toEqual({ min: 300, max: 967 });
+      expect(getScoreRange('pa', 'rawScore', 5)).toEqual({ min: 40, max: 733 });
+    });
+
+    it('falls back to the lower tier for a version below the higher minVersion', () => {
+      expect(getScoreRange('sre', 'rawScore', 4)).toEqual({ min: 0, max: 130 });
+      expect(getScoreRange('pa', 'rawScore', 4)).toEqual({ min: 0, max: 57 });
+    });
+
+    it('treats a null scoring version as v0', () => {
+      expect(getScoreRange('sre', 'rawScore', null)).toEqual({ min: 0, max: 130 });
+    });
+
+    it('returns null when no tier covers the version', () => {
+      // sre-es declares a raw range only from v1, so a legacy run has no scale.
+      expect(getScoreRange('sre-es', 'rawScore', 0)).toBeNull();
+    });
+  });
+
+  describe('unversioned score types', () => {
+    it('ignores the scoring version', () => {
+      expect(getScoreRange('sre', 'percentile', 0)).toEqual({ min: 0, max: 99 });
+      expect(getScoreRange('sre', 'percentile', 5)).toEqual({ min: 0, max: 99 });
+      expect(getScoreRange('sre', 'standardScore', 0)).toEqual({ min: 0, max: 180 });
+    });
+
+    it('returns null for a score type the config does not declare', () => {
+      expect(getScoreRange('swr', 'percentCorrect', 7)).toBeNull();
+    });
+  });
+
+  it('returns null for an unknown task', () => {
+    expect(getScoreRange('not-a-task', 'rawScore', 1)).toBeNull();
+  });
+});
+
+describe('extractScoringVersions', () => {
+  it('maps task variant IDs to their scoring version', () => {
+    const versions = extractScoringVersions([
+      { taskVariantId: 'variant-1', name: 'scoringVersion', value: 7 },
+      { taskVariantId: 'variant-2', name: 'scoringVersion', value: '1' },
+    ]);
+
+    expect(versions.get('variant-1')).toBe(7);
+    expect(versions.get('variant-2')).toBe(1);
+  });
+
+  it('ignores parameters that are not scoringVersion', () => {
+    const versions = extractScoringVersions([{ taskVariantId: 'variant-1', name: 'corpus', value: 3 }]);
+
+    expect(versions.size).toBe(0);
+  });
+
+  it('records no version when the value is not an integer', () => {
+    const versions = extractScoringVersions([
+      { taskVariantId: 'variant-1', name: 'scoringVersion', value: 'abc' },
+      { taskVariantId: 'variant-2', name: 'scoringVersion', value: 1.5 },
+      { taskVariantId: 'variant-3', name: 'scoringVersion', value: undefined },
+      { taskVariantId: 'variant-4', name: 'scoringVersion', value: null },
+      { taskVariantId: 'variant-5', name: 'scoringVersion', value: '' },
+    ]);
+
+    expect(versions.size).toBe(0);
+  });
+
+  it('takes the last row when a variant has duplicate parameters', () => {
+    const versions = extractScoringVersions([
+      { taskVariantId: 'variant-1', name: 'scoringVersion', value: 6 },
+      { taskVariantId: 'variant-1', name: 'scoringVersion', value: 7 },
+    ]);
+
+    expect(versions.get('variant-1')).toBe(7);
+  });
+});
+
+describe('resolveNumericScore', () => {
+  it('returns the first field name present in the score map', () => {
+    const scores = new Map([
+      ['percentile', '45'],
+      ['sprPercentile', '80'],
+    ]);
+
+    expect(resolveNumericScore(scores, ['sprPercentile', 'percentile'])).toBe(80);
+    expect(resolveNumericScore(scores, ['percentile', 'sprPercentile'])).toBe(45);
+  });
+
+  it('skips absent names', () => {
+    const scores = new Map([['percentile', '45']]);
+
+    expect(resolveNumericScore(scores, ['missing', 'percentile'])).toBe(45);
+  });
+
+  it('skips present-but-unparseable values', () => {
+    const scores = new Map([
+      ['percentile', 'not-a-number'],
+      ['sprPercentile', '80'],
+    ]);
+
+    expect(resolveNumericScore(scores, ['percentile', 'sprPercentile'])).toBe(80);
+  });
+
+  it('parses angle-bracket strings', () => {
+    expect(resolveNumericScore(new Map([['percentile', '>99']]), ['percentile'])).toBe(99);
+  });
+
+  it('returns null when no name resolves', () => {
+    expect(resolveNumericScore(new Map([['percentile', '45']]), ['missing'])).toBeNull();
+    expect(resolveNumericScore(new Map(), ['percentile'])).toBeNull();
+  });
+});
+
+describe('resolveVersionedEntry', () => {
+  const tiers = [
+    { minVersion: 5, width: 65 },
+    { minVersion: 0, width: 10 },
+  ];
+
+  it('returns the first entry the version satisfies', () => {
+    expect(resolveVersionedEntry(tiers, 5)).toEqual({ minVersion: 5, width: 65 });
+    expect(resolveVersionedEntry(tiers, 6)).toEqual({ minVersion: 5, width: 65 });
+    expect(resolveVersionedEntry(tiers, 4)).toEqual({ minVersion: 0, width: 10 });
+    expect(resolveVersionedEntry(tiers, 0)).toEqual({ minVersion: 0, width: 10 });
+  });
+
+  it('returns undefined when the version is below every minVersion', () => {
+    expect(resolveVersionedEntry([{ minVersion: 1, width: 50 }], 0)).toBeUndefined();
+  });
+
+  it('returns undefined for an empty array', () => {
+    expect(resolveVersionedEntry([], 7)).toBeUndefined();
   });
 });
