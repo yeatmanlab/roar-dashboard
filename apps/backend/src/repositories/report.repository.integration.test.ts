@@ -2622,9 +2622,9 @@ describe('ReportRepository dynamic sorts — #2289', () => {
         percentileCutoffsByVersion: [{ minVersion: 0, cutoffs: { achieved: 50, developing: 25 } }],
         rawScoreThresholdsByVersion: [{ minVersion: 0, thresholds: { some: 20, above: 40 } }],
         percentileBelowGrade: 6,
-        percentileFieldNames: [PERCENTILE_FIELD],
-        rawScoreFieldNames: [],
-        standardScoreFieldNames: [],
+        percentileFieldsByVersion: [{ minVersion: 0, fieldName: PERCENTILE_FIELD }],
+        rawScoreFieldsByVersion: [],
+        standardScoreFieldsByVersion: [],
       };
 
       const achieved = await enrollStudentWithScore(ctx, 'ScoreAchieved', '3', {
@@ -2659,9 +2659,9 @@ describe('ReportRepository dynamic sorts — #2289', () => {
         percentileCutoffsByVersion: [{ minVersion: 0, cutoffs: { achieved: 50, developing: 25 } }],
         rawScoreThresholdsByVersion: [{ minVersion: 0, thresholds: { some: 20, above: 40 } }],
         percentileBelowGrade: null,
-        percentileFieldNames: [],
-        rawScoreFieldNames: [],
-        standardScoreFieldNames: [],
+        percentileFieldsByVersion: [],
+        rawScoreFieldsByVersion: [],
+        standardScoreFieldsByVersion: [],
       };
 
       const achieved = await enrollStudentWithScore(ctx, 'AssessedAchieved', '3', {
