@@ -2,7 +2,7 @@
   <form class="p-fluid flex flex-column row-gap-8" @submit.prevent="handleSubmit()">
     <fieldset class="flex flex-column row-gap-4">
       <legend class="sr-only">Task Details</legend>
-      <TextInput
+      <TextInputLegacy
         id="taskSlug"
         v-model="v$.slug.$model"
         label="Slug"
@@ -11,7 +11,7 @@
         :required="true"
       />
 
-      <TextInput
+      <TextInputLegacy
         id="taskName"
         v-model="v$.name.$model"
         label="Name"
@@ -20,7 +20,7 @@
         :required="true"
       />
 
-      <TextInput
+      <TextInputLegacy
         id="taskNameSimple"
         v-model="v$.nameSimple.$model"
         label="Simple Name"
@@ -29,7 +29,7 @@
         :required="true"
       />
 
-      <TextInput
+      <TextInputLegacy
         id="taskNameTechnical"
         v-model="v$.nameTechnical.$model"
         label="Technical Name"
@@ -38,7 +38,7 @@
         :required="true"
       />
 
-      <TextInput
+      <TextInputLegacy
         id="taskDescription"
         v-model="v$.description.$model"
         label="Description"
@@ -46,7 +46,7 @@
         :errors="v$.description.$errors"
       />
 
-      <TextInput
+      <TextInputLegacy
         id="taskImage"
         v-model="v$.image.$model"
         label="Cover Image URL"
@@ -55,7 +55,7 @@
         :errors="v$.image.$errors"
       />
 
-      <TextInput
+      <TextInputLegacy
         id="taskTutorialVideo"
         v-model="v$.tutorialVideo.$model"
         label="Tutorial Video URL"
@@ -106,7 +106,7 @@ import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvToast from 'primevue/toast';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
-import TextInput from '@/components/Form/TextInput';
+import TextInputLegacy from '@/components/Form/TextInputLegacy';
 import TaskParametersConfigurator from '@/components/TaskParametersConfigurator/TaskParametersConfigurator.vue';
 import { buildTaskConfigFromRows } from '@/helpers/taskConfig';
 import { StatusCodes } from 'http-status-codes';
