@@ -308,6 +308,7 @@ export const TaskScoresSchema = z.object({
   rawScore: z.number().int().nullable(),
   percentile: z.number().int().nullable(),
   standardScore: z.number().int().nullable(),
+  scoringVersion: z.number().int().nullable(),
 });
 
 export type TaskScores = z.infer<typeof TaskScoresSchema>;

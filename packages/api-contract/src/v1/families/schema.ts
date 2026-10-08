@@ -94,6 +94,20 @@ export const FamilyDetailSchema = z.object({
 export type FamilyDetail = z.infer<typeof FamilyDetailSchema>;
 
 /**
+ * Mutable opt-in preferences collected during self-registration.
+ *
+ * This object is strict so newly introduced client fields cannot be silently
+ * accepted before the backend has defined how to persist them.
+ */
+export const RegistrationOptInsSchema = z
+  .object({
+    researchContact: z.boolean(),
+  })
+  .strict();
+
+export type RegistrationOptIns = z.infer<typeof RegistrationOptInsSchema>;
+
+/**
  * Request body for POST /families.
  *
  * This endpoint registers a new caretaker (a `users` row with

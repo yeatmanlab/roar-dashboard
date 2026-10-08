@@ -66,6 +66,7 @@ export const SCORE_NAME = {
   THETA_SE: 'thetaSE', // computed composite_foundational input
   THETA_SE_RAW: 'thetaSERaw', // raw composite SE — best-run recompute ranks on this
   NUM_ATTEMPTED: 'numAttempted',
+  SCORING_VERSION: 'scoringVersion',
   // Normed composite scores resolved from the lookup table (computed, composite_foundational).
   // Names mirror the columns the assessments already write for their per-task norms.
   PERCENTILE: 'percentile',

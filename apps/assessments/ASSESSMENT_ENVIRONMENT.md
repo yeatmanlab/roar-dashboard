@@ -25,13 +25,16 @@ After that, `npm start` is all you need for day-to-day work. Everything else is 
 
 `npm run setup` checks these for you and prints fix-it instructions, but for reference:
 
+- **Node.js 22 or newer** — check with `node --version`; install from https://nodejs.org (or `brew install node@22` / `nvm install 22`).
 - **Node dependencies** — installed with `npm install` from the monorepo root (setup does this).
 - **Docker** with Compose v2 (`docker compose version` should work). If you don't have it:
   - macOS: `brew install --cask docker`, then launch Docker Desktop (Compose v2 is bundled). Or download from https://www.docker.com/products/docker-desktop/.
   - Ubuntu/Debian: `curl -fsSL https://get.docker.com | sh`, then `sudo usermod -aG docker $USER` and log out/in so you can run Docker without `sudo`. See https://docs.docker.com/engine/install/ubuntu/ for the manual apt steps.
-- **Port 5433 free** — the ephemeral database publishes on host port **5433** by default (deliberately not the standard 5432), so it can run alongside a persistent platform-dev Postgres on 5432. If something already holds 5433, free it or set `ASSESSMENT_PG_PORT` to another port:
-  - Find it: `lsof -i :5433` (macOS) / `ss -tlnp | grep :5433` (Linux)
-  - Usual cause is a leftover assessment container: `docker ps | grep 5433`
+- **Stack host ports free** — the stack binds five host ports, and `npm start` refuses to launch while any of them is taken (it names the holder and how to free it). Every port is deliberately different from the ones the ROAR platform dev stack uses, so the two environments run in parallel:
+  - **5433** — the ephemeral database (the platform Postgres owns 5432). The only overridable port: `ASSESSMENT_PG_PORT=<port> npm start`.
+  - **9097 / 9197 / 9002** — the Firebase Auth emulator, Storage emulator, and Emulator UI (the platform stack owns the canonical 9099/9199).
+  - **4002** — the backend API (the platform backend owns 4000).
+  - Find a holder yourself: `lsof -i :<port>` (macOS) / `ss -tlnp | grep :<port>` (Linux)
 
 ---
 
@@ -44,16 +47,17 @@ cd apps/assessments/roar-swr
 npm run setup
 ```
 
-It walks through four steps and finishes by pointing you at the next command:
+It walks through five steps and finishes by pointing you at the next command:
 
-1. **Checks Docker** (Compose v2). If missing, prints install options and flags it as a blocker — but keeps going, since the remaining steps don't need Docker.
-2. **Checks the ephemeral Postgres host port is free** (`ASSESSMENT_PG_PORT`, default 5433). If it's taken, prints how to find the holder and flags it as a blocker.
-3. **Installs dependencies and builds the platform libraries** from the repo root (`api-contract`, `assessment-schema`, `scoring-tables`, `assessment-sdk`). The assessment dev server bundles these from their built output, so they must exist before the first start. This step can take a few minutes.
-4. **Creates `taskVariantParameters.json`** from the committed example (never overwrites an existing one — see [Configuring task variants](#configuring-task-variants)).
+1. **Checks the Node.js version** (22+). npm alone only warns and continues on old Node, and the eventual failure looks unrelated.
+2. **Checks Docker** (Compose v2, and that the daemon is actually running). If missing or stopped, prints install/launch options and flags it as a blocker — but keeps going, since the remaining steps don't need Docker.
+3. **Checks every host port the stack binds is free** — the database port (`ASSESSMENT_PG_PORT`, default 5433), the Firebase emulators (9097/9197/9002), and the backend (4002). Each taken port gets a diagnosis naming the holder and is flagged as a blocker.
+4. **Installs dependencies and builds the platform libraries** from the repo root (`api-contract`, `assessment-schema`, `scoring-tables`, `assessment-sdk`). The assessment dev server bundles these from their built output, so they must exist before the first start. This step can take a few minutes.
+5. **Creates `taskVariantParameters.json`** from the committed example (never overwrites an existing one — see [Configuring task variants](#configuring-task-variants)).
 
 Any Docker/port blocker is re-printed in a summary at the end so you resolve it before starting. Once setup is happy, run `npm start`.
 
-> Docker and the Postgres host port are **checked but not required** to finish setup — install/build/copy all run regardless, so you can prep the repo now and sort out Docker later.
+> Docker and the host ports are **checked but not required** to finish setup — install/build/copy all run regardless, so you can prep the repo now and sort out Docker later.
 
 ---
 
@@ -66,30 +70,31 @@ npm start      # Start the shared stack (if needed) and the assessment dev serve
 **Ctrl+C stops only the assessment dev server.** The Docker services (database, backend, Firebase emulators) keep running in the background and your data is preserved. Run `npm start` again to reattach the dev server to the same database — it detects the running stack and skips straight to the dev server.
 
 ```bash
-npm stop       # Stop ALL Docker services and permanently DELETE the database
+npm stop       # Stop all Docker services — and choose what happens to the database
 ```
 
-`npm stop` tears down the containers **and their volumes** — every run, trial, score, and uploaded recording is gone. Use it when you want a clean slate; don't use it to "restart."
+`npm stop` asks one question: **keep the local database (runs, trials, scores, recordings), or delete it?** Keeping is the default — a plain Enter picks it — and stops the containers while the data survives; the next `npm start` brings everything back exactly as you left it. Choosing delete tears down containers **and volumes** for a completely clean slate. Note that uploaded recordings live in the Storage emulator's memory, so they end with the emulator container either way.
 
-Because the teardown is irreversible, both `npm stop` and `npm restart` **prompt for confirmation** before wiping the database. Declining is clean — it exits without an error and changes nothing: `npm stop` doesn't tear down, and `npm restart` neither tears down nor starts. Bypass the prompt with `npm run stop -- --yes` (or `npm run restart -- --yes`); non-interactive shells (CI, pipes) proceed without prompting.
+`npm restart` is always the clean-slate path: it confirms the wipe once, tears everything down, and starts fresh. Declining is clean — it exits without an error and changes nothing.
+
+For scripting: `npm run stop -- --keep-data` keeps without asking, `npm run stop -- --yes` (or `restart -- --yes`) deletes without asking. Non-interactive shells (CI, pipes) keep the data.
 
 ---
 
 ## Switching between assessments
 
-The Docker stack — database, backend, and Firebase emulators — is **shared across all assessments** and keeps running in the background; only the dev server on port 8000 is per-assessment. So moving from one assessment to another (say `roar-swr` → `roar-pa`) tears nothing down:
+The Docker stack — database, backend, and Firebase emulators — is **shared across all assessments** and keeps running in the background; only the dev server on port 8000 is per-assessment. Moving from one assessment to another (say `roar-swr` → `roar-pa`) is:
 
 1. **Stop the current dev server** with Ctrl+C — frees port 8000; the stack and your data stay up.
-2. **`cd` to the other assessment** (e.g. `cd ../roar-pa`).
-3. **Seed it into the running database:** `npm run seed:tasks`. The stack only auto-seeds the _first_ assessment that brought it up, so each additional assessment you switch to needs its task(s)/variants seeded once — until then it starts but can't resolve a variant. (First time on that assessment, create its config first: `cp taskVariantParameters.example.json taskVariantParameters.json`.)
-4. **`npm start`** — it detects the running stack and launches this assessment's dev server against the same database.
+2. **`cd` to the other assessment** (e.g. `cd ../roar-pa`) and **`npm start`** — it detects the running stack, makes sure this assessment's tasks and variants are seeded (idempotent, a few seconds), and launches its dev server against the same database.
+
+The only first-time prerequisite is the assessment's `taskVariantParameters.json` (`npm run setup`, or `cp taskVariantParameters.example.json taskVariantParameters.json`) — `npm start` names that fix if the file is missing.
 
 A few things follow from the stack being shared and persistent:
 
-- **Switching back needs no re-seed.** Seeding is additive and the database persists — it survives Ctrl+C; only `npm stop` / `npm restart` wipe it. Once an assessment is seeded, returning to it is just Ctrl+C → `cd` → `npm start`.
+- **Every switch path is the same two commands.** Whether the stack kept running (Ctrl+C), was stopped keeping data, or was wiped: `cd` + `npm start` does the right thing — the bring-up path seeds via the migration container, the fast path re-runs the same idempotent seeder from the host. The database survives Ctrl+C and a data-keeping `npm stop`; only `npm restart` (or choosing delete at `npm stop`) wipes it.
 - **Runs from both assessments coexist** in the same database — handy for cross-assessment work.
-- **No full `npm run setup` needed.** The platform libraries are built once at the repo root and shared, so only the per-assessment `taskVariantParameters.json` (and its seed) is assessment-specific. Running `setup` mid-switch would also spuriously flag port 5433 as "in use" — that's your own running stack.
-- **If you fully stopped the stack** (`npm stop`) between assessments, skip step 3: the next `npm start` brings the stack up fresh and auto-seeds whichever assessment you start it from.
+- **No full `npm run setup` needed.** The platform libraries are built once at the repo root and shared, so only the per-assessment `taskVariantParameters.json` (and its seed) is assessment-specific. Running `setup` mid-switch would also spuriously flag the stack's ports as "in use" — that's your own running stack.
 
 ---
 
@@ -97,15 +102,15 @@ A few things follow from the stack being shared and persistent:
 
 Run all of these from the assessment's directory. This is the whole surface — the other scripts in `package.json` (`build`, `build:staging`, `dev`, etc.) are for CI and platform developers; ignore them.
 
-| Script               | What it does                                                                             | When to use                                                                                                                   |
-| -------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `npm run setup`      | Check prerequisites, install deps, build platform libraries, create the config file      | Once, on first setup (or on a fresh clone)                                                                                    |
-| `npm start`          | Start the shared stack (if not already up) and the assessment dev server                 | Every time you sit down to work                                                                                               |
-| `npm run seed:tasks` | Seed **new** variants from `taskVariantParameters.json` into the running DB, no teardown | After editing `taskVariantParameters.json`, to pick up new variants **without losing your data**                              |
-| `npm stop`           | Stop all Docker services and delete the database volume                                  | When you want a completely clean slate                                                                                        |
-| `npm restart`        | Confirmed full teardown (**deletes data**) and fresh start                               | When the stack is wedged and `seed:tasks` isn't the issue. **Destroys your data**                                             |
-| `npm run update`     | Rebuild the host platform libraries (SDK / schema / scoring-tables)                      | After `git pull` brings changes to those packages (see [Updating after a pull](#updating-after-a-pull))                       |
-| `npm run rebuild`    | Force a no-cache rebuild of the Docker images                                            | After changes to the backend, migrations, Dockerfile, or shared deps (see [Rebuilding images](#rebuilding-the-docker-images)) |
+| Script               | What it does                                                                                                                                      | When to use                                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `npm run setup`      | Check prerequisites, install deps, build platform libraries, create the config file                                                               | Once, on first setup (or on a fresh clone)                                                                                    |
+| `npm start`          | Start the shared stack (if not already up), ensure this assessment is seeded, and run its dev server                                              | Every time you sit down to work                                                                                               |
+| `npm run seed:tasks` | Seed **new** variants from `taskVariantParameters.json` into the running DB, no teardown (add `-- --refresh-params` to also update existing ones) | After editing `taskVariantParameters.json`, to pick up new or changed variants **without losing your data**                   |
+| `npm stop`           | Stop all Docker services; asks whether to keep or delete the database (default: keep)                                                             | Pausing work (keep), or a completely clean slate (delete)                                                                     |
+| `npm restart`        | Confirmed full teardown (**deletes data**) and fresh start                                                                                        | When the stack is wedged and `seed:tasks` isn't the issue. **Destroys your data**                                             |
+| `npm run update`     | Rebuild the host platform libraries (api-contract / SDK / schema / scoring-tables)                                                                | After `git pull` brings changes to those packages (see [Updating after a pull](#updating-after-a-pull))                       |
+| `npm run rebuild`    | Rebuild the Docker images (cached) and apply them to a running stack                                                                              | After changes to the backend, migrations, Dockerfile, or shared deps (see [Rebuilding images](#rebuilding-the-docker-images)) |
 
 ---
 
@@ -113,10 +118,10 @@ Run all of these from the assessment's directory. This is the whole surface — 
 
 | Process                                         | URL                   |
 | ----------------------------------------------- | --------------------- |
-| Firebase emulator — Auth                        | http://localhost:9099 |
-| Firebase emulator — Storage (recording uploads) | http://localhost:9199 |
-| Firebase emulator — UI (browse recordings)      | http://localhost:9000 |
-| ROAR backend (HTTP)                             | http://localhost:4000 |
+| Firebase emulator — Auth                        | http://localhost:9097 |
+| Firebase emulator — Storage (recording uploads) | http://localhost:9197 |
+| Firebase emulator — UI (browse recordings)      | http://localhost:9002 |
+| ROAR backend (HTTP)                             | http://localhost:4002 |
 | Assessment dev server                           | http://localhost:8000 |
 | PostgreSQL                                      | localhost:5433        |
 
@@ -215,7 +220,7 @@ Local leniency is deliberate: your own seed need not contain the canonical varia
 
 ### Adding or changing variants without losing data
 
-Here's the catch: the seed only runs automatically **once**, inside that migration container at bring-up. Editing `taskVariantParameters.json` afterward and running `npm start` again does **nothing** — when the stack is already up, `npm start` skips straight to the dev server and never re-runs the seed. And `npm restart` / `npm stop` re-seed only because they wipe the database volume first, taking every run/trial/score you've generated with them.
+Here's the catch: the seed only runs automatically **once**, inside that migration container at bring-up. Editing `taskVariantParameters.json` afterward and running `npm start` again does **nothing** — when the stack is already up, `npm start` skips straight to the dev server and never re-runs the seed. And `npm restart` (or a data-deleting `npm stop`) re-seeds only because it wipes the database volume first, taking every run/trial/score you've generated with it.
 
 Use **`npm run seed:tasks`** instead. It runs the same idempotent, additive-by-name seeder against the **live** database, so newly added variants appear immediately while your generated data stays put:
 
@@ -228,15 +233,23 @@ npm run seed:tasks
 
 It requires the environment to be running (`npm start` first) — it seeds into the live container database. This is the recommended way to iterate on variants.
 
+**Changing a parameter on an _existing_ variant** needs one extra flag: a plain `npm run seed:tasks` matches variants by name and skips ones that already exist, so an edited value would silently not apply. Re-apply the file's parameters to existing variants with:
+
+```bash
+npm run seed:tasks -- --refresh-params
+```
+
+Your generated runs/trials/scores still stay put — only the variant parameters are updated.
+
 ---
 
 ## Updating after a pull
 
 After `git pull` brings in new code, which command you need depends on what changed:
 
-- **Platform libraries the dev server bundles** (`assessment-sdk`, `assessment-schema`, `scoring-tables`): run **`npm run update`** to rebuild them on the host, then restart the dev server (Ctrl+C, `npm start`). Which libraries `update` rebuilds varies by assessment — check its `package.json`.
-- **Backend, migrations, `api-contract`, the Dockerfile, or root dependencies**: these run inside the Docker images, so run **`npm run rebuild`** (see below).
-- **The `assessment-schema` package** is used by _both_ the host dev server and the backend, so a change there can need **both** `update` and `rebuild`.
+- **Platform libraries the dev server bundles** (`api-contract`, `assessment-sdk`, `assessment-schema`, `scoring-tables`): run **`npm run update`** to rebuild them on the host, then restart the dev server (Ctrl+C, `npm start`).
+- **Backend, migrations, the Dockerfile, or root dependencies**: these run inside the Docker images, so run **`npm run rebuild`** (see below).
+- **`api-contract` and `assessment-schema`** are used by _both_ the host dev server and the backend, so a change there needs **both** `update` and `rebuild`.
 
 When in doubt after a large pull, `npm run rebuild` then `npm run update` is the safe combination.
 
@@ -244,11 +257,13 @@ When in doubt after a large pull, `npm run rebuild` then `npm run update` is the
 
 ## Rebuilding the Docker images
 
-Docker caches build layers, so changes to files copied into an image aren't always picked up by a normal start. Force a clean rebuild with:
+`npm start` never rebuilds images once they exist, so changes to files copied into an image need an explicit rebuild:
 
 ```bash
 npm run rebuild
 ```
+
+The build is cached — routine post-pull rebuilds take seconds. For the rare case where a cached layer itself is stale, force a clean build with `npm run rebuild -- --no-cache`.
 
 Run this after changing any of the following:
 
@@ -258,19 +273,35 @@ Run this after changing any of the following:
 - `packages/assessment-schema/` — shared assessment data schemas
 - Root `package.json` / `package-lock.json` — dependency changes
 
-The environment doesn't need to be stopped first — the rebuild only updates the images. Run `npm start` afterward to bring the environment up with the new images.
+The environment doesn't need to be stopped first: when the stack is running, `rebuild` finishes by applying the new images itself (only services whose image changed are recreated; the database survives, while the emulator's in-memory auth users and recordings reset). With the stack down, the next `npm start` uses the new images.
+
+---
+
+## Running alongside the platform dev environment
+
+The assessment environment and the ROAR platform dev stack bind disjoint host ports, so they run in parallel — no need to stop one to use the other. Engineers who want to serve an assessment against the **platform** stack (host-run backend on 4000, canonical emulator on 9099) instead of this environment opt in explicitly:
+
+```bash
+FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npm run dev
+```
+
+The preflight detects the common mistakes (missing opt-in, missing `FIREBASE_AUTH_EMULATOR_HOST` in `apps/backend/.env`) and prints the fix.
 
 ---
 
 ## Troubleshooting
 
-**"Port 5433 is already in use."** Something is holding the ephemeral database's host port — usually a leftover assessment container (`docker ps | grep 5433`) or, rarely, another service. Stop it, or run with a different port: `ASSESSMENT_PG_PORT=<port> npm start`.
+**"Port 5433 is already in use."** Something is holding the ephemeral database's host port — the error names the holder. Stop it, or run with a different port: `ASSESSMENT_PG_PORT=<port> npm start`.
+
+**"Port 9097 / 9197 / 9002 / 4002 is already in use."** Another program on your machine is holding a Firebase emulator, Emulator UI, or backend port. These ports aren't overridable: stop the holder (the error names it), then `npm start`. The ROAR platform dev stack is never the culprit — the two environments use disjoint ports and run in parallel.
 
 **"Port 8000 is already in use."** A previous dev server (or another assessment) is still running. Stop that process, then `npm start`.
 
 **"taskVariantParameters.json not found."** You skipped the config step. Run `npm run setup`, or copy the example manually (see [Configuring task variants](#configuring-task-variants)).
 
-**The migration container failed / "Unknown task."** The assessment isn't registered in the seed config registry, or its `taskVariantParameters.json` has an invalid parameter value. The error names the available tasks and the offending entry. Fix the config or the params file, then `npm run rebuild` and `npm start`.
+**The migration container failed with an invalid parameter value.** `npm start` prints the seed container's own error, which names the offending `taskVariantParameters.json` entry. Fix the file, then run `npm start` again — the file is read from your directory at seed time, so no rebuild is needed.
+
+**The migration container failed with "Unknown task."** The assessment isn't registered in the backend's seed config registry — the error names the tasks it knows about. Registering it is a platform-developer change (a seed config in `apps/backend/seeds/configs/`), followed by `npm run rebuild` and `npm start`.
 
 **"My new variant didn't show up."** Editing `taskVariantParameters.json` doesn't re-seed on its own. Run `npm run seed:tasks` (preserves your data) rather than `npm restart` (wipes it). See [Adding or changing variants without losing data](#adding-or-changing-variants-without-losing-data).
 
@@ -282,7 +313,7 @@ The environment doesn't need to be stopped first — the rebuild only updates th
 
 **A code change isn't taking effect.** Host library change → `npm run update`; backend/migration/Dockerfile change → `npm run rebuild`. See [Updating after a pull](#updating-after-a-pull).
 
-**"Failed to bind host port 9000/9099/9199" — or the Firebase emulator container never starts.** Another Firebase emulator already holds those ports. The usual culprit is a persistent platform-dev stack (its auth emulator publishes 9099) or a hand-started `firebase emulators:start`; this stack publishes all three on the host, so the two cannot run at once. Stop the other emulator, then `npm start`. One wrinkle if the first attempt already created the container: starting it again can leave it running with no published ports (`docker port firebase-emulator` prints nothing, and the emulator is unreachable from the host even though the container reports healthy). Recreate it rather than restarting it — `docker compose -f docker-compose.assessment.yml up -d --force-recreate firebase-emulator`.
+**"Failed to bind host port 9002/9097/9197" — or the Firebase emulator container never starts.** Another program already holds those ports (a hand-started `firebase emulators:start`, or an unrelated service). Stop it, then `npm start`. One wrinkle if the first attempt already created the container: starting it again can leave it running with no published ports (`docker port firebase-emulator` prints nothing, and the emulator is unreachable from the host even though the container reports healthy). Recreate it rather than restarting it — `docker compose -f docker-compose.assessment.yml up -d --force-recreate firebase-emulator`.
 
 **Stale containers / name or port conflicts on start.** `npm start` force-removes known stale containers before bringing the stack up, but if it's still wedged, `npm stop` (deletes data) then `npm start` gives a clean slate.
 
@@ -297,7 +328,7 @@ The environment doesn't need to be stopped first — the rebuild only updates th
 | Host                | `localhost`                   |
 | Port                | `5433` (`ASSESSMENT_PG_PORT`) |
 | Username            | `postgres`                    |
-| Password            | _(none)_                      |
+| Password            | `postgres`                    |
 | Core database       | `roar_core`                   |
 | Assessment database | `roar_assessment`             |
 | SSL mode            | `disable`                     |

@@ -320,6 +320,7 @@ export interface ServiceTaskScores {
   rawScore: number | null;
   percentile: number | null;
   standardScore: number | null;
+  scoringVersion: number | null;
 }
 
 /** A single subscore entry. */

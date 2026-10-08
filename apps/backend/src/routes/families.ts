@@ -3,6 +3,7 @@ import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { FamiliesContract } from '@roar-platform/api-contract';
 import { FamiliesController } from '../controllers/families.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
+import { asTsRestMiddleware } from '../middleware/auth-guard/as-ts-rest-middleware';
 
 const s = initServer();
 
@@ -23,18 +24,17 @@ export function registerFamiliesRoutes(routerInstance: Router) {
       handler: async ({ body }) => FamiliesController.create(body),
     },
     get: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req, params }) =>
         FamiliesController.getById({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.familyId),
     },
     addChildren: {
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { familyId }, body }) =>
         FamiliesController.addChildren(user!, familyId, body),
     },
     listUsers: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
-      middleware: [AuthGuardMiddleware],
+      middleware: [asTsRestMiddleware(AuthGuardMiddleware)],
       handler: async ({ req: { user }, params: { familyId }, query }) =>
         FamiliesController.listUsers(user!, familyId, query),
     },
