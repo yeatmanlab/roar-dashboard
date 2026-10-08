@@ -100,7 +100,9 @@ describe('AnonTokenMiddleware', () => {
     expect(response.body.traceId).toBeDefined();
   });
 
-  it('returns 401 when token sign_in_provider is not "anonymous"', async () => {
+  // A valid token of the wrong credential type is an authorization failure, not a missing
+  // credential: the caller is authenticated, and signing in again cannot change the outcome.
+  it('returns 403 when token sign_in_provider is not "anonymous"', async () => {
     const decodedUser = buildAnonymousDecodedUser('password');
     authServiceMock.mockResolvedValue(decodedUser);
 
@@ -108,14 +110,14 @@ describe('AnonTokenMiddleware', () => {
     const response = await request(app)
       .post('/users/anonymous')
       .set('Authorization', 'Bearer password-token')
-      .expect(StatusCodes.UNAUTHORIZED);
+      .expect(StatusCodes.FORBIDDEN);
 
-    expect(response.body.message).toBe(ApiErrorMessage.UNAUTHORIZED);
-    expect(response.body.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    expect(response.body.message).toBe(ApiErrorMessage.FORBIDDEN);
+    expect(response.body.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     expect(response.body.traceId).toBeDefined();
   });
 
-  it('returns 401 when token sign_in_provider is "google.com"', async () => {
+  it('returns 403 when token sign_in_provider is "google.com"', async () => {
     const decodedUser = buildAnonymousDecodedUser('google.com');
     authServiceMock.mockResolvedValue(decodedUser);
 
@@ -123,13 +125,13 @@ describe('AnonTokenMiddleware', () => {
     const response = await request(app)
       .post('/users/anonymous')
       .set('Authorization', 'Bearer google-token')
-      .expect(StatusCodes.UNAUTHORIZED);
+      .expect(StatusCodes.FORBIDDEN);
 
-    expect(response.body.message).toBe(ApiErrorMessage.UNAUTHORIZED);
-    expect(response.body.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    expect(response.body.message).toBe(ApiErrorMessage.FORBIDDEN);
+    expect(response.body.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
   });
 
-  it('returns 401 when claims.firebase is absent from decoded token', async () => {
+  it('returns 403 when claims.firebase is absent from decoded token', async () => {
     const decodedUser = DecodedUserFactory.build({ claims: {} });
     authServiceMock.mockResolvedValue(decodedUser);
 
@@ -137,10 +139,10 @@ describe('AnonTokenMiddleware', () => {
     const response = await request(app)
       .post('/users/anonymous')
       .set('Authorization', 'Bearer no-firebase-claim-token')
-      .expect(StatusCodes.UNAUTHORIZED);
+      .expect(StatusCodes.FORBIDDEN);
 
-    expect(response.body.message).toBe(ApiErrorMessage.UNAUTHORIZED);
-    expect(response.body.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    expect(response.body.message).toBe(ApiErrorMessage.FORBIDDEN);
+    expect(response.body.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
   });
 
   it('logs a warning when a non-anonymous token is presented', async () => {
