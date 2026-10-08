@@ -37,6 +37,7 @@ export const GAME_ROUTES = {
   ROAV_MP_PT: '/game/roav-mp-pt',
   ROAV_RVP: '/game/roav-rvp',
   ROAV_RVP_PT: '/game/roav-rvp-pt',
+  ROAV_CR: '/game/roav-cr',
   CORE_TASKS: '/game/core-tasks/:taskId',
   CORE_TASKS_PT: '/game/core-tasks-pt/:taskId',
   RAN: '/game/ran',
