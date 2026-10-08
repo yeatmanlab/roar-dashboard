@@ -1283,14 +1283,9 @@ const computeAssignmentAndRunData = computed(() => {
             Object.keys(roamAlpacaSubskills).forEach((subskillId) => {
               const subskillInfo = _get(scores, subskillId);
               if (subskillInfo) {
-                let percentCorrect = null;
-                if (typeof subskillInfo.rawScore === 'number' && subskillInfo.numAttempted) {
-                  percentCorrect = `${_round((subskillInfo.rawScore / subskillInfo.numAttempted) * 100)}%`;
-                }
                 // roam-alpaca calculates and returns support level automatically
                 let tagColor = getTagColor(subskillInfo.supportLevel);
                 currRowScores[taskId][subskillId] = {
-                  percentCorrect,
                   tagColor: returnColorByReliability(
                     assessment,
                     subskillInfo.rawScore,

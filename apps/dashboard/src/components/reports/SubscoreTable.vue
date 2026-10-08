@@ -186,7 +186,6 @@ const columns = computed(() => {
     // });
   }
   if (props.taskId === 'roam-alpaca') {
-    const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
     tableColumns.push({
       field: `scores.${props.taskId}.composite.roarScore`,
       header: 'Raw Score',
@@ -196,12 +195,11 @@ const columns = computed(() => {
     });
     Object.entries(roamAlpacaSubskills).forEach(([subskillId, subskill]) => {
       tableColumns.push({
-        field: `scores.${props.taskId}.${subskillId}.percentCorrect`,
+        field: `scores.${props.taskId}.${subskillId}.numCorrect`,
         header: subskill,
         dataType: 'text',
         sort: false,
         tagColor: `scores.${props.taskId}.${subskillId}.tagColor`,
-        ...(gradeEstimate && { gradeEstimate }),
       });
     });
     tableColumns.push({
