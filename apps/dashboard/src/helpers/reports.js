@@ -486,6 +486,7 @@ export const excludeFromScoringTasks = [
   'roam-alpaca-pt',
   'roav-mp-pt',
   'roav-rvp-pt',
+  'roav-rc',
   'symbol-search',
   'symbol-search-pt',
   ...LEVANTE_TASK_IDS_NO_SCORES,
