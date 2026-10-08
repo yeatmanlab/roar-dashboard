@@ -35,7 +35,7 @@ vi.mock('@/composables/usePermissions', () => ({
 }));
 
 vi.mock('@/composables/useSentryLogging', () => ({
-  default: () => ({ logNavEvent: vi.fn() }),
+  default: () => ({ logNavEvent: vi.fn(), logAuthEvent: vi.fn() }),
 }));
 
 import { routes } from './index';

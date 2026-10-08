@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   signInWithEmailAndPassword: vi.fn(),
   getIdToken: vi.fn(),
   getCurrentUser: vi.fn(),
+  authReady: vi.fn(),
   initializeFirekit: vi.fn(),
   setGlobalError: vi.fn(),
 }));
@@ -17,6 +18,7 @@ vi.mock('@/services/AuthService', () => ({
     signInWithEmailAndPassword: mocks.signInWithEmailAndPassword,
     getIdToken: mocks.getIdToken,
     getCurrentUser: mocks.getCurrentUser,
+    authReady: mocks.authReady,
   }),
 }));
 
@@ -358,5 +360,154 @@ describe('authStore.initFirekit', () => {
 
     expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
     expect(authStore.roarfirekit).toBeNull();
+  });
+});
+
+describe('authStore.awaitAuthReady', () => {
+  let authStore;
+
+  const readyState = (overrides = {}) => ({
+    user: null,
+    accessToken: null,
+    isFromRedirect: false,
+    initError: null,
+    redirectError: null,
+    tokenError: null,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setActivePinia(createPinia());
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    authStore = useAuthStore();
+  });
+
+  it('holds the spinner for a session just established by a redirect return', async () => {
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'sso-user' }, isFromRedirect: true }));
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.spinner).toBe(true);
+  });
+
+  it('clears the spinner for a session restored on an ordinary load', async () => {
+    // Regression guard: keying the spinner on session presence instead of
+    // the redirect result left `spinner: true` in the persisted store on
+    // every signed-in reload, with no owner to clear it — SignIn would
+    // render a permanent blur overlay the next time the user landed there
+    // (e.g. after auth expiry). Only a redirect return is mid-sign-in.
+    authStore.spinner = true; // stale persisted value
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'user-1' } }));
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.spinner).toBe(false);
+  });
+
+  it('records a redirect failure and does not hold the spinner', async () => {
+    const redirectError = new Error('auth/account-exists-with-different-credential');
+    mocks.authReady.mockResolvedValue(readyState({ isFromRedirect: true, redirectError }));
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.redirectError).toBe(redirectError);
+    expect(authStore.spinner).toBe(false);
+  });
+
+  it('clears a stale persisted redirectError on a boot without one', async () => {
+    authStore.redirectError = new Error('stale');
+    mocks.authReady.mockResolvedValue(readyState());
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.redirectError).toBeNull();
+  });
+
+  it('writes the access token from the readiness state so the gate opens with it set', async () => {
+    // The guarantee the readiness gate sells: when it resolves, accessToken is
+    // already present — so the SSO readiness page does not read `!accessToken`
+    // on mount and bounce a successful sign-in back to SignIn.
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'user-1' }, accessToken: 'id-token-1' }));
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.accessToken).toBe('id-token-1');
+  });
+
+  it('leaves the access token null for a signed-out boot', async () => {
+    authStore.accessToken = 'stale-token'; // stale persisted value
+    mocks.authReady.mockResolvedValue(readyState());
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.accessToken).toBeNull();
+  });
+
+  it('applies the boot state only once — a second call must not restore the boot token after sign-out', async () => {
+    // The router guard awaits awaitAuthReady on EVERY navigation, and the
+    // service memoizes the boot state. Without memoizing the store-side
+    // continuation, the navigation after a sign-out would write the stale
+    // boot token back over the null the listener wrote.
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'user-1' }, accessToken: 'boot-token' }));
+
+    await authStore.awaitAuthReady();
+    expect(authStore.accessToken).toBe('boot-token');
+
+    // The long-lived listener clears the token on sign-out.
+    authStore.accessToken = null;
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.accessToken).toBeNull();
+    expect(mocks.authReady).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-hold the redirect spinner on a later call', async () => {
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'sso-user' }, isFromRedirect: true }));
+
+    await authStore.awaitAuthReady();
+    expect(authStore.spinner).toBe(true);
+
+    // The post-sign-in flow releases the spinner; the next navigation's gate
+    // call must not re-engage it.
+    authStore.spinner = false;
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.spinner).toBe(false);
+  });
+
+  it('shares one continuation across concurrent callers (initAuth and the guard)', async () => {
+    let resolveReady;
+    mocks.authReady.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveReady = resolve;
+        }),
+    );
+
+    const first = authStore.awaitAuthReady();
+    const second = authStore.awaitAuthReady();
+    resolveReady(readyState({ user: { uid: 'user-1' }, accessToken: 'boot-token' }));
+
+    await Promise.all([first, second]);
+
+    expect(mocks.authReady).toHaveBeenCalledTimes(1);
+    expect(authStore.accessToken).toBe('boot-token');
+  });
+
+  it('degrades to a null token (and logs) when readiness reports a token failure', async () => {
+    // An offline reload with an expired token: the session is present but the
+    // token could not be resolved. The gate must still open (no throw), with a
+    // null token rather than a stale one.
+    authStore.accessToken = 'stale-token';
+    const tokenError = new Error('auth/network-request-failed');
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'user-1' }, accessToken: null, tokenError }));
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.accessToken).toBeNull();
+    expect(console.error).toHaveBeenCalledWith('Error resolving the access token during auth readiness:', tokenError);
   });
 });
