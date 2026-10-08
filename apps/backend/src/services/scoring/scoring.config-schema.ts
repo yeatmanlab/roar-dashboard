@@ -281,13 +281,25 @@ const VersionedDisplayCategorySchema = z.object({
 const ScoreRangeSchema = z.object({ min: z.number(), max: z.number() });
 
 /**
- * Display ranges (dial min/max) per display score type. Not versioned — the
- * dashboard's `getRawScoreRange` is per-task, not per-version.
+ * A versioned display range. Resolved by descending `minVersion`, same as
+ * `displayCategory`, used only for rawScore ranges.
+ */
+const VersionedScoreRangeSchema = z.object({
+  minVersion: z.number().int().min(0),
+  range: ScoreRangeSchema,
+});
+
+/**
+ * Display ranges (dial min/max) per display score type. `rawScore` is versioned
+ * because the raw scale is norming-table-derived.
+ *
+ * The other fields don't need versioning — `displayCategory` picks which one applies
+ * per version, so a range a version doesn't use is never read.
  */
 const DisplayRangesSchema = z.object({
   percentile: ScoreRangeSchema.optional(),
   standardScore: ScoreRangeSchema.optional(),
-  rawScore: ScoreRangeSchema.optional(),
+  rawScore: z.array(VersionedScoreRangeSchema).min(1).superRefine(descendingMinVersion).optional(),
   percentCorrect: ScoreRangeSchema.optional(),
   correctIncorrectDifference: ScoreRangeSchema.optional(),
 });
