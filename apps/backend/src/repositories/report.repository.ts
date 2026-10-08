@@ -37,6 +37,7 @@ import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
 import { COMPOSITE_RUN_TASK_ID } from '../constants/run';
 import { SCORE_DOMAIN, SCORE_NAME } from '../constants/run-scores';
+import { compositeScoreFilter } from './utils/composite-score-filter.utils';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
 import {
@@ -2217,6 +2218,7 @@ export class ReportRepository {
             isNull(fdwRuns.abortedAt),
             eq(fdwRuns.useForReporting, true),
             isNotNull(fdwRuns.completedAt),
+            compositeScoreFilter(),
             scoreNames.length === 1 ? eq(fdwRunScores.name, scoreNames[0]!) : inArray(fdwRunScores.name, scoreNames),
           ),
         )
@@ -2470,7 +2472,7 @@ export class ReportRepository {
           })
           .from(fdwRuns)
           .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
-          .where(inArray(fdwRuns.id, selectedRunIds));
+          .where(and(inArray(fdwRuns.id, selectedRunIds), compositeScoreFilter()));
 
         for (const row of scoreRows) {
           if (!scoresByStudent.has(row.userId)) scoresByStudent.set(row.userId, new Map());
@@ -3073,7 +3075,7 @@ export class ReportRepository {
         scoreValue: fdwRunScores.value,
       })
       .from(fdwRunScores)
-      .where(inArray(fdwRunScores.runId, runIds));
+      .where(and(inArray(fdwRunScores.runId, runIds), compositeScoreFilter()));
 
     return rows;
   }

@@ -3970,6 +3970,37 @@ describe('ReportService', () => {
       expect(typeTag.value).toBe('Required');
     });
 
+    it('reads the composite score when a subtask domain emits the same name', async () => {
+      // `sre` writes `sreScore` per block (lab, test1, …) as well as for the
+      // composite, so a block's score must not stand in for the composite.
+      setupDefaults();
+      const baseRow: RunScoreRow = {
+        userId: targetUserId,
+        taskVariantId: VARIANT_ID_2,
+        scoreName: ScoreField.SRE_RAW_SCORE,
+        scoreValue: '7',
+        runGrade: null,
+        runId: FIXTURE_RUN_ID,
+        completedAt: FIXTURE_RUN_COMPLETED_AT,
+      };
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        { ...baseRow, scoreDomain: 'test1', scoreValue: '7' },
+        { ...baseRow, scoreDomain: 'composite', scoreValue: '19' },
+        { ...baseRow, scoreDomain: 'lab', scoreValue: '3' },
+        { ...baseRow, scoreName: ScoreField.SCORING_VERSION, scoreValue: String(DEFAULT_SCORING_VERSION) },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      expect(result.tasks.find((t) => t.taskId === TASK_ID_2)!.scores.rawScore).toBe(19);
+    });
+
     it('classifies an older administration on the percentile cutoff when the run predates grade 6', async () => {
       // Percentile 60 clears the legacy achieved cutoff of 50; raw score 46 falls
       // under the `some` threshold of 47, so the grade used flips the result.
@@ -4296,6 +4327,17 @@ describe('ReportService', () => {
           scoreDomain: 'DEL',
           scoreName: 'percentCorrect',
           scoreValue: '60',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
+        // The composite group PA writes alongside the subtask domains.
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'composite',
+          scoreName: 'roarScore',
+          scoreValue: '480',
           runGrade: null,
           runId: FIXTURE_RUN_ID,
           completedAt: FIXTURE_RUN_COMPLETED_AT,
@@ -4956,6 +4998,17 @@ describe('ReportService', () => {
           runId: FIXTURE_RUN_ID,
           completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
+        // The composite group PA writes alongside the subtask domains.
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'composite',
+          scoreName: 'roarScore',
+          scoreValue: '480',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -5028,6 +5081,17 @@ describe('ReportService', () => {
           scoreDomain: 'DEL',
           scoreName: 'percentCorrect',
           scoreValue: '90',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
+        // The composite group PA writes alongside the subtask domains.
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'composite',
+          scoreName: 'roarScore',
+          scoreValue: '480',
           runGrade: null,
           runId: FIXTURE_RUN_ID,
           completedAt: FIXTURE_RUN_COMPLETED_AT,

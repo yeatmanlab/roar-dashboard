@@ -1928,7 +1928,7 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
       await RunScoreFactory.create({
         runId: run.id,
         type: 'computed',
-        domain: 'default',
+        domain: SCORE_DOMAIN.COMPOSITE,
         name: 'percentile',
         value: '90',
       });
@@ -2289,7 +2289,7 @@ describe('GET /v1/administrations/:id/reports/scores/facets', () => {
       await RunScoreFactory.create({
         runId: run.id,
         type: 'computed',
-        domain: 'default',
+        domain: SCORE_DOMAIN.COMPOSITE,
         name: 'percentile',
         value: String(opts.percentile),
       });
@@ -2909,7 +2909,7 @@ describe('GET /v1/administrations/:id/reports/scores/students', () => {
       await RunScoreFactory.create({
         runId: run.id,
         type: 'computed',
-        domain: 'default',
+        domain: SCORE_DOMAIN.COMPOSITE,
         name: 'percentile',
         value: '90',
       });
@@ -3651,21 +3651,21 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       await RunScoreFactory.create({
         runId: run.id,
         type: 'computed',
-        domain: 'default',
+        domain: SCORE_DOMAIN.COMPOSITE,
         name: PHONICS_SUBSKILL_DEFS[SEEDED_SKILL].correctName,
         value: '7',
       });
       await RunScoreFactory.create({
         runId: run.id,
         type: 'computed',
-        domain: 'default',
+        domain: SCORE_DOMAIN.COMPOSITE,
         name: PHONICS_SUBSKILL_DEFS[SEEDED_SKILL].attemptedName,
         value: '10',
       });
       await RunScoreFactory.create({
         runId: run.id,
         type: SCORE_TYPE.RAW,
-        domain: 'default',
+        domain: SCORE_DOMAIN.COMPOSITE,
         name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT,
         value: '33',
         assessmentStage: ASSESSMENT_STAGE.TEST,
@@ -3673,7 +3673,7 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       await RunScoreFactory.create({
         runId: run.id,
         type: SCORE_TYPE.RAW,
-        domain: 'default',
+        domain: SCORE_DOMAIN.COMPOSITE,
         name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
         value: '40',
         assessmentStage: ASSESSMENT_STAGE.TEST,
@@ -3681,7 +3681,7 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       await RunScoreFactory.create({
         runId: run.id,
         type: SCORE_TYPE.COMPUTED,
-        domain: 'default',
+        domain: SCORE_DOMAIN.COMPOSITE,
         name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
         value: '82.6',
       });
