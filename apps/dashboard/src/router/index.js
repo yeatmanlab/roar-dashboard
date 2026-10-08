@@ -1083,11 +1083,13 @@ const awaitAuthReady = async (to) => {
   const store = useAuthStore();
 
   let timeoutId;
-  // Await the STORE's readiness, not `authService.authReady()` directly. Both
-  // resolve from the same memoized promise, but `awaitAuthReady` writes
-  // `accessToken` in its continuation — awaiting it here makes "gate resolved
+  // Await the STORE's readiness, not `authService.authReady()` directly.
+  // `awaitAuthReady` memoizes a continuation over the service's readiness
+  // state that writes `accessToken` — awaiting it here makes "gate resolved
   // ⟹ accessToken written" structural rather than dependent on which awaiter
-  // wins the microtask race. It never rejects (mirrors the service contract),
+  // wins the microtask race, and the memo means this per-navigation call
+  // applies the boot state only once (later navigations must not clobber the
+  // listener-owned token). It never rejects (mirrors the service contract),
   // so no catch is needed around it.
   const timedOut = await Promise.race([
     store.awaitAuthReady().then(() => false),

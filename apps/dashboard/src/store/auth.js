@@ -1,4 +1,4 @@
-import { markRaw } from 'vue';
+import { markRaw, toRaw } from 'vue';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
@@ -19,6 +19,31 @@ import { FIREBASE_AUTH_PROVIDER_IDS } from '@/constants/firebase';
  * @type {Promise<string | null> | null}
  */
 let inFlightTokenRefresh = null;
+
+/**
+ * Memoized `awaitAuthReady` continuation, keyed per store instance.
+ *
+ * The router's `beforeEach` awaits `awaitAuthReady()` on EVERY navigation.
+ * The boot `AuthReadyState` is memoized in the AuthService, so re-running the
+ * continuation would re-apply boot-time values over live ones: restoring the
+ * boot token after the listener cleared it on sign-out, overwriting a
+ * refreshed token with the expired boot one, and re-holding the redirect
+ * spinner on every navigation. Memoizing the continuation applies the boot
+ * state exactly once; later calls await the same promise.
+ *
+ * Module-scoped (like `inFlightTokenRefresh`) because the store's `persist`
+ * covers all of `$state` and a promise must not land in sessionStorage.
+ * Keyed on the RAW store object (`toRaw(this)`), not on `this`: inside a
+ * Pinia action `this` is not identity-stable — the devtools integration
+ * wraps every action call in a fresh tracking proxy, so a `this`-keyed memo
+ * misses on every navigation and re-applies the stale boot state (nulling
+ * the token the listener just wrote after sign-in). `toRaw` collapses the
+ * reactive proxy and any devtools proxy to the one underlying object, and a
+ * fresh Pinia (tests) still gets a fresh raw store and therefore a fresh memo.
+ *
+ * @type {WeakMap<object, Promise<import('@/services/AuthService').AuthReadyState>>}
+ */
+const authReadyContinuation = new WeakMap();
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -116,9 +141,33 @@ export const useAuthStore = () => {
        * (with a null token); an init failure is surfaced by `initAuth`'s caller
        * via the bootstrap error boundary in `App.vue`.
        *
+       * Memoized per store instance: the guard calls this on every navigation,
+       * but the boot state must be applied exactly once. After the first call,
+       * the long-lived `onIdTokenChanged` listener owns `accessToken` — a
+       * second application would restore the boot token over a sign-out or a
+       * refresh, and re-hold the redirect spinner (see `authReadyContinuation`).
+       *
        * @returns {Promise<import('@/services/AuthService').AuthReadyState>}
        */
       async awaitAuthReady() {
+        // toRaw, not `this`: see the `authReadyContinuation` doc block.
+        const memoKey = toRaw(this);
+        let continuation = authReadyContinuation.get(memoKey);
+        if (!continuation) {
+          continuation = this.applyAuthReadyState();
+          authReadyContinuation.set(memoKey, continuation);
+        }
+        return continuation;
+      },
+
+      /**
+       * The one-shot continuation behind `awaitAuthReady` — awaits the service's
+       * readiness state and records it on the store. Not called directly by
+       * consumers; `awaitAuthReady` memoizes it.
+       *
+       * @returns {Promise<import('@/services/AuthService').AuthReadyState>}
+       */
+      async applyAuthReadyState() {
         const authService = getAuthService();
         const state = await authService.authReady();
 
@@ -137,17 +186,16 @@ export const useAuthStore = () => {
         this.redirectError = state.redirectError;
 
         // Write the first token from the readiness state. The router guard
-        // awaits THIS method (not `authService.authReady()` directly), so by
-        // the time the gate opens `accessToken` is written — a structural
+        // awaits `awaitAuthReady` (not `authService.authReady()` directly), so
+        // by the time the gate opens `accessToken` is written — a structural
         // guarantee, not a microtask-ordering accident. Without it the gate
         // could open before the token landed and the SSO readiness page would
         // read `!accessToken` on mount and bounce a successful sign-in back to
         // SignIn. Null when signed out, or when the token failed to resolve
         // (see `tokenError` above). The long-lived `onIdTokenChanged` listener
         // also writes the token from the same first emission, so its later
-        // write is idempotent. This method is called by both `initAuth` and the
-        // guard; the writes are from the same memoized state, so running the
-        // continuation twice is safe.
+        // write is idempotent. This continuation runs exactly once per store
+        // instance; after it, the listener owns the token.
         this.accessToken = state.accessToken;
 
         // A returning SSO *redirect* user is signed in by the time readiness

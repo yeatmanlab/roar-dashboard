@@ -444,6 +444,84 @@ describe('authStore.awaitAuthReady', () => {
     expect(authStore.accessToken).toBeNull();
   });
 
+  it('applies the boot state only once — a second call must not restore the boot token after sign-out', async () => {
+    // The router guard awaits awaitAuthReady on EVERY navigation, and the
+    // service memoizes the boot state. Without memoizing the store-side
+    // continuation, the navigation after a sign-out would write the stale
+    // boot token back over the null the listener wrote.
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'user-1' }, accessToken: 'boot-token' }));
+
+    await authStore.awaitAuthReady();
+    expect(authStore.accessToken).toBe('boot-token');
+
+    // The long-lived listener clears the token on sign-out.
+    authStore.accessToken = null;
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.accessToken).toBeNull();
+    expect(mocks.authReady).toHaveBeenCalledTimes(1);
+  });
+
+  it('memoizes across distinct action-call proxies — the token written after sign-in must survive the next navigation', async () => {
+    // In dev, the Pinia devtools integration invokes every action with `this`
+    // set to a FRESH tracking proxy, so a memo keyed on `this` identity misses
+    // on every navigation. The real-world failure: boot resolves signed out
+    // (null token), the user signs in, the listener writes the token, and the
+    // very next navigation's `awaitAuthReady` re-applies the stale boot state
+    // — nulling the token and stranding the home view on its spinner. The memo
+    // must key on `toRaw(this)`, which is identical under any proxy wrapper.
+    mocks.authReady.mockResolvedValue(readyState()); // signed-out boot
+
+    // Each call goes through a different proxy, mimicking devtools wrapping.
+    const proxyA = new Proxy(authStore, {});
+    const proxyB = new Proxy(authStore, {});
+
+    await proxyA.awaitAuthReady();
+
+    // The listener writes the token after sign-in.
+    authStore.accessToken = 'post-sign-in-token';
+
+    await proxyB.awaitAuthReady();
+
+    expect(authStore.accessToken).toBe('post-sign-in-token');
+    expect(mocks.authReady).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-hold the redirect spinner on a later call', async () => {
+    mocks.authReady.mockResolvedValue(readyState({ user: { uid: 'sso-user' }, isFromRedirect: true }));
+
+    await authStore.awaitAuthReady();
+    expect(authStore.spinner).toBe(true);
+
+    // The post-sign-in flow releases the spinner; the next navigation's gate
+    // call must not re-engage it.
+    authStore.spinner = false;
+
+    await authStore.awaitAuthReady();
+
+    expect(authStore.spinner).toBe(false);
+  });
+
+  it('shares one continuation across concurrent callers (initAuth and the guard)', async () => {
+    let resolveReady;
+    mocks.authReady.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveReady = resolve;
+        }),
+    );
+
+    const first = authStore.awaitAuthReady();
+    const second = authStore.awaitAuthReady();
+    resolveReady(readyState({ user: { uid: 'user-1' }, accessToken: 'boot-token' }));
+
+    await Promise.all([first, second]);
+
+    expect(mocks.authReady).toHaveBeenCalledTimes(1);
+    expect(authStore.accessToken).toBe('boot-token');
+  });
+
   it('degrades to a null token (and logs) when readiness reports a token failure', async () => {
     // An offline reload with an expired token: the session is present but the
     // token could not be resolved. The gate must still open (no throw), with a
