@@ -1,5 +1,13 @@
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
-import type { ScoringConfig, FieldNameValue, SCORE_FIELD_TYPES, SubscoreColumn } from './scoring.config-schema';
+import { SCORE_NAME } from '../../constants/run-scores';
+import type {
+  ScoringConfig,
+  FieldNameValue,
+  SCORE_FIELD_TYPES,
+  SubscoreColumn,
+  DisplayRanges,
+  ScoreRange,
+} from './scoring.config-schema';
 import { getScoringConfig } from './scoring.config-registry';
 import type {
   SupportLevel,
@@ -37,13 +45,50 @@ export function parseScoreValue(value: string | number | null | undefined): numb
   return isNaN(parsed) ? null : parsed;
 }
 
+/**
+ * Parse a `scoringVersion` into the integer the versioned configs index by.
+ * Every way of being absent — no value, null, empty string — returns `null`,
+ * so the result reflects the run rather than how the row was written.
+ *
+ * @param value - Raw value from a variant parameter or a run score row
+ * @returns The integer scoring version, or `null` if absent or non-integer
+ */
+export function parseScoringVersion(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? value : null;
+  }
+  if (typeof value !== 'string' || value.trim() === '') {
+    return null;
+  }
+  const version = Number(value);
+  return Number.isInteger(version) ? version : null;
+}
+
+/**
+ * Read a run's scoring version. An absent value for swr v6, sre v3, pa v3 is treated
+ * as the floor version.
+ *
+ * @param scoreMap - The run's `run_scores` values, keyed by score name
+ * @returns The run's scoring version, or `null` when it carries no stamp
+ */
+export function resolveRunScoringVersion(scoreMap: Map<string, string>): number | null {
+  return parseScoringVersion(scoreMap.get(SCORE_NAME.SCORING_VERSION));
+}
+
 // --- Versioned array resolution ---
 
 /**
  * Resolve from an ordered versioned array. Entries must be ordered by descending minVersion.
  * Returns the value from the first entry where scoringVersion >= minVersion, or undefined.
+ *
+ * @param entries - Versioned entries in strictly descending minVersion order
+ * @param scoringVersion - The variant's scoring version
+ * @returns The first entry the version satisfies, or undefined if none do
  */
-function resolveVersionedEntry<T extends { minVersion: number }>(entries: T[], scoringVersion: number): T | undefined {
+export function resolveVersionedEntry<T extends { minVersion: number }>(
+  entries: T[],
+  scoringVersion: number,
+): T | undefined {
   return entries.find((entry) => scoringVersion >= entry.minVersion);
 }
 
@@ -147,6 +192,30 @@ export function getSupportLevel(input: ScoringInput): SupportLevel | null {
 }
 
 /**
+ * Resolve the configured display range (dial min/max) for a resolved score type.
+ *
+ * @param displayRanges - The task's configured display ranges, if any
+ * @param scoreType - The score type resolved for this run
+ * @param scoringVersion - The scoring version, with legacy runs normalized to 0
+ * @returns The range to render, or null when the config declares none
+ */
+function resolveDisplayRange(
+  displayRanges: DisplayRanges | undefined,
+  scoreType: DisplayScoreType,
+  scoringVersion: number,
+): ScoreRange | null {
+  if (!displayRanges) {
+    return null;
+  }
+
+  if (scoreType === 'rawScore') {
+    return resolveVersionedEntry(displayRanges.rawScore ?? [], scoringVersion)?.range ?? null;
+  }
+
+  return displayRanges[scoreType] ?? null;
+}
+
+/**
  * Resolve a task's primary display descriptor (which score to surface, its
  * value, label, and range) from config — moving the dashboard's
  * `getScoreToDisplay` + percent-correct/raw-only/version branching server-side.
@@ -231,8 +300,51 @@ export function getScoreDisplay(args: {
     scoreType,
     value,
     label: scoreType,
-    range: config.displayRanges?.[scoreType] ?? null,
+    range: resolveDisplayRange(config.displayRanges, scoreType, version),
   };
+}
+
+/**
+ * Get a task's configured score range, independent of which score is the primary
+ * display. Only `rawScore` varies by version; the others ignore `scoringVersion`.
+ *
+ * @param taskSlug - The task slug (e.g., 'pa', 'sre')
+ * @param scoreType - The score type to get the range for
+ * @param scoringVersion - The scoring version, or null for legacy
+ * @returns The range { min, max }, or null if the config declares none
+ */
+export function getScoreRange(
+  taskSlug: string,
+  scoreType: DisplayScoreType,
+  scoringVersion: number | null,
+): ScoreRange | null {
+  const config = getScoringConfig(taskSlug);
+  if (!config) {
+    return null;
+  }
+
+  return resolveDisplayRange(config.displayRanges, scoreType, scoringVersion ?? 0);
+}
+
+/**
+ * Extract a `taskVariantId → scoringVersion` map from `task_variant_parameters` rows.
+ * Drives version-aware classification and range resolution across score reporting.
+ *
+ * @param params - `task_variant_parameters` rows for the variants of interest
+ * @returns Map of task variant ID to scoring version; invalid variants are omitted
+ */
+export function extractScoringVersions(
+  params: Array<{ taskVariantId: string; name: string; value: unknown }>,
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const param of params) {
+    if (param.name !== 'scoringVersion') continue;
+    const version = parseScoringVersion(param.value);
+    if (version !== null) {
+      map.set(param.taskVariantId, version);
+    }
+  }
+  return map;
 }
 
 /**
@@ -330,6 +442,21 @@ export function resolveScoreFieldName(
 }
 
 /**
+ * Resolve a numeric score from the score map by trying each field name in order.
+ * Returns the first valid numeric value found, or null if none match.
+ */
+export function resolveNumericScore(scores: Map<string, string>, fieldNames: string[]): number | null {
+  for (const name of fieldNames) {
+    const raw = scores.get(name);
+    if (raw !== undefined) {
+      const parsed = parseScoreValue(raw);
+      if (parsed !== null) return parsed;
+    }
+  }
+  return null;
+}
+
+/**
  * Resolve score field names for a task, optionally filtered by scoring version.
  *
  * When scoringVersion is provided (including null for legacy v0), returns only
@@ -339,15 +466,16 @@ export function resolveScoreFieldName(
  * When omitted, returns all possible field names across all versions (backward compat).
  *
  * @param taskSlug - The task slug
- * @param gradeLevel - Numeric grade level, or null
+ * @param grade - Grade enum string, number, or null. Normalized via `getGradeAsNumber`.
  * @param scoringVersion - When provided, resolve for this version only. Omit for all versions.
  * @returns Resolved field names for percentile and raw score
  */
 export function resolveScoreFieldNames(
   taskSlug: string,
-  gradeLevel: number | null,
+  grade: string | number | null,
   scoringVersion?: number | null,
 ): ScoreFieldResolution {
+  const gradeLevel = getGradeAsNumber(grade);
   const emptyResolution: ScoreFieldResolution = {
     percentileFieldNames: [],
     percentileDisplayFieldNames: [],

@@ -74,10 +74,12 @@ export class TaskLauncher {
     // ownership of SDK setup.
     if (sdkContext) {
       initFirekitCompat(sdkContext.ctx, sdkContext.taskInfo);
+    } else {
+      // No context to resolve from, so `gameParams` are already final here. Installing the
+      // logger now preserves the pre-#2016 timing for hosts that have not migrated — anything
+      // reaching `Logger.getInstance()` before `run()` still finds it set.
+      Logger.setInstance(logger, gameParams, userParams);
     }
-
-    // Logger installation moved to `run()`: it snapshots `gameParams` for every captured event,
-    // and when the host hands over its context those are not resolved until then.
   }
 
   /**
@@ -200,10 +202,12 @@ export class TaskLauncher {
 
   async run() {
     await this._resolveGameParams();
-    // Installed here, not in the constructor: `capture()` snapshots gameParams on every event,
-    // so it has to see the resolved variant params. Runs before `init()`, which is the earliest
-    // point anything downstream calls `Logger.getInstance()`.
-    Logger.setInstance(this.logger, this.gameParams, this.userParams);
+    if (this.sdkContext) {
+      // Deferred to here only in the handover case: `capture()` snapshots gameParams on every
+      // event, and those are not resolved until `_resolveGameParams` has run. `setInstance`
+      // throws if called twice, so this is mutually exclusive with the constructor branch.
+      Logger.setInstance(this.logger, this.gameParams, this.userParams);
+    }
     showLevanteLogoLoading();
     const { jsPsych, timeline } = await this.init();
     hideLevanteLogoLoading();
