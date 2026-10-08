@@ -846,6 +846,32 @@ describe('resolveScoreFieldNames', () => {
       expect(result.standardScoreFieldNames).toEqual(['sprStandardScore']);
     });
 
+    it('pa v3 grade < 6 returns "percentile"', () => {
+      const result = resolveScoreFieldNames('pa', 3, 3);
+      expect(result.percentileFieldNames).toEqual(['percentile']);
+      expect(result.percentileDisplayFieldNames).toEqual(['percentile']);
+      expect(result.standardScoreFieldNames).toEqual(['standardScore']);
+    });
+
+    it('pa v3 grade >= 6 returns the spr fields', () => {
+      const result = resolveScoreFieldNames('pa', 8, 3);
+      expect(result.percentileFieldNames).toEqual(['sprPercentile']);
+      expect(result.percentileDisplayFieldNames).toEqual(['sprPercentileString']);
+      expect(result.standardScoreFieldNames).toEqual(['sprStandardScore']);
+      expect(result.standardScoreDisplayFieldNames).toEqual(['sprStandardScoreString']);
+    });
+
+    it('pa v4 resolves the same grade-conditional fields as v3', () => {
+      expect(resolveScoreFieldNames('pa', 8, 4).percentileFieldNames).toEqual(['sprPercentile']);
+      expect(resolveScoreFieldNames('pa', 3, 4).percentileFieldNames).toEqual(['percentile']);
+    });
+
+    it('pa v5 returns "percentile" regardless of grade', () => {
+      expect(resolveScoreFieldNames('pa', 3, 5).percentileFieldNames).toEqual(['percentile']);
+      expect(resolveScoreFieldNames('pa', 8, 5).percentileFieldNames).toEqual(['percentile']);
+      expect(resolveScoreFieldNames('pa', 8, 5).standardScoreFieldNames).toEqual(['standardScore']);
+    });
+
     it('sre-es v0 returns empty arrays for normed fields (unnormed version)', () => {
       const result = resolveScoreFieldNames('sre-es', 3, null);
       expect(result.percentileFieldNames).toEqual([]);
