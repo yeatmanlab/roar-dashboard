@@ -4,6 +4,7 @@ import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { READALOUD_TASK_ID } from '@roar-platform/assessment-schema/roar-readaloud';
 import ReadAloudTask from '../src/experiment/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
+import { createRecordingUploader } from '../../shared/recordingUploader.js';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
 import { ROAR_DB_MODE, unresolvedDefaultVariantPolicy } from '../../shared/roarDbMode.js';
 // Import necessary for async in the top level of the experiment script
@@ -38,6 +39,13 @@ const ageMonths = urlParams.get('agemonths') ? parseFloat(urlParams.get('agemont
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+// Recording uploads are host-supplied: the SDK owns the object path and the upload queue, the
+// harness owns the transport (see `ctx.recordings` / `RecordingUploader`). Under the emulator
+// this resolves to the local Storage emulator; in staging and production it resolves to
+// nothing until the recordings bucket is provisioned and injected, and recording uploads are
+// disabled with a logged error rather than silently failing mid-upload.
+// See https://github.com/yeatmanlab/roar-project-management/issues/2167
+const recordings = createRecordingUploader(app);
 const baseUrl = ROAR_API_BASE_URL;
 
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
@@ -66,6 +74,7 @@ onAuthStateChanged(auth, async (user) => {
         baseUrl,
         auth: authCallbacks,
         participant: { participantId },
+        ...(recordings ? { recordings } : {}),
       };
 
       const taskInfo = {

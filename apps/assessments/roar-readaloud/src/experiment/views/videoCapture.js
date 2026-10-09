@@ -123,10 +123,10 @@ export async function saveRecordings({ filename, metadata = {} }) {
  * Uploads a recording via the assessment-sdk `uploadFile()` compat method and returns its
  * gs:// storage path, or null on failure.
  *
- * `uploadFile` resolves the storage bucket (the local Storage emulator in dev, the admin
- * recordings bucket in staging/prod), enqueues the resumable upload, and returns the storage
- * path immediately at enqueue — it sources runId/administrationId/participantId from the SDK
- * facade. We forward the session `id` as `assessmentPid` (the `<assessmentUid>_<participant>`
+ * `uploadFile` enqueues the upload against the host-supplied `ctx.recordings` uploader and
+ * returns the storage path immediately at enqueue — it sources runId/administrationId/
+ * participantId from the SDK facade. A host that supplies no uploader (currently the dashboard)
+ * makes this throw, which the catch below already turns into a null path. We forward the session `id` as `assessmentPid` (the `<assessmentUid>_<participant>`
  * value configureDeviceView stores) so recordings keep the legacy storage-path convention
  * (`{taskId}/{participantId}/{assessmentPid}/…`) that downstream tooling expects, instead of
  * `pid` falling back to a duplicated participantId. A failed upload must not abort the

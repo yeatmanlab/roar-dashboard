@@ -77,7 +77,7 @@ invariants below.
 > literals collapsed into one module), no ROAR infrastructure identifiers in a published package,
 > and an explicit record of which values an alternate deployment must replace. Making origins
 > injectable by a package consumer is a larger change: they would have to flow through the
-> assessment's runtime entry, the way `CommandContext.storageBucket` threads the recordings bucket
+> assessment's runtime entry, the way `CommandContext.recordings` threads the recordings uploader
 > in the storage-seam work. That is deliberately out of scope here.
 
 ## Two invariants

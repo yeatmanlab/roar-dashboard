@@ -1,16 +1,30 @@
-import { ref, uploadBytesResumable } from 'firebase/storage';
-import type { FirebaseStorage } from 'firebase/storage';
 import type { Command } from '../command/command';
 import { UploadStatusEnum } from '../types/upload-file';
 import generateFilePath from '../utils/generate-file-path';
-import type { UploadFileInput, UploadFileOutput } from '../types/upload-file';
+import type { RecordingUploader, UploadFileInput, UploadFileOutput } from '../types/upload-file';
 
 /**
- * Command for uploading a file to Firebase Storage.
+ * Strips trailing slashes from a host-supplied bucket URI.
+ *
+ * `storagePath` is persisted on the trial and parsed by downstream tooling, so a host that
+ * passes `gs://bucket/` must not produce `gs://bucket//task/...`.
+ *
+ * @param bucketUri - Bucket URI as supplied by the host
+ * @returns The URI without trailing slashes
+ */
+function normalizeBucketUri(bucketUri: string): string {
+  return bucketUri.replace(/\/+$/, '');
+}
+
+/**
+ * Command for uploading a recording through the host-supplied {@link RecordingUploader}.
  * Allowed file types: .webm, .mp4, .wav, .ogg, .mkv, .mp3.
  *
+ * The command owns the path convention; the host owns the transport. It deliberately does not
+ * take a storage-client handle — see {@link RecordingUploader} for why.
+ *
  * @param participantId - The participant ID.
- * @param storageBucket - The Firebase storage bucket.
+ * @param recordings - The host-supplied storage capability.
  */
 export class UploadFileCommand implements Command<UploadFileInput, UploadFileOutput> {
   readonly name = 'upload-file';
@@ -18,11 +32,15 @@ export class UploadFileCommand implements Command<UploadFileInput, UploadFileOut
 
   constructor(
     private participantId: string,
-    private storageBucket: FirebaseStorage,
+    private recordings: RecordingUploader,
   ) {}
 
   /**
-   * Generates a file path and creates an upload task for a file.
+   * Generates a file path and returns a deferred upload for the queue to drive.
+   *
+   * The bytes do not move until the returned `upload()` is called — the facade's queue owns
+   * when that happens (see `_processUploadQueue`). `storagePath` is resolved eagerly so the
+   * caller can persist it on the trial without waiting for the upload to finish.
    *
    * @param input - The input parameters for the command.
    * @param input.filename - The file name
@@ -36,15 +54,13 @@ export class UploadFileCommand implements Command<UploadFileInput, UploadFileOut
    */
   async execute(input: UploadFileInput): Promise<UploadFileOutput> {
     const { filename, fileOrBlob, customMetadata, ...extraMetadata } = input;
-    const filePath = generateFilePath({ filename, participantId: this.participantId, ...extraMetadata });
-
-    const storageRef = ref(this.storageBucket, filePath);
+    const path = generateFilePath({ filename, participantId: this.participantId, ...extraMetadata });
 
     return {
-      upload: () => uploadBytesResumable(storageRef, fileOrBlob, customMetadata ? { customMetadata } : undefined),
+      upload: () => this.recordings.upload({ path, fileOrBlob, ...(customMetadata ? { customMetadata } : {}) }),
       status: UploadStatusEnum.PENDING,
       filename,
-      storagePath: storageRef.toString(),
+      storagePath: `${normalizeBucketUri(this.recordings.bucketUri)}/${path}`,
     };
   }
 }
