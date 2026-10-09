@@ -1389,8 +1389,11 @@ describe('firekit compat', () => {
       expect(fourth.output.status).toBe(UploadStatusEnum.UPLOADING);
     });
 
-    it('logs filename to logger.warn on failure', async () => {
-      const { output, triggerError } = createMockUploadOutput('audio.webm');
+    it('reports a failure to logger.warn without naming the file', async () => {
+      // Recording filenames end in a participant identifier (readaloud composes them from
+      // `store.session.get('id')`), and this message goes wherever the host points its logger
+      // — Sentry, in the deployed harnesses. The error object is the host's to redact.
+      const { output, triggerError } = createMockUploadOutput('clip_assessmentUid_participant.webm');
       const facade = getFirekitCompat();
       const logger = facade._getLogger();
 
@@ -1399,7 +1402,7 @@ describe('firekit compat', () => {
 
       expect(logger?.warn).toHaveBeenCalledWith(
         expect.objectContaining({ err: expect.objectContaining({ code: 'storage/unauthorized' }) }),
-        expect.stringContaining('audio.webm'),
+        expect.not.stringContaining('participant'),
       );
     });
 

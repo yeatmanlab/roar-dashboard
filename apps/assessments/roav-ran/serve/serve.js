@@ -47,12 +47,8 @@ const languageOverride = urlParams.get('lng');
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-// Recording uploads are host-supplied: the SDK owns the object path and the upload queue, the
-// harness owns the transport (see `ctx.recordings` / `RecordingUploader`). Under the emulator
-// this resolves to the local Storage emulator; in staging and production it resolves to
-// nothing until the recordings bucket is provisioned and injected, and recording uploads are
-// disabled with a logged error rather than silently failing mid-upload.
-// See https://github.com/yeatmanlab/roar-project-management/issues/2167
+// Resolves to the Storage emulator in dev and to nothing in staging/production until the
+// bucket is provisioned — see createRecordingUploader, and issue #2167 for the wiring.
 const recordings = createRecordingUploader(app);
 const baseUrl = ROAR_API_BASE_URL;
 

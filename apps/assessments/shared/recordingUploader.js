@@ -43,7 +43,7 @@ function resolveStorageEmulatorAddress() {
  * literal bucket name and uploads then go somewhere that has never existed. Both are rejected
  * here so they degrade the same way everything else in this helper does.
  */
-const BUCKET_URI_PATTERN = /^gs:\/\/[A-Za-z0-9._-]+\/?$/;
+const BUCKET_URI_PATTERN = /^gs:\/\/[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]\/?$/;
 
 /**
  * Validates a destination bucket and strips any trailing slash.
@@ -70,7 +70,11 @@ function normalizeBucketUri(bucketUri) {
  *
  * Under the emulator the destination is the app's own default bucket, which the emulator
  * creates on first write. Outside it, the caller must name a bucket: there is no safe guess,
- * and guessing is what this seam exists to remove.
+ * and guessing is what this seam exists to remove. No caller names one yet, so in staging and
+ * production this returns undefined and recording uploads are disabled with a logged error
+ * rather than failing silently mid-upload — see
+ * https://github.com/yeatmanlab/roar-project-management/issues/2167 for the bucket provisioning
+ * and the `bucketUri` wiring that turns them on.
  *
  * @param {import('firebase/app').FirebaseApp} app - The harness's Firebase app
  * @param {object} [options] - Uploader options

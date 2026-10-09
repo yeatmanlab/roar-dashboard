@@ -362,7 +362,10 @@ export class FirekitFacade {
         await nextTask.upload();
         settle(UploadStatusEnum.COMPLETED);
       } catch (error) {
-        this._getLogger()?.warn({ err: error }, `Upload failed: ${nextTask.filename}`);
+        // Deliberately not interpolating filename or storagePath: both end in a participant
+        // identifier (readaloud composes the filename from `store.session.get('id')`), and this
+        // goes wherever the host points its logger.
+        this._getLogger()?.warn({ err: error }, 'Recording upload failed');
         settle(UploadStatusEnum.FAILED);
       }
     })();

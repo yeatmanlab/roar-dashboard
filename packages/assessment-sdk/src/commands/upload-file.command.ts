@@ -7,19 +7,15 @@ import type { RecordingUploader, UploadFileInput, UploadFileOutput } from '../ty
  * Strips trailing slashes from a host-supplied bucket URI.
  *
  * `storagePath` is persisted on the trial and parsed by downstream tooling, so a host that
- * passes `gs://bucket/` must not produce `gs://bucket//task/...`.
- *
- * Not a duplicate of the harness helper of the same name in
- * `apps/assessments/shared/recordingUploader.js`: that one is a configuration *gate* that
- * rejects anything but a bare `gs://bucket` and disables uploads, which the SDK cannot do
- * because any npm consumer may implement `RecordingUploader` itself. This is the unconditional
- * normalisation applied to whatever the host ends up handing over, so the two need not agree
- * beyond both removing a trailing slash.
+ * passes `gs://bucket/` must not produce `gs://bucket//task/...`. Named for exactly what it
+ * does, because the harness has a `normalizeBucketUri` that also *validates* and disables
+ * uploads on a bad URI — something the SDK can't do, since any consumer may implement
+ * `RecordingUploader` itself. These are not two copies of one helper.
  *
  * @param bucketUri - Bucket URI as supplied by the host
  * @returns The URI without trailing slashes
  */
-function normalizeBucketUri(bucketUri: string): string {
+function stripTrailingSlashes(bucketUri: string): string {
   return bucketUri.replace(/\/+$/, '');
 }
 
@@ -67,7 +63,7 @@ export class UploadFileCommand implements Command<UploadFileInput, UploadFileOut
       upload: () => this.recordings.upload({ path, fileOrBlob, ...(customMetadata ? { customMetadata } : {}) }),
       status: UploadStatusEnum.PENDING,
       filename,
-      storagePath: `${normalizeBucketUri(this.recordings.bucketUri)}/${path}`,
+      storagePath: `${stripTrailingSlashes(this.recordings.bucketUri)}/${path}`,
     };
   }
 }

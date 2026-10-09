@@ -123,6 +123,8 @@ describe('createRecordingUploader outside the emulator', () => {
     ['a path-bearing URI Firebase would throw on', 'gs://recordings-bucket/readaloud'],
     ['a bare bucket name Firebase would accept silently', 'recordings-bucket'],
     ['an https URL', 'https://storage.googleapis.com/recordings-bucket'],
+    ['a degenerate name', 'gs://..'],
+    ['a name below the GCS 3-character minimum', 'gs://ab'],
   ])('disables uploads for %s rather than failing at boot', (_label, badUri) => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
 
