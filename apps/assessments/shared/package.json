@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "echo \"assessment-shared is source-only (imported directly and bundled by consuming assessments); no build step\"",
+    "format": "prettier . --write --log-level=warn",
+    "format:check": "prettier . --check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
@@ -23,10 +25,12 @@
   "devDependencies": {
     "@roar-platform/assessment-schema": "^1.0.0",
     "@roar-platform/eslint-config": "*",
+    "@roar-platform/prettier-config": "*",
     "eslint": "^9.0.0",
     "firebase": "^10.13.2",
     "globals": "^16.0.0",
     "jsdom": "^29.1.1",
+    "prettier": "^3.6.0",
     "vitest": "^3.2.4",
     "webpack": "^5.74.0"
   }
