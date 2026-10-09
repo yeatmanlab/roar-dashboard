@@ -1,0 +1,4 @@
+# Build artifacts and generated output
+coverage/
+node_modules/
+.turbo/
