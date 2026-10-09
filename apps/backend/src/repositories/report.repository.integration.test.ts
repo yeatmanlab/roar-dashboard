@@ -12,6 +12,8 @@ import type {
   ReportTaskMeta,
   ProgressOverviewCountsResult,
   ResolvedScoringRules,
+  StudentScoresFieldType,
+  StudentScoresFilterOperator,
 } from './report.repository';
 import { SortOrder } from '@roar-platform/api-contract';
 import { conditionToSql } from '../utils/condition-to-sql';
@@ -1885,14 +1887,24 @@ describe('ReportRepository.getStudentScores — supportLevel filtering', () => {
     ],
   };
 
-  /** swr-shaped rules; percentile field names cover both generations, as the service resolves them. */
-  const swrRules: ResolvedScoringRules = {
+  /** Shared defaults — each fixture below overrides only what its tests discriminate on. */
+  const baseRules: ResolvedScoringRules = {
     assessmentSupportLevelField: null,
-    ...SWR_CUTOFFS,
+    percentileCutoffsByVersion: [],
+    rawScoreThresholdsByVersion: [],
     percentileBelowGrade: 6,
-    percentileFieldNames: ['percentile', 'wjPercentile'],
-    rawScoreFieldNames: ['roarScore'],
-    standardScoreFieldNames: ['standardScore'],
+    percentileFieldsByVersion: [],
+    rawScoreFieldsByVersion: [{ minVersion: 0, fieldName: 'roarScore' }],
+    standardScoreFieldsByVersion: [{ minVersion: 0, fieldName: 'standardScore' }],
+  };
+
+  const swrRules: ResolvedScoringRules = {
+    ...baseRules,
+    ...SWR_CUTOFFS,
+    percentileFieldsByVersion: [
+      { minVersion: 7, fieldName: 'percentile' },
+      { minVersion: 0, fieldName: 'wjPercentile' },
+    ],
   };
 
   let scope: ReportScope;
@@ -1974,6 +1986,80 @@ describe('ReportRepository.getStudentScores — supportLevel filtering', () => {
       new Map([[allGradesVariantId, swrRules]]),
     );
 
+  const paRules: ResolvedScoringRules = {
+    ...baseRules,
+    percentileCutoffsByVersion: [
+      { minVersion: 5, cutoffs: { achieved: 40, developing: 20 } },
+      { minVersion: 0, cutoffs: { achieved: 50, developing: 25 } },
+    ],
+    rawScoreThresholdsByVersion: [
+      { minVersion: 5, thresholds: { above: 480, some: 420 } },
+      { minVersion: 0, thresholds: { above: 55, some: 45 } },
+    ],
+
+    percentileFieldsByVersion: [
+      { minVersion: 5, fieldName: 'percentile' },
+      {
+        minVersion: 0,
+        fieldName: {
+          gradeConditional: true,
+          conditions: [
+            { gradeLt: 6, value: 'percentile' },
+            { gradeGte: 6, value: 'sprPercentile' },
+          ],
+        },
+      },
+    ],
+  };
+
+  const sreRules: ResolvedScoringRules = {
+    ...baseRules,
+    percentileCutoffsByVersion: [{ minVersion: 0, cutoffs: { achieved: 50, developing: 25 } }],
+    rawScoreThresholdsByVersion: [{ minVersion: 0, thresholds: { above: 25, some: 12 } }],
+    percentileFieldsByVersion: [
+      { minVersion: 4, fieldName: 'percentile' },
+      {
+        minVersion: 0,
+        fieldName: {
+          gradeConditional: true,
+          conditions: [
+            { gradeLt: 6, value: 'tosrecPercentile' },
+            { gradeGte: 6, value: 'sprPercentile' },
+          ],
+        },
+      },
+    ],
+    rawScoreFieldsByVersion: [{ minVersion: 0, fieldName: 'sreScore' }],
+  };
+
+  /** Filter the page on one score field, under the given task's rules. */
+  const filterByField = (
+    rules: ResolvedScoringRules,
+    taskSlug: string,
+    fieldType: StudentScoresFieldType,
+    operator: StudentScoresFilterOperator,
+    values: string[],
+  ) =>
+    repo.getStudentScores(
+      adminWindow.id,
+      scope,
+      adminWindow,
+      taskMetas,
+      defaultOptions,
+      undefined,
+      null,
+      [{ taskVariantId: allGradesVariantId, taskSlug, fieldType, operator, values }],
+      new Map([[allGradesVariantId, rules]]),
+    );
+
+  const filterPaByField = (
+    fieldType: StudentScoresFieldType,
+    operator: StudentScoresFilterOperator,
+    values: string[],
+  ) => filterByField(paRules, 'pa', fieldType, operator, values);
+
+  const filterPaBySupportLevel = (priority: string) => filterPaByField('supportLevel', 'eq', [priority]);
+
   describe('cutoffs come from the run scoring version', () => {
     let stampedStudentId: string;
     let unstampedStudentId: string;
@@ -2053,44 +2139,6 @@ describe('ReportRepository.getStudentScores — supportLevel filtering', () => {
   describe('reads are addressed by domain', () => {
     const SUBTASK_DOMAIN = 'FSM';
 
-    /** pa-shaped rules; values mirror `configs/pa.ts` so the arithmetic below reads true. */
-    const paRules: ResolvedScoringRules = {
-      assessmentSupportLevelField: null,
-      percentileCutoffsByVersion: [
-        { minVersion: 5, cutoffs: { achieved: 40, developing: 20 } },
-        { minVersion: 0, cutoffs: { achieved: 50, developing: 25 } },
-      ],
-      rawScoreThresholdsByVersion: [
-        { minVersion: 5, thresholds: { above: 480, some: 420 } },
-        { minVersion: 0, thresholds: { above: 55, some: 45 } },
-      ],
-      percentileBelowGrade: 6,
-      percentileFieldNames: ['percentile', 'sprPercentile'],
-      rawScoreFieldNames: ['roarScore'],
-      standardScoreFieldNames: ['standardScore'],
-    };
-
-    const filterPaBySupportLevel = (priority: string) =>
-      repo.getStudentScores(
-        adminWindow.id,
-        scope,
-        adminWindow,
-        taskMetas,
-        defaultOptions,
-        undefined,
-        null,
-        [
-          {
-            taskVariantId: allGradesVariantId,
-            taskSlug: 'pa',
-            fieldType: 'supportLevel',
-            operator: 'eq',
-            values: [priority],
-          },
-        ],
-        new Map([[allGradesVariantId, paRules]]),
-      );
-
     let collidingStudentId: string;
     beforeAll(async () => {
       collidingStudentId = await seedStudent({
@@ -2111,6 +2159,177 @@ describe('ReportRepository.getStudentScores — supportLevel filtering', () => {
 
       const achieved = await filterPaBySupportLevel('3');
       expect(achieved.items.map((r) => r.userId)).not.toContain(collidingStudentId);
+    });
+  });
+
+  describe('the field name comes from the run scoring version and grade', () => {
+    let grade8V3StudentId: string;
+    let grade3V3StudentId: string;
+    let grade8V5StudentId: string;
+
+    /** Each run carries both percentile rows, so only version + grade pick the answer. */
+    beforeAll(async () => {
+      // v3 + grade 8 → the v0 grade-conditional entry, gradeGte branch → sprPercentile (5).
+      // The inapplicable row is written as 'null', which numericValueSql reads as NULL.
+      grade8V3StudentId = await seedStudent({
+        nameLast: 'FieldOfRecordGrade8V3',
+        grade: '8',
+        scores: [
+          { name: 'percentile', value: 'null' },
+          { name: 'sprPercentile', value: '5' },
+          { name: 'scoringVersion', value: '3' },
+        ],
+      });
+      // v3 + grade 3 → the same entry, gradeLt branch → percentile (5).
+      grade3V3StudentId = await seedStudent({
+        nameLast: 'FieldOfRecordGrade3V3',
+        grade: '3',
+        scores: [
+          { name: 'percentile', value: '5' },
+          { name: 'sprPercentile', value: 'null' },
+          { name: 'scoringVersion', value: '3' },
+        ],
+      });
+      // v5 → the flat entry, which names `percentile` regardless of grade (95).
+      grade8V5StudentId = await seedStudent({
+        nameLast: 'FieldOfRecordGrade8V5',
+        grade: '8',
+        scores: [
+          { name: 'percentile', value: '95' },
+          { name: 'sprPercentile', value: '5' },
+          { name: 'scoringVersion', value: '5' },
+        ],
+      });
+    });
+
+    it('reads sprPercentile for a grade-8 v3 run, not the inapplicable percentile row', async () => {
+      const high = await filterPaByField('percentile', 'gte', ['90']);
+      expect(high.items.map((r) => r.userId)).not.toContain(grade8V3StudentId);
+
+      const low = await filterPaByField('percentile', 'lte', ['10']);
+      expect(low.items.map((r) => r.userId)).toContain(grade8V3StudentId);
+    });
+
+    it('reads percentile for a grade-3 v3 run, not the sprPercentile row', async () => {
+      const high = await filterPaByField('percentile', 'gte', ['90']);
+      expect(high.items.map((r) => r.userId)).not.toContain(grade3V3StudentId);
+
+      const low = await filterPaByField('percentile', 'lte', ['10']);
+      expect(low.items.map((r) => r.userId)).toContain(grade3V3StudentId);
+    });
+
+    it('lets the version override the grade branch — v5 names percentile at grade 8', async () => {
+      const high = await filterPaByField('percentile', 'gte', ['90']);
+      expect(high.items.map((r) => r.userId)).toContain(grade8V5StudentId);
+
+      const low = await filterPaByField('percentile', 'lte', ['10']);
+      expect(low.items.map((r) => r.userId)).not.toContain(grade8V5StudentId);
+    });
+
+    it('returns one row per student when a run carries several candidate names', async () => {
+      const result = await filterPaByField('percentile', 'lte', ['100']);
+      const matched = result.items.filter((r) => r.userId === grade8V3StudentId);
+      expect(matched).toHaveLength(1);
+    });
+
+    describe('non-numeric grades resolve through GRADE_MAP, as the response path does', () => {
+      let kindergartenStudentId: string;
+
+      /** Kindergarten maps to 0, so the gradeLt-6 branch applies — `percentile`, not SPR. */
+      beforeAll(async () => {
+        kindergartenStudentId = await seedStudent({
+          nameLast: 'FieldOfRecordKindergarten',
+          grade: 'Kindergarten',
+          scores: [
+            { name: 'percentile', value: '5' },
+            { name: 'sprPercentile', value: '95' },
+            { name: 'scoringVersion', value: '3' },
+          ],
+        });
+      });
+
+      it('reads percentile for a Kindergarten run', async () => {
+        const low = await filterPaByField('percentile', 'lte', ['10']);
+        expect(low.items.map((r) => r.userId)).toContain(kindergartenStudentId);
+
+        const high = await filterPaByField('percentile', 'gte', ['90']);
+        expect(high.items.map((r) => r.userId)).not.toContain(kindergartenStudentId);
+      });
+
+      it('classifies on percentile cutoffs, which a NULL grade would have skipped', async () => {
+        // A NULL grade fails the `grade < 6` gate and falls through to the raw branch.
+        const needsSupport = await filterPaBySupportLevel('1');
+        expect(needsSupport.items.map((r) => r.userId)).toContain(kindergartenStudentId);
+      });
+    });
+
+    describe('a gradeLt-only field name is reachable', () => {
+      let sreGrade3StudentId: string;
+
+      /** `tosrecPercentile` is gradeLt-only, so flattening at `grade: null` omitted it. */
+      beforeAll(async () => {
+        sreGrade3StudentId = await seedStudent({
+          nameLast: 'SreGrade3TosrecOnly',
+          grade: '3',
+          scores: [
+            { name: 'tosrecPercentile', value: '5' },
+            { name: 'scoringVersion', value: '3' },
+          ],
+        });
+      });
+
+      it('reads tosrecPercentile for a grade-3 v3 sre run', async () => {
+        const low = await filterByField(sreRules, 'sre', 'percentile', 'lte', ['10']);
+        expect(low.items.map((r) => r.userId)).toContain(sreGrade3StudentId);
+      });
+
+      it('classifies it on percentile cutoffs rather than finding no score', async () => {
+        const needsSupport = await filterByField(sreRules, 'sre', 'supportLevel', 'eq', ['1']);
+        expect(needsSupport.items.map((r) => r.userId)).toContain(sreGrade3StudentId);
+      });
+    });
+  });
+
+  describe('assessment-computed tasks read their own support level', () => {
+    /** roam-alpaca-shaped: reports its own support level, every score field `null`. */
+    const alpacaRules: ResolvedScoringRules = {
+      assessmentSupportLevelField: 'supportLevel',
+      percentileCutoffsByVersion: [],
+      rawScoreThresholdsByVersion: [],
+      percentileBelowGrade: 6,
+      percentileFieldsByVersion: [{ minVersion: 0, fieldName: null }],
+      rawScoreFieldsByVersion: [{ minVersion: 0, fieldName: null }],
+      standardScoreFieldsByVersion: [{ minVersion: 0, fieldName: null }],
+    };
+
+    const filterAlpacaByField = (
+      fieldType: StudentScoresFieldType,
+      operator: StudentScoresFilterOperator,
+      values: string[],
+    ) => filterByField(alpacaRules, 'roam-alpaca', fieldType, operator, values);
+
+    let achievedStudentId: string;
+
+    beforeAll(async () => {
+      achievedStudentId = await seedStudent({
+        nameLast: 'AlpacaAchieved',
+        grade: '3',
+        scores: [{ name: 'supportLevel', value: 'achievedSkill' }],
+      });
+    });
+
+    it('matches the priority the run own support level maps to', async () => {
+      const achieved = await filterAlpacaByField('supportLevel', 'eq', ['3']);
+      expect(achieved.items.map((r) => r.userId)).toContain(achievedStudentId);
+
+      const needsSupport = await filterAlpacaByField('supportLevel', 'eq', ['1']);
+      expect(needsSupport.items.map((r) => r.userId)).not.toContain(achievedStudentId);
+    });
+
+    it('drops a numeric filter the task has no field for, so it matches everything', async () => {
+      // Pins today's fail-open: no column resolves, so the condition is dropped.
+      const impossible = await filterAlpacaByField('percentile', 'gte', ['200']);
+      expect(impossible.items.map((r) => r.userId)).toContain(achievedStudentId);
     });
   });
 });
@@ -2403,9 +2622,9 @@ describe('ReportRepository dynamic sorts — #2289', () => {
         percentileCutoffsByVersion: [{ minVersion: 0, cutoffs: { achieved: 50, developing: 25 } }],
         rawScoreThresholdsByVersion: [{ minVersion: 0, thresholds: { some: 20, above: 40 } }],
         percentileBelowGrade: 6,
-        percentileFieldNames: [PERCENTILE_FIELD],
-        rawScoreFieldNames: [],
-        standardScoreFieldNames: [],
+        percentileFieldsByVersion: [{ minVersion: 0, fieldName: PERCENTILE_FIELD }],
+        rawScoreFieldsByVersion: [],
+        standardScoreFieldsByVersion: [],
       };
 
       const achieved = await enrollStudentWithScore(ctx, 'ScoreAchieved', '3', {
@@ -2440,9 +2659,9 @@ describe('ReportRepository dynamic sorts — #2289', () => {
         percentileCutoffsByVersion: [{ minVersion: 0, cutoffs: { achieved: 50, developing: 25 } }],
         rawScoreThresholdsByVersion: [{ minVersion: 0, thresholds: { some: 20, above: 40 } }],
         percentileBelowGrade: null,
-        percentileFieldNames: [],
-        rawScoreFieldNames: [],
-        standardScoreFieldNames: [],
+        percentileFieldsByVersion: [],
+        rawScoreFieldsByVersion: [],
+        standardScoreFieldsByVersion: [],
       };
 
       const achieved = await enrollStudentWithScore(ctx, 'AssessedAchieved', '3', {
