@@ -1,6 +1,3 @@
-import { getApp } from 'firebase/app';
-import { getStorage, connectStorageEmulator } from 'firebase/storage';
-import type { FirebaseStorage, StorageError } from 'firebase/storage';
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';
@@ -36,7 +33,7 @@ import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-f
 import { GetTaskVariantCommand } from '../commands/get-variant-id.command';
 import { GetVariantByIdCommand } from '../commands/get-variant-by-id.command';
 import { UploadFileCommand } from '../commands/upload-file.command';
-import type { UploadFileOutput } from '../types/upload-file';
+import type { RecordingUploader, UploadFileOutput, UploadStatus } from '../types/upload-file';
 import { UploadStatusEnum } from '../types/upload-file';
 
 type CompatTaskInfo = {
@@ -47,63 +44,6 @@ type CompatTaskInfo = {
 };
 
 /**
- * Fallback Storage emulator port when only FIREBASE_AUTH_EMULATOR_HOST is set —
- * the canonical port from `docker/firebase-emulator/firebase.json`
- * (`emulators.storage.port`). Stacks that publish the Storage emulator on a
- * different host port (the assessment stack uses 9197 so it can run alongside
- * the platform stack) inject FIREBASE_STORAGE_EMULATOR_HOST instead.
- */
-const DEFAULT_STORAGE_EMULATOR_PORT = 9199;
-
-/**
- * Firebase project id for the production admin recordings project. Anything else
- * (e.g. `gse-roar-admin-staging`) resolves to the staging bucket.
- */
-const ADMIN_RECORDINGS_PROD_PROJECT_ID = 'gse-roar-admin';
-
-/** `connectStorageEmulator` may be called at most once per storage instance. */
-let storageEmulatorConnected = false;
-
-/**
- * Resolves the Firebase Storage bucket for recording uploads.
- *
- * - **Dev (Auth emulator running):** returns the default app's storage connected to the
- *   local Storage emulator, so recordings land in the emulator (viewable in the
- *   Emulator UI) instead of a real cloud bucket. The emulator address comes from
- *   `FIREBASE_STORAGE_EMULATOR_HOST` when injected, and otherwise falls back to the
- *   auth emulator's host with the canonical storage port.
- * - **Prod / staging:** returns the admin recordings bucket for the resolved environment
- *   (`gse-roar-admin` → prod, otherwise staging).
- *
- * Resolved lazily (at first upload) rather than at facade init so that consumers which
- * never upload — and test environments with no Firebase app — never call `getApp()`.
- *
- * @returns The Firebase Storage instance recordings are written to
- */
-function resolveStorageBucket(): FirebaseStorage {
-  const authEmulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
-
-  if (authEmulatorHost) {
-    const storage = getStorage(getApp());
-    if (!storageEmulatorConnected) {
-      // Tolerate the scheme-prefixed form firebase-tools uses for its own
-      // analogous variable ('http://127.0.0.1:9199') — without the strip it
-      // would parse to host 'http' and port NaN.
-      const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST?.replace(/^https?:\/\//, '');
-      const [host = '127.0.0.1', port] = storageEmulatorHost
-        ? storageEmulatorHost.split(':')
-        : [authEmulatorHost.split(':')[0]];
-      connectStorageEmulator(storage, host || '127.0.0.1', port ? Number(port) : DEFAULT_STORAGE_EMULATOR_PORT);
-      storageEmulatorConnected = true;
-    }
-    return storage;
-  }
-
-  const env = getApp().options.projectId === ADMIN_RECORDINGS_PROD_PROJECT_ID ? 'prod' : 'staging';
-  return getStorage(getApp(), `gs://roar-${env}-admin-recordings-bucket`);
-}
-
-/**
  * Test-only function to reset the Firekit compat singleton state.
  * Clears the singleton instance and module-level state variables.
  * @internal
@@ -111,6 +51,9 @@ function resolveStorageBucket(): FirebaseStorage {
 export function _resetFirekitCompat(): void {
   FirekitFacade._resetInstance();
 }
+
+/** Maximum uploads in flight at once. Matches the limit legacy Firekit applied. */
+const MAX_CONCURRENT_UPLOADS = 3;
 
 /**
  * Default best-effort timeout (ms) for {@link FirekitFacade.flushUploads}. Once it elapses,
@@ -147,7 +90,6 @@ export class FirekitFacade {
   #runId: string | undefined;
   #taskInfo: CompatTaskInfo | undefined;
   #interactionBuffer: AddInteractionInput[] = [];
-  #storageBucket: FirebaseStorage | undefined;
   #uploadQueue: UploadFileOutput[] = [];
   // Settle tracking for flushUploads(): a resolver + promise per in-flight upload task,
   // populated on enqueue and resolved when the task completes or fails.
@@ -156,8 +98,16 @@ export class FirekitFacade {
   private constructor() {}
 
   /**
-   * Resets all state to initial values.
+   * Resets per-session state to initial values.
    * Called during initialization to prevent state leakage between sessions.
+   *
+   * `#uploadQueue` and `#pendingUploads` are deliberately left alone. An enqueued upload closes
+   * over its own path, bytes, and host uploader (see `UploadFileCommand.execute`), so it owes
+   * nothing to the session that created it: transfers in flight keep running, ones still queued
+   * are picked up by the next `_processUploadQueue()`, and both settle normally. Clearing them
+   * here would abandon recordings whose `storagePath` the caller already persisted on a trial,
+   * and would hide in-flight transfers from the concurrency cap, which counts over
+   * `#uploadQueue`.
    * @internal
    */
   private _reset(): void {
@@ -167,7 +117,6 @@ export class FirekitFacade {
     this.#runId = undefined;
     this.#taskInfo = undefined;
     this.#interactionBuffer = [];
-    this.#storageBucket = undefined;
   }
 
   /**
@@ -197,8 +146,8 @@ export class FirekitFacade {
     this.#api = new RoarApi(ctx);
     this.#invoker = new Invoker(ctx);
     this.#taskInfo = taskInfo;
-    // Storage is resolved lazily at first upload (see `_getStorageBucket`), not here —
-    // `initialize()` must not touch Firebase so consumers/tests without an app can init.
+    // No storage setup here: the host supplies `ctx.recordings` (see RecordingUploader), so
+    // there is nothing for the SDK to resolve and nothing to defer.
   }
 
   /**
@@ -253,21 +202,21 @@ export class FirekitFacade {
   }
 
   /**
-   * Lazily resolves and memoizes the storage bucket for recording uploads.
-   * Resolution is deferred to the first call (upload time) so `initialize()` stays
-   * Firebase-free. See {@link resolveStorageBucket} for the dev/prod/staging routing.
+   * Returns the host-supplied storage capability for recording uploads.
+   *
+   * Recording uploads are opt-in: a host that never uploads omits `ctx.recordings` entirely,
+   * and this throws at the call site rather than failing silently once bytes are in flight.
    * @internal
+   * @throws {SDKError} UPLOAD_FILE_FAILED if the host supplied no uploader
    */
-  _getStorageBucket(): FirebaseStorage {
-    try {
-      this.#storageBucket ??= resolveStorageBucket();
-    } catch (err) {
-      throw new SDKError('appkit.uploadFile requires an initialized Firebase app.', {
+  _getRecordingUploader(): RecordingUploader {
+    const recordings = this.getContext().recordings;
+    if (!recordings) {
+      throw new SDKError('appkit.uploadFile requires a recordings uploader in the SDK context.', {
         code: SdkErrorCode.UPLOAD_FILE_FAILED,
-        ...(err instanceof Error ? { cause: err } : {}),
       });
     }
-    return this.#storageBucket;
+    return recordings;
   }
 
   /**
@@ -388,34 +337,38 @@ export class FirekitFacade {
    */
   _processUploadQueue() {
     const totalUploadingTasks = this.#uploadQueue.filter((task) => task.status === UploadStatusEnum.UPLOADING).length;
-    if (totalUploadingTasks >= 3) return;
+    if (totalUploadingTasks >= MAX_CONCURRENT_UPLOADS) return;
     const nextTask = this.#uploadQueue.find((task) => task.status === UploadStatusEnum.PENDING);
 
     if (!nextTask) return;
 
     nextTask.status = UploadStatusEnum.UPLOADING;
 
-    const activeTask = nextTask.upload();
+    const settle = (status: UploadStatus) => {
+      nextTask.status = status;
+      const idx = this.#uploadQueue.indexOf(nextTask);
+      if (idx !== -1) this.#uploadQueue.splice(idx, 1);
+      this._settleUpload(nextTask);
+      this._processUploadQueue();
+    };
 
-    activeTask.on(
-      'state_changed',
-      undefined,
-      (error: StorageError) => {
-        this._getLogger()?.warn({ err: error }, `Upload failed: ${nextTask.filename}`);
-        nextTask.status = UploadStatusEnum.FAILED;
-        const idx = this.#uploadQueue.indexOf(nextTask);
-        if (idx !== -1) this.#uploadQueue.splice(idx, 1);
-        this._settleUpload(nextTask);
-        this._processUploadQueue();
-      },
-      () => {
-        nextTask.status = UploadStatusEnum.COMPLETED;
-        const idx = this.#uploadQueue.indexOf(nextTask);
-        if (idx !== -1) this.#uploadQueue.splice(idx, 1);
-        this._settleUpload(nextTask);
-        this._processUploadQueue();
-      },
-    );
+    // `upload` is host code now, so a synchronous throw is possible however the interface is
+    // documented. The try/catch covers it as well as a rejection — uncaught, either would
+    // surface only as an unhandled rejection while the task sat UPLOADING forever, stalling
+    // the queue and making flushUploads wait out its timeout. The call itself still happens
+    // synchronously, before the first await.
+    void (async () => {
+      try {
+        await nextTask.upload();
+        settle(UploadStatusEnum.COMPLETED);
+      } catch (error) {
+        // Deliberately not interpolating filename or storagePath: both end in a participant
+        // identifier (readaloud composes the filename from `store.session.get('id')`), and this
+        // goes wherever the host points its logger.
+        this._getLogger()?.warn({ err: error }, 'Recording upload failed');
+        settle(UploadStatusEnum.FAILED);
+      }
+    })();
   }
 
   /**
@@ -1079,7 +1032,7 @@ export async function uploadFile({
   const facade = getFirekitCompat();
   const invoker = facade.getInvoker();
   const ctx = facade.getContext();
-  const storageBucket = facade._getStorageBucket();
+  const recordings = facade._getRecordingUploader();
   const taskInfo = facade._getTaskInfo();
   const runId = facade._getRunId();
   let sanitizedCustomMetadata: Record<string, string> | undefined = { ...customMetadata };
@@ -1119,9 +1072,7 @@ export async function uploadFile({
     ...(customMetadata !== undefined && sanitizedCustomMetadata ? { customMetadata: sanitizedCustomMetadata } : {}),
   };
 
-  // _getStorageBucket() resolves the bucket lazily: the local Storage emulator in dev, the
-  // admin recordings bucket in prod/staging (it throws via getApp if no Firebase app exists).
-  const cmd = new UploadFileCommand(ctx.participant.participantId, storageBucket);
+  const cmd = new UploadFileCommand(ctx.participant.participantId, recordings);
   const output = await invoker.run(cmd, input);
 
   // Add to queue which kicks off the resumable upload process (fire-and-forget)

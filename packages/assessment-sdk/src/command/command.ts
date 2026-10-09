@@ -1,4 +1,5 @@
 import type { ParticipantContext } from '../types/participant-context';
+import type { RecordingUploader } from '../types/upload-file';
 
 /**
  * Logger interface for SDK observability.
@@ -24,6 +25,9 @@ export interface Logger {
  *   the source `getToken` reads from: if `getToken` keeps returning the stale token after a
  *   refresh, every request silently doubles into a 401-refresh-retry cycle.
  * @property participant - Required participant identity context containing participantId
+ * @property recordings - Optional storage capability for recording uploads. Required only by
+ *                        assessments that call `uploadFile`; omitting it makes that call throw
+ *                        rather than failing at upload time.
  * @property requestId - Optional function to generate request IDs for tracing
  * @property fetchImpl - Deprecated and never honored: the underlying ts-rest fetcher always
  *   uses the global fetch. Stub the global in tests instead. Slated for removal in the next major.
@@ -36,6 +40,7 @@ export interface CommandContext {
     refreshToken?(): Promise<string | undefined>;
   };
   participant: ParticipantContext;
+  recordings?: RecordingUploader;
   requestId?: () => string;
   /** @deprecated Never honored — the ts-rest fetcher always uses the global fetch. */
   fetchImpl?: typeof fetch;

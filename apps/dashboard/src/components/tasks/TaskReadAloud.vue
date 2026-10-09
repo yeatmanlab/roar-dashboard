@@ -129,6 +129,13 @@ async function startTask(selectedAdmin) {
     }
 
     // Handed to the assessment, which owns SDK initialization and variant resolution.
+    // No `recordings` uploader: the recordings bucket is not Firebase-linked, so no client
+    // upload can reach it from here regardless of which app opens it. The Firebase buckets the
+    // dashboard does configure (firekit.js) belong to the admin and app projects and are not
+    // it; this task's stimuli come from a plain public GCS bucket, not Firebase at all.
+    // Omitting the uploader makes `uploadFile` throw a named SDK error at the call site, which
+    // Read Aloud's capture view already tolerates. Wiring this up needs the provisioned bucket:
+    // https://github.com/yeatmanlab/roar-project-management/issues/2167
     const sdkContext = {
       ctx: {
         baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
