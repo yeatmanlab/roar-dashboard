@@ -112,7 +112,10 @@ async function startTask(selectedAdmin) {
     }, 100);
 
     const userDob = _get(userData.value, 'studentData.dob');
-    const userDateObj = userDob ? new Date(userDob) : null;
+    const parsedDob = userDob ? new Date(userDob) : null;
+    // A present-but-unparseable dob yields an Invalid Date, whose getMonth()/getFullYear()
+    // are NaN — and that NaN would be persisted as run metadata. Treat it as absent.
+    const userDateObj = parsedDob && !Number.isNaN(parsedDob.getTime()) ? parsedDob : null;
 
     const userParams = {
       grade: _get(userData.value, 'studentData.grade'),

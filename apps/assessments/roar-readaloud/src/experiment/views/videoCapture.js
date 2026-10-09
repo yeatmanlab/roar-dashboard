@@ -125,9 +125,11 @@ export async function saveRecordings({ filename, metadata = {} }) {
  *
  * `uploadFile` enqueues the upload against the host-supplied `ctx.recordings` uploader and
  * returns the storage path immediately at enqueue — it sources runId/administrationId/
- * participantId from the SDK facade. A host that supplies no uploader (currently the dashboard)
- * makes this throw, which the catch below already turns into a null path. We forward the session `id` as `assessmentPid` (the `<assessmentUid>_<participant>`
- * value configureDeviceView stores) so recordings keep the legacy storage-path convention
+ * participantId from the SDK facade. A host that supplies no uploader (currently the
+ * dashboard) makes this throw, which the catch below already turns into a null path.
+ *
+ * We forward the session `id` as `assessmentPid` (the `<assessmentUid>_<participant>` value
+ * configureDeviceView stores) so recordings keep the legacy storage-path convention
  * (`{taskId}/{participantId}/{assessmentPid}/…`) that downstream tooling expects, instead of
  * `pid` falling back to a duplicated participantId. A failed upload must not abort the
  * assessment, so the error is swallowed and null is returned (the caller's `recordAnswer`

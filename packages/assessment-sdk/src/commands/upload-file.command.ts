@@ -9,6 +9,13 @@ import type { RecordingUploader, UploadFileInput, UploadFileOutput } from '../ty
  * `storagePath` is persisted on the trial and parsed by downstream tooling, so a host that
  * passes `gs://bucket/` must not produce `gs://bucket//task/...`.
  *
+ * Not a duplicate of the harness helper of the same name in
+ * `apps/assessments/shared/recordingUploader.js`: that one is a configuration *gate* that
+ * rejects anything but a bare `gs://bucket` and disables uploads, which the SDK cannot do
+ * because any npm consumer may implement `RecordingUploader` itself. This is the unconditional
+ * normalisation applied to whatever the host ends up handing over, so the two need not agree
+ * beyond both removing a trailing slash.
+ *
  * @param bucketUri - Bucket URI as supplied by the host
  * @returns The URI without trailing slashes
  */
