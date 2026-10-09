@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
-import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import {
   LEVANTE_NORMED_TASK_IDS,
@@ -95,11 +94,11 @@ onAuthStateChanged(auth, async (user) => {
         participant: { participantId },
       };
 
-      initFirekitCompat(ctx, {
+      const taskInfo = {
         variantId: resolvedVariantId,
         taskVersion,
         isAnonymous: true,
-      });
+      };
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between published
       // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
@@ -111,8 +110,6 @@ onAuthStateChanged(auth, async (user) => {
           currentVariantId: resolvedVariantId,
         });
       }
-
-      const { variantParams } = await getVariantById(resolvedVariantId);
 
       const userParams = {
         pid,
@@ -126,8 +123,10 @@ onAuthStateChanged(auth, async (user) => {
       };
 
       const isDev = ROAR_DB === 'development';
-      const task = new TaskLauncher(variantParams, userParams, isDev);
-      task.run();
+      // Game params come from the variant, which TaskLauncher resolves through the SDK using the
+      // taskInfo below — so none are passed here. `logger` stays undefined for standalone play.
+      const task = new TaskLauncher({}, userParams, isDev, undefined, { ctx, taskInfo });
+      task.run().catch((err) => console.error('[roar-levante-tasks] run() failed:', err));
     } catch (err) {
       console.error('[roar-levante-tasks] Failed to initialize assessment:', err);
     }

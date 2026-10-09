@@ -12,7 +12,7 @@ import {
 } from './tasks/shared/helpers';
 import './styles/index.scss';
 import taskConfig from './tasks/taskConfig';
-import { startRun } from '@roar-platform/assessment-sdk/compat/firekit';
+import { startRun, initFirekitCompat, getVariantById } from '@roar-platform/assessment-sdk/compat/firekit';
 // @ts-ignore: facade is a plain JS file without type declarations
 import { wireScoreAdapter } from './sdk/levante-firekit-facade.js';
 import { setTaskStore, taskStore } from './taskStore';
@@ -30,16 +30,79 @@ let sharedAudioAssets: MediaAssetsType;
 let taskVisualAssets: MediaAssetsType;
 let sharedVisualAssets: MediaAssetsType;
 
+/**
+ * Host-supplied SDK wiring. Derived from `initFirekitCompat`'s own signature so the shape
+ * cannot drift from the SDK it is passed to.
+ */
+interface AssessmentSdkContext {
+  ctx: Parameters<typeof initFirekitCompat>[0];
+  taskInfo: Parameters<typeof initFirekitCompat>[1];
+}
+
 export class TaskLauncher {
   gameParams: GameParamsType;
   userParams: UserParamsType;
   isDev: boolean;
   logger?: LevanteLogger;
-  constructor(gameParams: GameParamsType, userParams: UserParamsType, isDev = false, logger?: LevanteLogger) {
+  sdkContext?: AssessmentSdkContext;
+
+  /**
+   * @param gameParams - Variant parameters. Ignored in favour of the variant's own parameters
+   *   when `sdkContext` is supplied — pass `{}` in that case.
+   * @param userParams - Participant/session parameters, forwarded as run metadata.
+   * @param isDev - Dev-mode flag.
+   * @param logger - Optional host logger, installed once `gameParams` are resolved.
+   * @param sdkContext - Host-supplied SDK wiring. When present this class owns SDK
+   *   initialization and variant resolution. When absent the host must call
+   *   `initFirekitCompat` itself and pass resolved variant parameters as `gameParams`.
+   */
+  constructor(
+    gameParams: GameParamsType,
+    userParams: UserParamsType,
+    isDev = false,
+    logger?: LevanteLogger,
+    sdkContext?: AssessmentSdkContext,
+  ) {
     this.gameParams = gameParams;
     this.userParams = userParams;
     this.isDev = isDev;
-    Logger.setInstance(logger, gameParams, userParams);
+    this.logger = logger;
+    this.sdkContext = sdkContext;
+
+    // `initFirekitCompat` is synchronous, so initializing here rather than in `run()` keeps the
+    // facade ready before any other method can touch it. Skipped when the host retains
+    // ownership of SDK setup.
+    if (sdkContext) {
+      initFirekitCompat(sdkContext.ctx, sdkContext.taskInfo);
+    } else {
+      // No context to resolve from, so `gameParams` are already final here. Installing the
+      // logger now preserves the pre-#2016 timing for hosts that have not migrated — anything
+      // reaching `Logger.getInstance()` before `run()` still finds it set.
+      Logger.setInstance(logger, gameParams, userParams);
+    }
+  }
+
+  /**
+   * Resolves the run's variant parameters through the SDK when the host handed over its context.
+   *
+   * No-op otherwise, so a host that has not migrated keeps supplying `gameParams` itself.
+   */
+  async _resolveGameParams(): Promise<void> {
+    if (!this.sdkContext) return;
+
+    const { variantParams } = await getVariantById(this.sdkContext.taskInfo.variantId);
+    // The variant is the authority on game parameters; anything the host passed is a fallback.
+    // See .ai/rules/assessment-integration-pattern.md.
+    //
+    // The assertion papers over a pre-existing inaccuracy rather than introducing one:
+    // `GameParamsType` is `Record<string, string>`, but seeded variant params legitimately
+    // carry numbers and booleans, and the SDK types them `Record<string, unknown>`. serve.js
+    // has always passed exactly this value in — being JavaScript, it was never checked.
+    // Widening `GameParamsType` to `Record<string, unknown>` is the real fix. The surface is
+    // small — the alias in types/index.d.ts, the `taskName`/`language` reads below and in the
+    // telemetry payload, and the signatures in helpers/config.ts and utils/logger.ts — but it
+    // is narrowing work unrelated to this change, so it is left for its own.
+    this.gameParams = { ...this.gameParams, ...variantParams } as GameParamsType;
   }
 
   async init() {
@@ -138,6 +201,13 @@ export class TaskLauncher {
   }
 
   async run() {
+    await this._resolveGameParams();
+    if (this.sdkContext) {
+      // Deferred to here only in the handover case: `capture()` snapshots gameParams on every
+      // event, and those are not resolved until `_resolveGameParams` has run. `setInstance`
+      // throws if called twice, so this is mutually exclusive with the constructor branch.
+      Logger.setInstance(this.logger, this.gameParams, this.userParams);
+    }
     showLevanteLogoLoading();
     const { jsPsych, timeline } = await this.init();
     hideLevanteLogoLoading();
