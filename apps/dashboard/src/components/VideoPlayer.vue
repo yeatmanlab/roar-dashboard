@@ -40,10 +40,12 @@ export default {
   data() {
     return {
       player: null,
+      isUnmounted: false,
     };
   },
   mounted: async function () {
     const videojs = (await import('video.js')).default;
+    if (this.isUnmounted || !this.$refs.videoPlayer) return;
     this.player = videojs(this.$refs.videoPlayer, this.options, () => {
       this.player.log('onPlayerReady', this);
     });
@@ -59,6 +61,7 @@ export default {
     this.player.on('ended', () => this.onVideoEnd(this.taskId));
   },
   beforeUnmount() {
+    this.isUnmounted = true;
     if (this.player) {
       this.player.dispose();
     }
