@@ -1,5 +1,5 @@
 /** Matches a bare `YYYY-MM-DD` calendar date, with no time or zone component. */
-export const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 /**
  * Formats a date of birth into the `YYYY-MM-DD` string required by the typed
