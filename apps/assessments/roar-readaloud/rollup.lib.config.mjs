@@ -13,6 +13,8 @@ import url from '@rollup/plugin-url';
 import html from '@rollup/plugin-html';
 import { string } from 'rollup-plugin-string';
 import copy from 'rollup-plugin-copy';
+import { escalateUnresolvedImports } from '../shared/rollupLogging.js';
+import { browserBuiltins } from '../shared/rollupResolve.js';
 
 // Resolve onnxruntime-web's dist dir via the module system so the runtime WASM
 // binaries copy correctly whether the dep is hoisted (monorepo root node_modules)
@@ -41,11 +43,15 @@ export default defineConfig({
     assetFileNames: '[name][extname]',
     sourcemap: true,
   },
+  // `assessment-sdk` is bundled, not externalized: a copy shared with the host is also a shared
+  // `FirekitFacade` singleton, and pins this assessment to whatever SDK version the host resolved.
+  //
   // `assessment-schema` is deliberately bundled rather than externalized: it is pure constants
   // and pure functions, so duplicate copies behave identically, and inlining pins each
   // assessment to the vocabulary it was built and tested against. `firebase` is absent from
-  // the bundle because nothing under src/ imports it, not because this list externalizes it.
-  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@sentry\//],
+  // the bundle because neither src/ nor the bundled SDK imports it, not because this list
+  // externalizes it.
+  external: [/^@sentry\//],
   plugins: [
     postcss({
       inject: true,
@@ -59,9 +65,9 @@ export default defineConfig({
     }),
     dsv(),
     json(),
+    browserBuiltins,
     nodeResolve({
       browser: true,
-      preferBuiltins: false,
       extensions: ['.mjs', '.js', '.json'],
     }),
     // No `include` filter: in the monorepo, deps are hoisted to the root
@@ -86,4 +92,7 @@ export default defineConfig({
       ],
     }),
   ],
+
+  // A resolution failure would otherwise be a warning that still produces a package.
+  onLog: escalateUnresolvedImports,
 });

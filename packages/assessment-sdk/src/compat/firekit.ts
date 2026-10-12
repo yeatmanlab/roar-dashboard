@@ -716,8 +716,12 @@ export function addInteraction(interaction: AddInteractionInput): AddInteraction
  * @throws {SDKError} Always, until implemented.
  */
 export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOutput {
-  // Issue deprecation warning
-  if (process.env.NODE_ENV !== 'production') {
+  // `typeof process` guard, not a bare `process.env` read: since #2016 this module is inlined
+  // into each assessment's published bundle, so a consumer loading that `dist/index.js` without
+  // a bundler to substitute `process.env.NODE_ENV` would otherwise hit a ReferenceError. Losing
+  // the warning in that environment is the right trade against crashing. `process.env?.` because
+  // some polyfills and SSR shims define a bare `process` object with no `env` on it.
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
     console.warn(
       '[DEPRECATION] updateUser() exists only for Firekit compatibility and will be removed in a future version.',
     );
