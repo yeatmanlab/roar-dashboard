@@ -3,9 +3,7 @@ import { ROAR_DB_MODE, unresolvedDefaultVariantPolicy } from './roarDbMode';
 
 describe('unresolvedDefaultVariantPolicy', () => {
   it('is lenient in local development', () => {
-    expect(unresolvedDefaultVariantPolicy(ROAR_DB_MODE.DEVELOPMENT)).toBe(
-      'fallback',
-    );
+    expect(unresolvedDefaultVariantPolicy(ROAR_DB_MODE.DEVELOPMENT)).toBe('fallback');
   });
 
   it('is strict in staging, which is the pre-production check', () => {
@@ -13,9 +11,7 @@ describe('unresolvedDefaultVariantPolicy', () => {
   });
 
   it('is strict in production', () => {
-    expect(unresolvedDefaultVariantPolicy(ROAR_DB_MODE.PRODUCTION)).toBe(
-      'throw',
-    );
+    expect(unresolvedDefaultVariantPolicy(ROAR_DB_MODE.PRODUCTION)).toBe('throw');
   });
 
   it('defaults to strict for an unrecognised mode', () => {
