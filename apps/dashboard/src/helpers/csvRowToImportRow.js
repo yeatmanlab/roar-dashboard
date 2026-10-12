@@ -37,7 +37,7 @@ export function csvRowToImportRow(row) {
 
   if (isPresent(row.password)) importRow.password = row.password;
   if (isPresent(row.dob)) importRow.dob = formatDobToApiDate(parseDob(row.dob));
-  if (isPresent(row.grade)) importRow.grade = new String(row.grade);
+  if (isPresent(row.grade)) importRow.grade = String(row.grade);
 
   if (isPresent(row.first)) importRow.name.first = row.first;
   if (isPresent(row.middle)) importRow.name.middle = row.middle;
