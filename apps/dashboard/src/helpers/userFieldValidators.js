@@ -73,7 +73,7 @@ export const isPasswordValid = (password) => {
  * @param {String} dob - The date of birth to validate.
  * @returns {Date|null} The parsed date, or null if invalid.
  */
-export const isDobValid = (dob) => {
+export const parseDob = (dob) => {
   const DOB_REGEX = /^(\d{1,2})([/-])(\d{1,2})\2(\d{4})$/;
   const match = DOB_REGEX.exec(String(dob).trim());
   if (!match) return null;

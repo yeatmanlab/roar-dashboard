@@ -1,5 +1,5 @@
 import { formatDobToApiDate } from './registration/formatDobToApiDate';
-import { isDobValid } from './userFieldValidators';
+import { parseDob } from './userFieldValidators';
 /**
  * Maps a CSV-mapped student row (keyed by RegisterStudents' canonical field names: `username`,
  * `email`, `password`, `dob`, `grade`, `first`/`middle`/`last`, the demographic fields, `stateId`,
@@ -36,7 +36,7 @@ export function csvRowToImportRow(row) {
   if (isPresent(row.email)) importRow.email = row.email;
 
   if (isPresent(row.password)) importRow.password = row.password;
-  if (isPresent(row.dob)) importRow.dob = formatDobToApiDate(isDobValid(row.dob));
+  if (isPresent(row.dob)) importRow.dob = formatDobToApiDate(parseDob(row.dob));
   if (isPresent(row.grade)) importRow.grade = new String(row.grade);
 
   if (isPresent(row.first)) importRow.name.first = row.first;

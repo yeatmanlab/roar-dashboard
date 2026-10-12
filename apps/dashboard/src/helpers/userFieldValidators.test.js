@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isEmailValid, isUsernameValid, isPasswordValid, isDobValid } from './userFieldValidators';
+import { isEmailValid, isUsernameValid, isPasswordValid, parseDob } from './userFieldValidators';
 
 describe('isEmailValid', () => {
   describe('valid addresses', () => {
@@ -241,7 +241,7 @@ describe('isPasswordValid', () => {
   });
 });
 
-describe('isDobValid', () => {
+describe('parseDob', () => {
   it.each([
     ['2/1/2020', 'single-digit month and day with slashes'],
     ['02/01/2020', 'zero-padded with slashes'],
@@ -249,11 +249,11 @@ describe('isDobValid', () => {
     ['02-01-2020', 'zero-padded with hyphens'],
     [' 2/1/2020 ', 'surrounding whitespace is trimmed'],
   ])('accepts %s (%s)', (dob) => {
-    expect(isDobValid(dob)).toBeInstanceOf(Date);
+    expect(parseDob(dob)).toBeInstanceOf(Date);
   });
 
   it('parses the date correctly', () => {
-    const date = isDobValid('2/1/2020');
+    const date = parseDob('2/1/2020');
     expect(date.getFullYear()).toBe(2020);
     expect(date.getMonth()).toBe(1); // February, zero-indexed
     expect(date.getDate()).toBe(1);
@@ -268,7 +268,7 @@ describe('isDobValid', () => {
     ['not a date', 'non-numeric'],
     ['', 'empty string'],
   ])('rejects %s (%s)', (dob) => {
-    expect(isDobValid(dob)).toBeNull();
+    expect(parseDob(dob)).toBeNull();
   });
 
   it.each([
@@ -277,15 +277,15 @@ describe('isDobValid', () => {
     ['13/45/2020', 'month and day out of range'],
     ['2/29/2021', '2021 is not a leap year'],
   ])('rejects %s (%s)', (dob) => {
-    expect(isDobValid(dob)).toBeNull();
+    expect(parseDob(dob)).toBeNull();
   });
 
   it('accepts a valid leap day', () => {
-    expect(isDobValid('2/29/2020')).toBeInstanceOf(Date);
+    expect(parseDob('2/29/2020')).toBeInstanceOf(Date);
   });
 
   it('rejects a future date', () => {
     const nextYear = new Date().getFullYear() + 1;
-    expect(isDobValid(`1/1/${nextYear}`)).toBeNull();
+    expect(parseDob(`1/1/${nextYear}`)).toBeNull();
   });
 });
