@@ -7,7 +7,6 @@ import {
   abortRun,
   updateEngagementFlags,
   addInteraction,
-  updateUser,
   writeTrial,
   uploadFile,
   flushUploads,
@@ -17,7 +16,7 @@ import {
   _resetFirekitCompat,
 } from './firekit';
 import { SDKError } from '../errors/sdk-error';
-import type { AddInteractionInput, UpdateUserInput, TrialData, RawScores, ComputedScores } from '../types';
+import type { AddInteractionInput, TrialData, RawScores, ComputedScores } from '../types';
 import type { CommandContext } from '../command/command';
 import { RUN_EVENT_STATUS_OK } from '../types';
 import { UploadStatusEnum } from '../types/upload-file';
@@ -345,10 +344,30 @@ describe('firekit compat', () => {
       await expect(startRun()).resolves.toBeUndefined();
     });
 
-    it('includes additional metadata when provided (custom key-value pairs)', async () => {
-      initializeFirekit('run-with-metadata');
-      const additionalMetadata = { customField: 'value', count: 42 };
-      await expect(startRun(additionalMetadata)).resolves.toBeUndefined();
+    // `startRun` builds `StartRunInput` as two hand-duplicated literals, one per anonymity branch,
+    // each spreading `additionalRunMetadata` independently. Covering one leaves the other free to
+    // drop its spread with the suite green, so both are exercised here.
+    describe.each([
+      { label: 'anonymous', options: { isAnonymous: true } },
+      { label: 'non-anonymous', options: { isAnonymous: false, administrationId: 'admin-456' } },
+    ])('includes additional metadata when provided ($label)', ({ options }) => {
+      it('sends it on the wire, not merely resolving', async () => {
+        // `startRun` is the only path an operator-entered `assessmentPid` takes into the run
+        // record, so a command that silently dropped `additionalRunMetadata` would still pass a
+        // resolves-only check.
+        const { fetchMock } = initializeFirekit('run-with-metadata', options);
+        const additionalMetadata = { assessmentPid: 'operator-entered-pid', customField: 'value', count: 42 };
+
+        await expect(startRun(additionalMetadata)).resolves.toBeUndefined();
+
+        // Located by index, not by path: this is the test's only request, and the contract's
+        // trailing slash is an artifact of `path: '/'` under a `pathPrefix` that may be normalized.
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const body = JSON.parse(fetchMock.mock.calls[0]![1].body as string);
+        // `toEqual` rather than `toMatchObject`: the metadata is forwarded verbatim, so pinning
+        // the addition direction is what keeps extra identity data from being injected here.
+        expect(body.metadata).toEqual(additionalMetadata);
+      });
     });
 
     it('matches Firekit signature (with optional metadata)', () => {
@@ -549,36 +568,6 @@ describe('firekit compat', () => {
       expectTypeOf(updateEngagementFlags).toEqualTypeOf<
         (flagNames: string[], markAsReliable?: boolean) => Promise<void>
       >();
-    });
-  });
-
-  describe('updateUser', () => {
-    it('throws SDKError when called (stub not yet implemented)', async () => {
-      await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
-      await expect(updateUser({ tasks: [], variants: [] })).rejects.toBeInstanceOf(SDKError);
-      await expect(updateUser({ assessmentPid: 'test', metadata: { customField: 'value' } })).rejects.toBeInstanceOf(
-        SDKError,
-      );
-    });
-
-    it('issues deprecation warning when called (related to standalone apps)', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        '[DEPRECATION] updateUser() exists only for Firekit compatibility and will be removed in a future version.',
-      );
-
-      consoleWarnSpy.mockRestore();
-    });
-
-    it('matches Firekit signature', () => {
-      // runtime assertion to satisfy vitest/expect-expect
-      expect(typeof updateUser).toBe('function');
-
-      // compile-time signature check
-      expectTypeOf(updateUser).toEqualTypeOf<(userUpdateData: UpdateUserInput) => Promise<void>>();
     });
   });
 

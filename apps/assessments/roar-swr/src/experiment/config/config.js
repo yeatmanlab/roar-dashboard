@@ -9,7 +9,7 @@ import { getAgeData, getGrade } from '@bdelab/roar-utils';
 import i18next from 'i18next';
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import { SWR_LANGUAGES } from '@roar-platform/assessment-schema/roar-swr';
-import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
+import { writeTrial, finishRun, addInteraction } from '@roar-platform/assessment-sdk/compat/firekit';
 import { wireScoreAdapter } from '../../sdk/swr-firekit-facade';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { enterFullscreen } from '../trials/fullScreen';
@@ -264,14 +264,6 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
     scoringVersion: scoringVersion ?? null,
   };
 
-  const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
-  );
-
-  // updateTaskParams is deprecated and will be removed in a future version.
-  // Task parameters are now recorded via the assessment-sdk run metadata.
-  console.warn('[roar-swr] updateTaskParams is deprecated and has no effect.', updatedGameParams);
-
   if (config.useParameterValidation) {
     // Exclude the internal control flag — it is not a game parameter and is not in the schema.
     const { useParameterValidation: _useParameterValidation, ...paramsToValidate } = gameParams;
@@ -283,13 +275,6 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
     }
   }
 
-  if (config.pid) {
-    try {
-      await updateUser({ assessmentPid: config.pid, ...userMetadata });
-    } catch (err) {
-      console.error('[roar-swr] updateUser failed (non-fatal):', err);
-    }
-  }
   return config;
 };
 
@@ -336,15 +321,6 @@ export const initRoarTimeline = (config) => {
       async: true,
       func: async (done) => {
         config.pid = config.pid || makePid();
-        try {
-          await updateUser({
-            assessmentPid: config.pid,
-            labId: config.labId,
-            ...config.userMetadata,
-          });
-        } catch (err) {
-          console.error('[roar-swr] updateUser failed (non-fatal):', err);
-        }
         done();
       },
     },

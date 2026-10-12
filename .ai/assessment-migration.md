@@ -180,23 +180,23 @@ Now the assessment's own source changes. Phase 2 seeded the variants this phase 
 
 Remove `@bdelab/roar-firekit` entirely — even for bundle-only tasks, or the build won't resolve. Import from `@roar-platform/assessment-sdk/compat/firekit`.
 
-| Legacy call                                      | Replacement                                                                                  |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `firekit.startRun()`                             | `startRun(metadata?)`                                                                        |
-| `firekit.writeTrial(data, cb)`                   | `writeTrial(data, cb)`                                                                       |
-| `firekit.finishRun()`                            | `finishRun(metadata?)`                                                                       |
-| `firekit.addInteraction(data)`                   | `addInteraction(data)`                                                                       |
-| `firekit.updateEngagementFlags(flags, reliable)` | `updateEngagementFlags(flags, reliable)`                                                     |
-| `firekit.updateUser({...})`                      | **Drop the call.** Assessments never write user data — see below.                            |
-| `firekit.updateTaskParams(params)`               | **Drop the call** + `console.warn`. No SDK equivalent — the backend owns variant params now. |
-| `this.firekit.run.completed` poll                | Poll a **local** completion flag instead; add `abort()` → `abortRun()`. See below.           |
-| `uploadFileOrBlobToStorage(...)`                 | `uploadFile(...)`, plus `flushUploads()` before finishing                                    |
+| Legacy call                                      | Replacement                                                                        |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `firekit.startRun()`                             | `startRun(metadata?)`                                                              |
+| `firekit.writeTrial(data, cb)`                   | `writeTrial(data, cb)`                                                             |
+| `firekit.finishRun()`                            | `finishRun(metadata?)`                                                             |
+| `firekit.addInteraction(data)`                   | `addInteraction(data)`                                                             |
+| `firekit.updateEngagementFlags(flags, reliable)` | `updateEngagementFlags(flags, reliable)`                                           |
+| `firekit.updateUser({...})`                      | **Drop the call.** Assessments never write user data — see below.                  |
+| `firekit.updateTaskParams(params)`               | **Drop the call.** No SDK equivalent — the backend owns variant params now.        |
+| `this.firekit.run.completed` poll                | Poll a **local** completion flag instead; add `abort()` → `abortRun()`. See below. |
+| `uploadFileOrBlobToStorage(...)`                 | `uploadFile(...)`, plus `flushUploads()` before finishing                          |
 
 The `TaskLauncher` constructor loses its `firekit` parameter: `new TaskLauncher(variantParams, userParams, target)`.
 
 **Completion polling has no SDK equivalent** — there is no run object to read. `isTaskFinished` is an assessment-local helper (`src/tasks/shared/helpers/isTaskFinished`), not an SDK export; roam-apps, roav-apps, and levante each carry their own copy. Point it at a flag the assessment owns: levante polls its Pinia store (`await isTaskFinished(() => taskStore().taskComplete)`). If the assessment you're migrating has no such helper, copy one — don't reach for the SDK.
 
-**Assessments read identity; they never write it.** Every legacy `updateUser` call is dropped, not replaced. Identity is owned upstream, and the assessments migrated so far have run without it — dropping it is settled, not provisional. The SDK's `updateUser` export exists only as a firekit-compatibility stub and throws if called; treat it as absent. If a migration plan shows `updateUser → updateUser`, the plan predates this decision.
+**Assessments read identity; they never write it.** Every legacy `updateUser` call is dropped, not replaced. Identity is owned upstream, and the assessments migrated so far have run without it — dropping it is settled, not provisional. The SDK has no `updateUser` export at all — the firekit-compatibility stub that used to throw was removed. If a migration plan shows `updateUser → updateUser`, the plan predates this decision.
 
 Where the assessment has an **editable** participant-ID field (roav-ran and roav-apps do; readaloud's is pre-filled and disabled), the operator-entered PID goes into run metadata via `startRun` and/or the recording's `uploadFile` `customMetadata`. Never onto the user record, and never overwriting a PID the user already has.
 
@@ -325,7 +325,7 @@ Nothing here changes how the assessment behaves; it changes whether the platform
 
 **Assessment stops redeploying when the SDK changes** — you added the paths filter to `detect-assessment-changes` but not the hardcoded fallback matrix. There are three such arrays across two files.
 
-**Uploads throw inside the SDK** — see the `firebase` version pin above.
+**Uploads throw inside the SDK** — the host supplied no `ctx.recordings` uploader, so `_getRecordingUploader()` throws `UPLOAD_FILE_FAILED` before any bytes move. Standalone harnesses build one with `createRecordingUploader()`; the dashboard path does not supply one yet.
 
 **Asset 404s on the dashboard but loads standalone** — a runtime string path instead of a `new URL(..., import.meta.url)` bundler reference. See [3c](#3c-runtime-loaded-assets-must-be-bundler-references). In dev the 404 can be masked: Vite's SPA fallback answers unknown paths with `index.html` and a 200, so a preload "succeeds" while caching HTML and the real consumer fails later.
 
