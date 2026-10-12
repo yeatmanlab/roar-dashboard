@@ -27,6 +27,7 @@ function isPresent(value) {
 /**
  * @param {Record<string, unknown>} row - A CSV-mapped student row (canonical keys).
  * @returns {object} An `ImportUserRow` with `memberships: []` (the caller fills memberships in).
+ * @throws {Error} If `dob` is present but not a parseable date.
  */
 export function csvRowToImportRow(row) {
   const importRow = { userType: 'student', name: {}, memberships: [] };
@@ -36,7 +37,11 @@ export function csvRowToImportRow(row) {
   if (isPresent(row.email)) importRow.email = row.email;
 
   if (isPresent(row.password)) importRow.password = row.password;
-  if (isPresent(row.dob)) importRow.dob = formatDobToApiDate(parseDob(row.dob));
+  if (isPresent(row.dob)) {
+    const dob = parseDob(row.dob);
+    if (!dob) throw new Error(`Invalid date of birth: ${row.dob}`);
+    importRow.dob = formatDobToApiDate(dob);
+  }
   if (isPresent(row.grade)) importRow.grade = String(row.grade);
 
   if (isPresent(row.first)) importRow.name.first = row.first;

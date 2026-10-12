@@ -278,7 +278,7 @@ async function validityCheck(row) {
   if (!_get(row, 'dob')) {
     errors.push('Date of Birth is required');
   } else if (!parseDob(row['dob'])) {
-    errors.push('Date of Birth must be a valid date in MM/DD/YYYY or YYYY/MM/DD format');
+    errors.push('Date of Birth must be a valid date in MM/DD/YYYY or YYYY-MM-DD format');
   }
 
   // check that password is valid
