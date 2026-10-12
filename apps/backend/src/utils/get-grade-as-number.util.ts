@@ -12,7 +12,7 @@
  * - 'Ungraded' - explicitly ungraded students
  * - 'Other' - non-standard grade levels
  */
-const GRADE_MAP: Record<string, number> = {
+export const GRADE_MAP: Record<string, number> = {
   InfantToddler: 0,
   Preschool: 0,
   PreKindergarten: 0,

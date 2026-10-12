@@ -754,37 +754,6 @@ describe('getSupportThreshold', () => {
 });
 
 describe('resolveScoreFieldNames', () => {
-  describe('without scoringVersion (all possible names)', () => {
-    it('resolves swr fields (all versions)', () => {
-      const result = resolveScoreFieldNames('swr', 3);
-      expect(result.percentileFieldNames).toContain('percentile');
-      expect(result.percentileFieldNames).toContain('wjPercentile');
-      expect(result.percentileDisplayFieldNames).toContain('percentile');
-      expect(result.percentileDisplayFieldNames).toContain('wjPercentile');
-      expect(result.standardScoreFieldNames).toContain('standardScore');
-      expect(result.standardScoreDisplayFieldNames).toContain('standardScore');
-      expect(result.rawScoreFieldNames).toContain('roarScore');
-    });
-
-    it('resolves sre fields for grade < 6 (all versions)', () => {
-      const result = resolveScoreFieldNames('sre', 3);
-      expect(result.percentileFieldNames).toContain('percentile');
-      expect(result.percentileFieldNames).toContain('tosrecPercentile');
-      expect(result.standardScoreFieldNames).toContain('standardScore');
-      expect(result.standardScoreFieldNames).toContain('tosrecSS');
-      expect(result.rawScoreFieldNames).toContain('sreScore');
-    });
-
-    it('resolves sre fields for grade >= 6 (all versions)', () => {
-      const result = resolveScoreFieldNames('sre', 8);
-      expect(result.percentileFieldNames).toContain('percentile');
-      expect(result.percentileFieldNames).toContain('sprPercentile');
-      expect(result.standardScoreFieldNames).toContain('standardScore');
-      expect(result.standardScoreFieldNames).toContain('sprStandardScore');
-      expect(result.rawScoreFieldNames).toContain('sreScore');
-    });
-  });
-
   describe('grade normalization', () => {
     // The grade argument accepts what `getSupportLevel` accepts, so callers can
     // hand both the same value instead of converting for one and not the other.
@@ -892,7 +861,7 @@ describe('resolveScoreFieldNames', () => {
   });
 
   it('resolves pa fields for grade < 6', () => {
-    const result = resolveScoreFieldNames('pa', 3);
+    const result = resolveScoreFieldNames('pa', 3, null);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.percentileDisplayFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
@@ -901,7 +870,7 @@ describe('resolveScoreFieldNames', () => {
   });
 
   it('resolves pa fields for grade >= 6', () => {
-    const result = resolveScoreFieldNames('pa', 8);
+    const result = resolveScoreFieldNames('pa', 8, null);
     expect(result.percentileFieldNames).toContain('sprPercentile');
     expect(result.percentileDisplayFieldNames).toContain('sprPercentileString');
     expect(result.standardScoreFieldNames).toContain('sprStandardScore');
@@ -909,57 +878,66 @@ describe('resolveScoreFieldNames', () => {
     expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
-  it('resolves letter fields', () => {
-    const result = resolveScoreFieldNames('letter', 1);
-    expect(result.percentileFieldNames).toContain('totalPercentCorrect');
-    expect(result.percentileDisplayFieldNames).toContain('totalPercentCorrect');
-    expect(result.standardScoreFieldNames).toContain('standardScore');
-    expect(result.standardScoreDisplayFieldNames).toContain('standardScore');
-    expect(result.rawScoreFieldNames).toContain('totalCorrect');
+  it('resolves letter fields for v0', () => {
+    const result = resolveScoreFieldNames('letter', 1, null);
+    expect(result.percentileFieldNames).toEqual(['totalPercentCorrect']);
+    expect(result.percentileDisplayFieldNames).toEqual(['totalPercentCorrect']);
+    expect(result.standardScoreFieldNames).toEqual([]);
+    expect(result.standardScoreDisplayFieldNames).toEqual([]);
+    expect(result.rawScoreFieldNames).toEqual(['totalCorrect']);
+  });
+
+  it('resolves letter fields for v1', () => {
+    const result = resolveScoreFieldNames('letter', 1, 1);
+    expect(result.percentileFieldNames).toEqual(['percentile']);
+    expect(result.percentileDisplayFieldNames).toEqual(['percentile']);
+    expect(result.standardScoreFieldNames).toEqual(['standardScore']);
+    expect(result.standardScoreDisplayFieldNames).toEqual(['standardScore']);
+    expect(result.rawScoreFieldNames).toEqual(['roarScore']);
   });
 
   it('resolves phonics fields', () => {
-    const result = resolveScoreFieldNames('phonics', 3);
+    const result = resolveScoreFieldNames('phonics', 3, null);
     expect(result.percentileFieldNames).toContain('totalPercentCorrect');
     expect(result.rawScoreFieldNames).toContain('totalCorrect');
   });
 
   it('resolves sre-es fields', () => {
-    const result = resolveScoreFieldNames('sre-es', 3);
+    const result = resolveScoreFieldNames('sre-es', 3, 1);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.rawScoreFieldNames).toContain('sreScore');
   });
 
   it('resolves cva fields', () => {
-    const result = resolveScoreFieldNames('cva', 3);
+    const result = resolveScoreFieldNames('cva', 3, 1);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
     expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('resolves roar-inference fields', () => {
-    const result = resolveScoreFieldNames('roar-inference', 3);
+    const result = resolveScoreFieldNames('roar-inference', 3, 1);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
     expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('resolves morphology fields', () => {
-    const result = resolveScoreFieldNames('morphology', 3);
+    const result = resolveScoreFieldNames('morphology', 3, 1);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
     expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('resolves trog fields', () => {
-    const result = resolveScoreFieldNames('trog', 3);
+    const result = resolveScoreFieldNames('trog', 3, 1);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
     expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('returns empty arrays for unknown task', () => {
-    const result = resolveScoreFieldNames('unknown-task', 3);
+    const result = resolveScoreFieldNames('unknown-task', 3, null);
     expect(result.percentileFieldNames).toHaveLength(0);
     expect(result.percentileDisplayFieldNames).toHaveLength(0);
     expect(result.standardScoreFieldNames).toHaveLength(0);
@@ -968,7 +946,7 @@ describe('resolveScoreFieldNames', () => {
   });
 
   it('handles null grade level', () => {
-    const result = resolveScoreFieldNames('sre', null);
+    const result = resolveScoreFieldNames('sre', null, null);
     // null grade treated as >= 6 path (gradeGte fallback in grade-conditional)
     expect(result.percentileFieldNames).toContain('sprPercentile');
   });

@@ -457,61 +457,42 @@ export function resolveNumericScore(scores: Map<string, string>, fieldNames: str
 }
 
 /**
- * Resolve score field names for a task, optionally filtered by scoring version.
- *
- * When scoringVersion is provided (including null for legacy v0), returns only
- * the field names applicable to that specific version — prevents callers from
- * looking up field names that don't exist in the norming tables for that version.
- *
- * When omitted, returns all possible field names across all versions (backward compat).
+ * Resolve score field names for a task, for one grade and one scoring version.
  *
  * @param taskSlug - The task slug
  * @param grade - Grade enum string, number, or null. Normalized via `getGradeAsNumber`.
- * @param scoringVersion - When provided, resolve for this version only. Omit for all versions.
+ * @param scoringVersion - The scoring version, or null for legacy v0.
  * @returns Resolved field names for percentile and raw score
  */
 export function resolveScoreFieldNames(
   taskSlug: string,
   grade: string | number | null,
-  scoringVersion?: number | null,
+  scoringVersion: number | null,
 ): ScoreFieldResolution {
   const gradeLevel = getGradeAsNumber(grade);
-  const emptyResolution: ScoreFieldResolution = {
-    percentileFieldNames: [],
-    percentileDisplayFieldNames: [],
-    standardScoreFieldNames: [],
-    standardScoreDisplayFieldNames: [],
-    rawScoreFieldNames: [],
-  };
 
-  const config = getScoringConfig(taskSlug);
-  if (!config) {
-    return emptyResolution;
-  }
-
-  // When a scoring version is provided, resolve for that specific version only.
-  if (scoringVersion !== undefined) {
-    const version = scoringVersion ?? 0;
+  if (!getScoringConfig(taskSlug)) {
     return {
-      percentileFieldNames: collectVersionSpecificFieldNames(taskSlug, 'percentile', gradeLevel, version),
-      percentileDisplayFieldNames: collectVersionSpecificFieldNames(taskSlug, 'percentileDisplay', gradeLevel, version),
-      standardScoreFieldNames: collectVersionSpecificFieldNames(taskSlug, 'standardScore', gradeLevel, version),
-      standardScoreDisplayFieldNames: collectVersionSpecificFieldNames(
-        taskSlug,
-        'standardScoreDisplay',
-        gradeLevel,
-        version,
-      ),
-      rawScoreFieldNames: collectVersionSpecificFieldNames(taskSlug, 'rawScore', gradeLevel, version),
+      percentileFieldNames: [],
+      percentileDisplayFieldNames: [],
+      standardScoreFieldNames: [],
+      standardScoreDisplayFieldNames: [],
+      rawScoreFieldNames: [],
     };
   }
 
+  const version = scoringVersion ?? 0;
   return {
-    percentileFieldNames: collectAllFieldNames(config, 'percentile', gradeLevel),
-    percentileDisplayFieldNames: collectAllFieldNames(config, 'percentileDisplay', gradeLevel),
-    standardScoreFieldNames: collectAllFieldNames(config, 'standardScore', gradeLevel),
-    standardScoreDisplayFieldNames: collectAllFieldNames(config, 'standardScoreDisplay', gradeLevel),
-    rawScoreFieldNames: collectAllFieldNames(config, 'rawScore', gradeLevel),
+    percentileFieldNames: collectVersionSpecificFieldNames(taskSlug, 'percentile', gradeLevel, version),
+    percentileDisplayFieldNames: collectVersionSpecificFieldNames(taskSlug, 'percentileDisplay', gradeLevel, version),
+    standardScoreFieldNames: collectVersionSpecificFieldNames(taskSlug, 'standardScore', gradeLevel, version),
+    standardScoreDisplayFieldNames: collectVersionSpecificFieldNames(
+      taskSlug,
+      'standardScoreDisplay',
+      gradeLevel,
+      version,
+    ),
+    rawScoreFieldNames: collectVersionSpecificFieldNames(taskSlug, 'rawScore', gradeLevel, version),
   };
 }
 
@@ -715,29 +696,6 @@ function collectVersionSpecificFieldNames(
 ): string[] {
   const resolved = resolveScoreFieldName(taskSlug, gradeLevel, fieldType, scoringVersion);
   return resolved !== null ? [resolved] : [];
-}
-
-/**
- * Collect all unique, non-null field names across all version entries for a field type.
- */
-function collectAllFieldNames(
-  config: ScoringConfig,
-  fieldType: (typeof SCORE_FIELD_TYPES)[number],
-  gradeLevel: number | null,
-): string[] {
-  const fieldEntries = config.scoreFields[fieldType];
-  if (!fieldEntries) {
-    return [];
-  }
-
-  const names = new Set<string>();
-  for (const entry of fieldEntries) {
-    const resolved = resolveFieldValue(entry.fieldName, gradeLevel);
-    if (resolved !== null) {
-      names.add(resolved);
-    }
-  }
-  return [...names];
 }
 
 /**
