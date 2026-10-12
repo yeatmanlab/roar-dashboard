@@ -27,7 +27,10 @@ import { fdwRuns } from '../db/schema/assessment-fdw/runs';
 import { fdwRunScores } from '../db/schema/assessment-fdw/run-scores';
 import { SortOrder } from '@roar-platform/api-contract';
 import type { ScopeType } from '../services/report/report.types';
-import type { PercentileThenRawscoreClassification } from '../services/scoring/scoring.config-schema';
+import type {
+  PercentileThenRawscoreClassification,
+  VersionedFieldName,
+} from '../services/scoring/scoring.config-schema';
 import { conditionToSql } from '../utils/condition-to-sql';
 import type { Condition } from '../types/condition';
 import type { ConditionFieldMap } from '../utils/condition-to-sql';
@@ -37,6 +40,7 @@ import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
 import { COMPOSITE_RUN_TASK_ID } from '../constants/run';
 import { SCORE_DOMAIN, SCORE_NAME } from '../constants/run-scores';
+import { GRADE_MAP } from '../utils/get-grade-as-number.util';
 import { compositeScoreFilter } from './utils/composite-score-filter.utils';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
@@ -299,10 +303,9 @@ export interface ResolvedScoringRules {
   percentileCutoffsByVersion: PercentileThenRawscoreClassification['percentileCutoffs'];
   rawScoreThresholdsByVersion: PercentileThenRawscoreClassification['rawScoreThresholds'];
   percentileBelowGrade: number | null;
-  /** Resolved field names for the variant + grade-aware fallback. */
-  percentileFieldNames: string[];
-  rawScoreFieldNames: string[];
-  standardScoreFieldNames: string[];
+  percentileFieldsByVersion: VersionedFieldName[];
+  rawScoreFieldsByVersion: VersionedFieldName[];
+  standardScoreFieldsByVersion: VersionedFieldName[];
 }
 
 /**
@@ -2196,101 +2199,135 @@ export class ReportRepository {
     const joins: JoinPlan[] = [];
 
     /**
-     * Build a runs+run_scores subquery selecting `value` for one (variant, name) combo.
-     * `grade` is the run's demographic snapshot, mirroring the response path's
-     * `runGrade ?? student.grade`; left-joined since a run may have none.
+     * Pivot one (alias, variant) to a row per student, each candidate score name its own
+     * column. Puts `grade`, `ver` and the values in one row so the field-name CASE can read
+     * them together, and collapses the per-score-name fan-out that duplicated student rows.
+     *
+     * Grouping by user alone is safe because `use_for_reporting` already selects one run per
+     * (user, administration, variant) — so a run dedupe would be unreachable and is left out.
+     * A flagged run may have no scores, hence the left join and NULL value columns.
      */
-    const buildScoreSub = (alias: string, variantId: string, scoreNames: string[]) =>
-      this.db
-        .select({
-          userId: fdwRuns.userId,
-          value: fdwRunScores.value,
-          grade: runDemographics.grade,
-        })
-        .from(fdwRuns)
-        .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
-        .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
-        .where(
-          and(
-            eq(fdwRuns.administrationId, administrationId),
-            eq(fdwRuns.taskVariantId, variantId),
-            isNull(fdwRuns.deletedAt),
-            isNull(fdwRuns.abortedAt),
-            eq(fdwRuns.useForReporting, true),
-            isNotNull(fdwRuns.completedAt),
-            compositeScoreFilter(),
-            scoreNames.length === 1 ? eq(fdwRunScores.name, scoreNames[0]!) : inArray(fdwRunScores.name, scoreNames),
-          ),
-        )
-        .as(alias);
+    const buildVariantScoreSub = (alias: string, variantId: string, rules: ResolvedScoringRules) => {
+      const candidates = new Set<string>([
+        ...candidateFieldNames(rules.percentileFieldsByVersion),
+        ...candidateFieldNames(rules.rawScoreFieldsByVersion),
+        ...candidateFieldNames(rules.standardScoreFieldsByVersion),
+      ]);
+
+      // `userId` and `grade` are selected as real columns so Drizzle emits qualified
+      // references. Aggregates have to be aliased SQL, which Drizzle references by bare
+      // alias — hence `pivotColumn`, which keeps those names unique across joined pivots.
+      const aggregate = (key: string, expr: SQL) => sql`${expr}`.as(pivotColumn(alias, key));
+
+      const columns: Record<string, SQL.Aliased | PgColumn> = {
+        userId: fdwRuns.userId,
+        grade: runDemographics.grade,
+        [pivotColumn(alias, VER_KEY)]: aggregate(
+          VER_KEY,
+          sql`MAX(${numericValueSql(fdwRunScores.value)}) FILTER (WHERE ${fdwRunScores.name} = ${SCORE_NAME.SCORING_VERSION})`,
+        ),
+      };
+      for (const name of candidates) {
+        columns[pivotColumn(alias, name)] = aggregate(
+          name,
+          sql`MAX(${numericValueSql(fdwRunScores.value)}) FILTER (WHERE ${fdwRunScores.name} = ${name})`,
+        );
+      }
+      if (rules.assessmentSupportLevelField) {
+        columns[pivotColumn(alias, SUPPORT_LEVEL_KEY)] = aggregate(
+          SUPPORT_LEVEL_KEY,
+          sql`MAX(${fdwRunScores.value}) FILTER (WHERE ${fdwRunScores.name} = ${rules.assessmentSupportLevelField})`,
+        );
+      }
+
+      return (
+        this.db
+          .select(columns)
+          .from(fdwRuns)
+          // Nothing guarantees a snapshot row (no cross-DB FK) so we left join.
+          .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
+          .leftJoin(fdwRunScores, and(eq(fdwRunScores.runId, fdwRuns.id), compositeScoreFilter()))
+          .where(
+            and(
+              eq(fdwRuns.administrationId, administrationId),
+              eq(fdwRuns.taskVariantId, variantId),
+              isNull(fdwRuns.deletedAt),
+              isNull(fdwRuns.abortedAt),
+              eq(fdwRuns.useForReporting, true),
+              isNotNull(fdwRuns.completedAt),
+            ),
+          )
+          .groupBy(fdwRuns.userId, runDemographics.grade)
+          .as(alias)
+      );
+    };
 
     /** Add a numeric (rawScore/percentile/standardScore) join for a field ref. */
     const addNumericJoin = (alias: string, ref: StudentScoresFieldRef): SQL | null => {
       const rules = scoringRulesByVariant?.get(ref.taskVariantId);
-      const fieldNames =
+      if (!rules) return null;
+      const entries =
         ref.fieldType === 'rawScore'
-          ? rules?.rawScoreFieldNames
+          ? rules.rawScoreFieldsByVersion
           : ref.fieldType === 'percentile'
-            ? rules?.percentileFieldNames
+            ? rules.percentileFieldsByVersion
             : ref.fieldType === 'standardScore'
-              ? rules?.standardScoreFieldNames
-              : undefined;
-      if (!fieldNames || fieldNames.length === 0) {
+              ? rules.standardScoreFieldsByVersion
+              : [];
+      if (entries.length === 0) {
         // Task has no resolvable field for this type (e.g., letter has no percentile)
         return null;
       }
-      const sub = buildScoreSub(alias, ref.taskVariantId, fieldNames);
-      const expr = numericValueSql(sub.value);
+      const sub = buildVariantScoreSub(alias, ref.taskVariantId, rules);
+      const expr = buildFieldValueSql(
+        entries,
+        sql`COALESCE(${pivotRef(sub, alias, VER_KEY)}, 0)`,
+        gradeAsIntSql(sql`COALESCE(${sub.grade}, ${users.grade})`),
+        (name) => pivotRef(sub, alias, name),
+      );
+      if (!expr) return null;
       joins.push({ sub, alias, expr });
       return expr;
     };
 
-    /** Add support-level priority join(s) for a field ref. Returns the priority SQL or null. */
+    /** Add the support-level priority join for a field ref. Returns the priority SQL or null. */
     const addSupportLevelJoin = (aliasPrefix: string, ref: StudentScoresFieldRef): SQL | null => {
       const rules = scoringRulesByVariant?.get(ref.taskVariantId);
       if (!rules) return null;
 
-      // Assessment-computed: one join on the supportLevel field, mapped to priority
+      const alias = `${aliasPrefix}_sl`;
+      const sub = buildVariantScoreSub(alias, ref.taskVariantId, rules);
+      // Assessment-computed: the run's own supportLevel string, mapped to priority
       if (rules.assessmentSupportLevelField) {
-        const sub = buildScoreSub(`${aliasPrefix}_sl`, ref.taskVariantId, [rules.assessmentSupportLevelField]);
-        const expr = sql`CASE ${sub.value}
+        const expr = sql`CASE ${pivotRef(sub, alias, SUPPORT_LEVEL_KEY)}
           WHEN 'achievedSkill' THEN 3
           WHEN 'developingSkill' THEN 2
           WHEN 'needsExtraSupport' THEN 1
           ELSE NULL::integer
         END`;
-        joins.push({ sub, alias: `${aliasPrefix}_sl`, expr });
+        joins.push({ sub, alias, expr });
         return expr;
       }
 
-      // Percentile-then-rawscore: needs percentile + rawScore joins (each may be empty)
-      const pctNames = rules.percentileFieldNames;
-      const rawNames = rules.rawScoreFieldNames;
-      let pctSql: SQL | null = null;
-      let rawSql: SQL | null = null;
-      let gradeSql: SQL = gradeAsIntSql(users.grade);
+      // Percentile-then-rawscore: each leg resolves its own field name per run
+      const verSql = sql`COALESCE(${pivotRef(sub, alias, VER_KEY)}, 0)`;
+      const gradeSql = gradeAsIntSql(sql`COALESCE(${sub.grade}, ${users.grade})`);
+      const colFor = (name: string) => pivotRef(sub, alias, name);
 
-      if (pctNames.length > 0 && rules.percentileCutoffsByVersion.length > 0) {
-        const sub = buildScoreSub(`${aliasPrefix}_pct`, ref.taskVariantId, pctNames);
-        joins.push({ sub, alias: `${aliasPrefix}_pct`, expr: numericValueSql(sub.value) });
-        pctSql = numericValueSql(sub.value);
-        gradeSql = gradeAsIntSql(sql`COALESCE(${sub.grade}, ${users.grade})`);
-      }
-      if (rawNames.length > 0 && rules.rawScoreThresholdsByVersion.length > 0) {
-        const sub = buildScoreSub(`${aliasPrefix}_raw`, ref.taskVariantId, rawNames);
-        joins.push({ sub, alias: `${aliasPrefix}_raw`, expr: numericValueSql(sub.value) });
-        rawSql = numericValueSql(sub.value);
-      }
+      const pctSql =
+        rules.percentileCutoffsByVersion.length > 0
+          ? buildFieldValueSql(rules.percentileFieldsByVersion, verSql, gradeSql, colFor)
+          : null;
+      const rawSql =
+        rules.rawScoreThresholdsByVersion.length > 0
+          ? buildFieldValueSql(rules.rawScoreFieldsByVersion, verSql, gradeSql, colFor)
+          : null;
+      if (!pctSql && !rawSql) return null;
 
-      // The run's stamped version selects which cutoffs apply; absent → 0.
-      let verSql: SQL | null = null;
-      if (pctSql || rawSql) {
-        const sub = buildScoreSub(`${aliasPrefix}_ver`, ref.taskVariantId, [SCORE_NAME.SCORING_VERSION]);
-        joins.push({ sub, alias: `${aliasPrefix}_ver`, expr: numericValueSql(sub.value) });
-        verSql = numericValueSql(sub.value);
-      }
-
-      return buildSupportLevelPrioritySql(rules, gradeSql, pctSql, rawSql, verSql);
+      const expr = buildSupportLevelPrioritySql(rules, gradeSql, pctSql, rawSql, verSql);
+      if (!expr) return null;
+      joins.push({ sub, alias, expr });
+      return expr;
     };
 
     // 2. Build sort expression (via dynamic field if requested)
@@ -2314,7 +2351,9 @@ export class ReportRepository {
           f.fieldType === 'supportLevel'
             ? addSupportLevelJoin(filterAlias, f)
             : addNumericJoin(`${filterAlias}_${f.fieldType}`, f);
-        if (!valueExpr) continue; // No resolvable scores → filter has no effect (matches nothing)
+        // No resolvable field for this task — the condition is dropped, so the filter
+        // matches everything rather than nothing.
+        if (!valueExpr) continue;
         const condition = buildScoreFieldFilterCondition(valueExpr, f.operator, f.values);
         if (condition) fieldFilterConditions.push(condition);
       }
@@ -3355,17 +3394,12 @@ export class ReportRepository {
 
 /**
  * Emit SQL that coerces a text grade column to a numeric grade level.
- *
- * Strips every non-digit character before casting to integer:
- *   `'Kindergarten'` → NULL, `'3'` → 3, `'12'` → 12, `'K-3'` → 3 (the digit only).
- *
- * Negative grades are not part of any roster convention we currently support, so
- * the regex deliberately excludes `-` — keeping it would let `'K-3'` parse as
- * `-3`, which would silently mis-classify scoring config branches that compare
- * grade against `percentileBelowGrade` (e.g., grade < 6 → percentile path).
+ * Built from `GRADE_MAP` so it agrees with `getGradeAsNumber`
+ * Grades with no numeric meaning (`'Ungraded'`, `'Other'`, `''`) fall through to NULL.
  */
 function gradeAsIntSql(gradeColumn: SQL | Column | PgColumn): SQL {
-  return sql`CAST(NULLIF(REGEXP_REPLACE(${gradeColumn}::text, '[^0-9]', '', 'g'), '') AS INTEGER)`;
+  const branches = Object.entries(GRADE_MAP).map(([grade, level]) => sql`WHEN ${grade} THEN ${level}`);
+  return sql`CASE ${gradeColumn}::text ${sql.join(branches, sql` `)} ELSE NULL::integer END`;
 }
 
 /**
@@ -3382,6 +3416,90 @@ function gradeAsIntSql(gradeColumn: SQL | Column | PgColumn): SQL {
  */
 function numericValueSql(valueExpr: SQL | Column): SQL {
   return sql`CAST(NULLIF(REGEXP_REPLACE(${valueExpr}, '[^0-9.-]', '', 'g'), '') AS NUMERIC)`;
+}
+
+/** Pivot column keys that aren't score names. Prefixed, so a real score can't collide. */
+const VER_KEY = '__ver';
+const SUPPORT_LEVEL_KEY = '__supportLevel';
+
+/**
+ * Name a pivot's aggregate column.
+ *
+ * Drizzle references aliased SQL by bare alias, with no subquery qualifier, so two
+ * joined pivots selecting the same name make the reference ambiguous in Postgres.
+ * Including the subquery alias keeps every aggregate column unique across joins.
+ */
+function pivotColumn(alias: string, key: string): string {
+  return `${alias}__${key}`;
+}
+
+/** Read one aggregate column off a pivot subquery. Keys are generated, so always present. */
+function pivotRef(sub: unknown, alias: string, key: string): SQL {
+  return (sub as Record<string, SQL>)[pivotColumn(alias, key)]!;
+}
+
+/**
+ * Every score name a field type could resolve to, across all versions and both
+ * grade branches. The pivot needs a column for each, since which one is the
+ * field of record isn't known until the run's version and grade are read.
+ */
+function candidateFieldNames(entries: VersionedFieldName[]): string[] {
+  const names = new Set<string>();
+  for (const entry of entries) {
+    if (typeof entry.fieldName === 'string') {
+      names.add(entry.fieldName);
+    } else if (entry.fieldName !== null) {
+      for (const condition of entry.fieldName.conditions) {
+        names.add(condition.value);
+      }
+    }
+  }
+  return [...names];
+}
+
+/**
+ * Emit SQL that resolves one field type to a single value per run — the SQL
+ * counterpart of `resolveScoreFieldName`.
+ *
+ * Branches are emitted in array order and SQL takes the first match, which is only correct
+ * for strictly descending `minVersion`. `VersionedFieldNameArraySchema`'s `descendingMinVersion`
+ * refinement enforces that at config-parse time, same as `resolveVersionedEntry` relies on.
+ *
+ * A NULL grade — `Ungraded`, `Other`, or none recorded — takes the `gradeGte` branch,
+ * mirroring `resolveFieldValue`: the filter path has to agree with the response path, so
+ * change both or neither. Returns null when no entry names a field, which is how a task
+ * that reports its own support level (roam-alpaca) resolves to no column.
+ */
+function buildFieldValueSql(
+  entries: VersionedFieldName[],
+  versionSql: SQL,
+  gradeSql: SQL,
+  columnFor: (scoreName: string) => SQL,
+): SQL | null {
+  const branches: SQL[] = [];
+
+  for (const entry of entries) {
+    const fieldName = entry.fieldName;
+    let resolved: SQL | null = null;
+
+    if (typeof fieldName === 'string') {
+      resolved = columnFor(fieldName);
+    } else if (fieldName !== null) {
+      const gradeBranches = fieldName.conditions.map((condition) =>
+        'gradeLt' in condition
+          ? sql`WHEN ${gradeSql} IS NOT NULL AND ${gradeSql} < ${condition.gradeLt} THEN ${columnFor(condition.value)}`
+          : sql`WHEN ${gradeSql} IS NULL OR ${gradeSql} >= ${condition.gradeGte} THEN ${columnFor(condition.value)}`,
+      );
+      resolved = sql`CASE ${sql.join(gradeBranches, sql` `)} END`;
+    }
+
+    if (resolved) {
+      branches.push(sql`WHEN ${versionSql} >= ${entry.minVersion} THEN ${resolved}`);
+    }
+  }
+
+  if (branches.length === 0) return null;
+  return sql`CASE ${sql.join(branches, sql` `)} END`;
 }
 
 /**
