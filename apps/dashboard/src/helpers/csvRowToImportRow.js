@@ -1,5 +1,5 @@
 import { formatDobToApiDate } from './registration/formatDobToApiDate';
-import { parseDob } from './userFieldValidators';
+import { parseDob } from './parseDob';
 /**
  * Maps a CSV-mapped student row (keyed by RegisterStudents' canonical field names: `username`,
  * `email`, `password`, `dob`, `grade`, `first`/`middle`/`last`, the demographic fields, `stateId`,

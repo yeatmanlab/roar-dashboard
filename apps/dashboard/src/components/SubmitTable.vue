@@ -95,7 +95,9 @@ import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
 import InputText from 'primevue/inputtext';
 import PvButton from 'primevue/button';
-import { isEmailValid, isUsernameValid, isPasswordValid, parseDob } from '@/helpers/userFieldValidators';
+import { isEmailValid, isUsernameValid, isPasswordValid } from '@/helpers/userFieldValidators';
+import { parseDob } from '@/helpers/parseDob';
+
 const props = defineProps({
   students: {
     type: Object,
