@@ -18,6 +18,7 @@ import {
   PA_SKILL_LEGACY_THRESHOLD,
   replaceDocLinks,
   isTaskNormed,
+  classifyGradeEstimate,
 } from './reports';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
@@ -1392,6 +1393,24 @@ describe('reports', () => {
 
     it('defaults scoringVersion to null when not provided', () => {
       expect(isTaskNormed('letter')).toBe(false);
+    });
+  });
+
+  describe('classifyGradeEstimate', () => {
+    const gradeEstimateTestCases = [
+      [-1, 'Pre-K'],
+      [-0.1, 'Pre-K'],
+      [0, 'K'],
+      [0.5, 'K'],
+      [1, 1],
+      [6.52, 6.52],
+      [9, 'HS'],
+      [10, 'Post-HS'],
+      [13, 'Post-HS'],
+    ];
+
+    it.each(gradeEstimateTestCases)('classifyGradeEstimate(%s) returns %s', (gradeEstimate, expected) => {
+      expect(classifyGradeEstimate(gradeEstimate)).toBe(expected);
     });
   });
 });

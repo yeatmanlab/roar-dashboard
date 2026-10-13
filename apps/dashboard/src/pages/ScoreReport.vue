@@ -403,6 +403,7 @@ import {
   roamFluencySubskillHeadersNonResponse,
   isTaskNormed,
   previouslyUnnormedTasks,
+  classifyGradeEstimate,
 } from '@/helpers/reports';
 import { i18n } from '@/translations/i18n';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
@@ -1285,6 +1286,7 @@ const computeAssignmentAndRunData = computed(() => {
               if (subskillInfo) {
                 // roam-alpaca calculates and returns support level automatically
                 let tagColor = getTagColor(subskillInfo.supportLevel);
+                const gradeEstimateLabel = classifyGradeEstimate(subskillInfo.gradeEstimate);
                 currRowScores[taskId][subskillId] = {
                   tagColor: returnColorByReliability(
                     assessment,
@@ -1293,7 +1295,9 @@ const computeAssignmentAndRunData = computed(() => {
                     tagColor,
                   ),
                   ...subskillInfo,
+                  gradeEstimate: gradeEstimateLabel,
                 };
+                console.log(currRowScores[taskId][subskillId]);
               } else {
                 currRowScores[taskId][subskillId] = null;
               }
@@ -1303,7 +1307,9 @@ const computeAssignmentAndRunData = computed(() => {
             currRowScores[taskId].composite = {
               ...scores.composite,
               incorrectSkills: scores.composite.incorrectSkills?.length > 0 ? scores.composite.incorrectSkills : null,
-              gradeEstimate: scores.composite.gradeEstimate ? _round(scores.composite.gradeEstimate, 2) : '',
+              gradeEstimate: scores.composite.gradeEstimate
+                ? classifyGradeEstimate(scores.composite.gradeEstimate)
+                : '',
               tagColor: getTagColor(scores.composite.supportLevel),
             };
           }

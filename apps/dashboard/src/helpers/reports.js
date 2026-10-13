@@ -1662,6 +1662,17 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
   return path;
 };
 
+// Map roam-alpaca grade estimate to grade categories (display purposes only).
+export const classifyGradeEstimate = (gradeEstimate) => {
+  if (gradeEstimate < 0) return 'Pre-K';
+  if (gradeEstimate < 1) return 'K';
+  if (gradeEstimate >= 9 && gradeEstimate < 10) return 'HS';
+  if (gradeEstimate >= 10) return 'Post-HS';
+
+  // Elementary to middle school values are kept as numeric
+  return gradeEstimate;
+};
+
 export const taskInfoById = {
   phonics: {
     color: '#4B7BE5',
