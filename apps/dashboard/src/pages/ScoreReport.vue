@@ -1276,7 +1276,11 @@ const computeAssignmentAndRunData = computed(() => {
             _get(assessment, `scores.computed.composite.${key}`),
           );
 
-          Object.assign(currRowScores[taskId], { numCorrect, numAttempted, gradeEstimate });
+          Object.assign(currRowScores[taskId], {
+            numCorrect,
+            numAttempted,
+            gradeEstimate: classifyGradeEstimate(gradeEstimate),
+          });
         }
         if (taskId === 'roam-alpaca') {
           const scores = _get(assessment, 'scores.computed');
@@ -1297,7 +1301,6 @@ const computeAssignmentAndRunData = computed(() => {
                   ...subskillInfo,
                   gradeEstimate: gradeEstimateLabel,
                 };
-                console.log(currRowScores[taskId][subskillId]);
               } else {
                 currRowScores[taskId][subskillId] = null;
               }
