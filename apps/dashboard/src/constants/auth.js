@@ -12,6 +12,20 @@ export const AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION =
   parseInt(import.meta.env.VITE_AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION, 10) || 60 * oneSecondInMs;
 
 /**
+ * How long the router's first navigation waits for Firebase to report the
+ * session before giving up and treating the visitor as signed out.
+ *
+ * The gate only waits on Firebase initialization and its first token
+ * emission — not on a token arriving over the network — so the bound is far
+ * tighter than the 20s grace timer it replaced on the SSO landing page.
+ * Generous enough for a cold cache on a weak device; short enough that a
+ * hung init does not look like a hang to the user.
+ *
+ * @constant {number} AUTH_READY_TIMEOUT_MS
+ */
+export const AUTH_READY_TIMEOUT_MS = 10 * oneSecondInMs;
+
+/**
  * Auth User Type
  *
  * @constant {Object} AUTH_USER_TYPE - User type, admin or participant.
