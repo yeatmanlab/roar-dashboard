@@ -21,6 +21,35 @@ describe('csvRowToImportRow', () => {
     });
   });
 
+  it.each([
+    ['2/1/2020', '2020-02-01'],
+    ['02/01/2020', '2020-02-01'],
+    ['2-1-2020', '2020-02-01'],
+    ['12/25/2015', '2015-12-25'],
+    ['2015-01-01', '2015-01-01'],
+    ['2015/1/1', '2015-01-01'],
+  ])('reformats dob %s to %s', (dob, expected) => {
+    expect(csvRowToImportRow({ dob }).dob).toBe(expected);
+  });
+
+  it('throws naming the value when dob is present but unparseable', () => {
+    expect(() => csvRowToImportRow({ dob: '13/45/2020' })).toThrow('Invalid date of birth: 13/45/2020');
+  });
+
+  it('omits dob when absent', () => {
+    expect(csvRowToImportRow({ first: 'Ada' })).not.toHaveProperty('dob');
+  });
+
+  it.each([
+    [3, '3'],
+    ['3', '3'],
+    [0, '0'],
+  ])('coerces grade %p to the primitive string %p', (grade, expected) => {
+    const result = csvRowToImportRow({ grade }).grade;
+    expect(result).toBe(expected);
+    expect(typeof result).toBe('string');
+  });
+
   it('renames demographics to the contract keys and coerces hispanicEthnicity to a boolean', () => {
     const { demographics } = csvRowToImportRow({
       gender: 'female',
