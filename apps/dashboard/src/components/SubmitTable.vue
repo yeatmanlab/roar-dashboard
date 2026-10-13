@@ -95,7 +95,9 @@ import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
 import InputText from 'primevue/inputtext';
 import PvButton from 'primevue/button';
-import { isEmailValid, isUsernameValid, isPasswordValid, isDobValid } from '@/helpers/userFieldValidators';
+import { isEmailValid, isUsernameValid, isPasswordValid } from '@/helpers/userFieldValidators';
+import { parseDob } from '@/helpers/parseDob';
+
 const props = defineProps({
   students: {
     type: Object,
@@ -275,8 +277,8 @@ async function validityCheck(row) {
 
   if (!_get(row, 'dob')) {
     errors.push('Date of Birth is required');
-  } else if (!isDobValid(row['dob'])) {
-    errors.push('Date of Birth must be a valid date in MM/DD/YYYY format');
+  } else if (!parseDob(row['dob'])) {
+    errors.push('Date of Birth must be a valid date in MM/DD/YYYY or YYYY-MM-DD format');
   }
 
   // check that password is valid
