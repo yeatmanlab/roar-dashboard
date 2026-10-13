@@ -371,8 +371,7 @@ describe('Providers.vue', () => {
     const buttonClasses = button.classes();
 
     expect(buttonClasses).toContain('flex');
-    expect(buttonClasses).toContain('h-1');
-    expect(buttonClasses).toContain('m-1');
+    expect(buttonClasses).toContain('my-1');
     expect(buttonClasses).toContain('w-full');
     expect(buttonClasses).toContain('border-round-md');
   });

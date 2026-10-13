@@ -219,7 +219,6 @@ import _findIndex from 'lodash/findIndex';
 import _debounce from 'lodash/debounce';
 import _toLower from 'lodash/toLower';
 import _isEmpty from 'lodash/isEmpty';
-import _union from 'lodash/union';
 import { VueDraggableNext } from 'vue-draggable-next';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -236,6 +235,7 @@ import PvIconField from 'primevue/iconfield';
 import PvInputIcon from 'primevue/inputicon';
 import SelectButton from 'primevue/selectbutton';
 import PvConfirmDialog from 'primevue/confirmdialog';
+import { CARD_TYPES, mergeSelectedVariants } from './taskPickerUtils';
 
 const toast = useToast();
 const confirm = useConfirm();
@@ -261,11 +261,6 @@ const props = defineProps({
   },
 });
 
-const CARD_TYPES = {
-  VARIANT: 'variant',
-  BUNDLE: 'bundle',
-};
-
 const selectedVariants = ref([]);
 const currentCardType = ref(CARD_TYPES.BUNDLE);
 
@@ -288,23 +283,13 @@ watch(
     if (_isEmpty(newVariants)) {
       return;
     }
-    // @TODO: Fix this as it's not working as expected. When updating the data set in the parent component, the data is
-    // added twice to the selectedVariants array, despite the _union call.
-    selectedVariants.value = _union(selectedVariants.value, newVariants);
-
-    // Update the card with the type, and update conditions for the variants that were pre-existing
-    selectedVariants.value = selectedVariants.value.map((variant) => {
-      variant = { ...variant, type: CARD_TYPES.VARIANT };
-      const preExistingInfo = props.preExistingAssessmentInfo.find((info) => info?.variantId === variant?.id);
-
-      if (preExistingInfo) {
-        return {
-          ...variant,
-          variant: { ...variant?.variant, conditions: preExistingInfo.conditions },
-        };
-      }
-      return variant;
-    });
+    // Merging by variant ID keeps this watcher idempotent. It is a deep watcher on a prop the
+    // parent rebuilds, so it can fire more than once for the same administration.
+    selectedVariants.value = mergeSelectedVariants(
+      selectedVariants.value,
+      newVariants,
+      props.preExistingAssessmentInfo,
+    );
   },
   { deep: true, immediate: true },
 );

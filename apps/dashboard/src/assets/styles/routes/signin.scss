@@ -7,7 +7,7 @@ body.page-signin {
 .border-style {
   outline: 1.2px solid rgba(0, 0, 0, 0.1);
 }
-.divider {
+.signin-divider {
   display: flex;
   align-items: center;
   text-align: center;
@@ -16,16 +16,16 @@ body.page-signin {
   margin: 1rem 0;
   font-size: 0.95rem;
 }
-.divider::before,
-.divider::after {
+.signin-divider::before,
+.signin-divider::after {
   content: '';
   flex: 1;
   border-bottom: 1px solid #d1d5db;
 }
-.divider::before {
+.signin-divider::before {
   margin-right: 0.75rem;
 }
-.divider::after {
+.signin-divider::after {
   margin-left: 0.75rem;
 }
 .loading-blur {
@@ -202,8 +202,24 @@ body.page-signin .signin-card {
 
 .provider-button {
   border-radius: 3rem;
-  height: 2.5rem;
+  min-height: 2.5rem;
   color: black !important;
+}
+
+.provider-button-icon {
+  flex: 0 0 2rem;
+  width: 2rem;
+  height: 2rem;
+}
+
+img.provider-button-icon {
+  display: block;
+}
+
+i.provider-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .signin-button {

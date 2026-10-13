@@ -3,7 +3,7 @@
     <!-- Google -->
     <ProviderButton
       v-if="availableProviders.includes('google')"
-      class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
+      class="flex my-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
       :img-src="GOOGLE_LOGO"
       :label="`${$t('authSignIn.signInWith')} Google`"
       data-cy="sign-in__google-sso"
@@ -13,7 +13,7 @@
     <!-- Clever -->
     <ProviderButton
       v-if="showAllDistrict || availableProviders.includes('clever')"
-      class="flex h-1 m-1 w-full surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
+      class="flex my-1 w-full surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
       :img-src="CLEVER_LOGO"
       :label="`${$t('authSignIn.signInWith')} Clever`"
       data-cy="sign-in__clever-sso"
@@ -23,7 +23,7 @@
     <!-- ClassLink -->
     <ProviderButton
       v-if="showAllDistrict || availableProviders.includes('classlink')"
-      class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
+      class="flex my-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
       :img-src="CLASSLINK_LOGO"
       :label="`${$t('authSignIn.signInWith')} ClassLink`"
       data-cy="sign-in__classlink-sso"
@@ -33,7 +33,7 @@
     <!-- NYCPS -->
     <ProviderButton
       v-if="showAllDistrict || availableProviders.includes('nycps')"
-      class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
+      class="flex my-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
       :img-src="NYCPS_LOGO"
       :label="`${$t('authSignIn.signInWith')} NYCPS`"
       data-cy="sign-in__nycps-sso"
