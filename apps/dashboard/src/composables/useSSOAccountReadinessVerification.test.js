@@ -250,14 +250,13 @@ describe('useSSOAccountReadinessVerification', () => {
     expect(result.hasError.value).toBe(false);
   });
 
-  it('routes to SignIn when no access token arrives within the grace period', async () => {
-    // Deep link or stale bookmark: no Firebase session means the /me query
-    // never fires, so without this guard the page would spin forever.
-    vi.useFakeTimers();
+  it('routes to SignIn immediately when there is no access token', () => {
+    // Deep link or stale bookmark. The router gate resolved auth before this
+    // page mounted, so a missing token means "signed out", not "not yet" —
+    // no grace period, no timer, and no wait for the user.
     mocks.useAuthStore.mockReturnValue({ accessToken: null });
 
     setup();
-    await vi.advanceTimersByTimeAsync(20_000);
 
     expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
     expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.SSO_SESSION_MISSING, {
@@ -266,24 +265,23 @@ describe('useSSOAccountReadinessVerification', () => {
     });
   });
 
-  it('does not route to SignIn when a token is present at the end of the grace period', async () => {
-    vi.useFakeTimers();
-
+  it('does not route to SignIn when a token is already present', () => {
     setup();
-    await vi.advanceTimersByTimeAsync(20_000);
 
     expect(router.replace).not.toHaveBeenCalled();
   });
 
-  it('cancels the no-session timer on unmount', async () => {
+  it('lets a slow-but-successful provisioning wait proceed', async () => {
+    // The residual race the grace timer could not win: a token present at
+    // mount, /me still provisioning well past the old 20s cutoff. Nothing
+    // may bounce the user to SignIn — the wait is working as intended.
     vi.useFakeTimers();
-    mocks.useAuthStore.mockReturnValue({ accessToken: null });
 
-    const { app } = setup();
-    app.unmount();
-    await vi.advanceTimersByTimeAsync(20_000);
+    const { result } = setup();
+    await vi.advanceTimersByTimeAsync(60_000);
 
     expect(router.replace).not.toHaveBeenCalled();
+    expect(result.hasError.value).toBe(false);
   });
 
   it('routes to SignIn when the access token disappears after having arrived', async () => {
