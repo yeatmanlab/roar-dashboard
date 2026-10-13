@@ -7,6 +7,7 @@ export const AUTH_LOG_MESSAGES = Object.freeze({
   MISSING_SSO_PROVIDER: 'No SSO provider detected. Redirecting to SSO landing page...',
   AWAITING_ACCOUNT_READINESS: 'Redirected to SSO landing page, awaiting account provisioning...',
   PROVISIONING_RETRIES_EXHAUSTED: 'SSO account readiness wait exhausted all /me retries',
+  AUTH_READY_TIMED_OUT: 'Auth readiness timed out, proceeding as signed out',
 });
 
 export const NAV_LOG_MESSAGES = Object.freeze({
