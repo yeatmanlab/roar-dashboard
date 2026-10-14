@@ -64,12 +64,15 @@ It provides `getFirebaseConfig()` (emulator config when `FIREBASE_AUTH_EMULATOR_
 2. `getFirebaseConfig()` → `initializeApp` → `getAuth`; `connectAuthEmulator` when `FIREBASE_AUTH_EMULATOR_HOST` is set.
 3. `signInAnonymously`, then inside `onAuthStateChanged`:
 4. `bootstrapAnonymousSession({ baseUrl, auth }, { variantId?, taskId })` → `{ participantId, variantId }`.
-5. `initFirekitCompat(ctx, { variantId, taskVersion, isAnonymous: true })`.
+5. Build `ctx` — `{ baseUrl, auth, participant }` — and `taskInfo` — `{ variantId, taskVersion, isAnonymous: true }`. Assessments that record also build `recordings` via `createRecordingUploader(app)` at module scope and spread it in conditionally, since it returns `undefined` when no bucket resolves.
 6. `mountVariantPicker(...)` when `ROAR_DB !== 'production'`.
-7. `getVariantById(resolvedVariantId)` → `{ variantParams }`.
-8. `new TaskLauncher({ ...variantParams }, userParams, null).run()`.
+7. `new TaskLauncher(gameParams, userParams, …, { ctx, taskInfo }).run()`.
 
-The variant is the source of truth for game parameters. URL params are the fallback for standalone play, not the authority — `roar-multichoice/serve/serve.js` comments this explicitly.
+**The harness no longer initializes the SDK or resolves the variant.** It hands `{ ctx, taskInfo }` over and the assessment calls `initFirekitCompat` itself, then resolves its own variant parameters through the SDK — which is what lets one assessment bundle its own SDK copy rather than sharing the host's. So `serve.js` passes no game params: `roar-multichoice` passes only the URL-derived `task`, and the rest pass `{}`.
+
+`{ ctx, taskInfo }` is always the **last** argument, but its position differs — fourth for `roar-multichoice`, `roar-readaloud` and `roav-ran`, fifth for `roar-swr`, which still takes `useParameterValidation`. Normalizing that is tracked separately.
+
+The variant is still the source of truth for game parameters; only the resolution moved. URL params remain the fallback for standalone play, not the authority — `roar-multichoice/serve/serve.js` comments this explicitly.
 
 ### The package manifest
 
