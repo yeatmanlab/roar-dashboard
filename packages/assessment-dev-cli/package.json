@@ -16,7 +16,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@clack/prompts": "^1.8.1"
+    "@clack/prompts": "^1.8.1",
+    "@roar-platform/assessment-schema": "^1.0.0"
   },
   "devDependencies": {
     "@roar-platform/eslint-config": "*",
