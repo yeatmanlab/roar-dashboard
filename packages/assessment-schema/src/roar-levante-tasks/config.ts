@@ -61,3 +61,9 @@ export const LEVANTE_SCORE_TABLE_URL = (
   const { bucket, csvPrefix } = LEVANTE_NORMED_TASK_TABLE_CONFIG[taskId];
   return `${origin}/${bucket}/scores/${csvPrefix}_lookup_v${version}.csv`;
 };
+
+/**
+ * Suffix for this assessment's artifact bucket. See `artifact-buckets.ts` for how the backend composes
+ * the full name, and why the suffix is declared separately from the task IDs above.
+ */
+export const LEVANTE_ARTIFACT_BUCKET_SUFFIX = 'levante' as const;
