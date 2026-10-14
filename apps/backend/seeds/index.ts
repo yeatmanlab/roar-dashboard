@@ -14,6 +14,7 @@
  * - CORE_DATABASE_URL: Core database connection string (required)
  * - ASSESSMENT_DATABASE_URL: Assessment database connection string (required)
  * - FGA_API_URL: OpenFGA server URL (default: http://localhost:4010)
+ * - GCS_API_ENDPOINT: Local GCS stand-in (default: http://localhost:4443)
  * - FIREBASE_AUTH_EMULATOR_HOST: When set, seeds Auth emulator users
  * - CYPRESS_FIXTURE_FILE: Path for Cypress fixture (default: /tmp/roar-cypress-fixture.json)
  * - TEST_FIXTURE_FILE: Path for SDK fixture (default: /tmp/roar-test-fixture.json)
@@ -25,6 +26,7 @@ import { createChildLogger } from '../src/logger';
 import { runReset } from './reset';
 import { runSetup } from './setup';
 import { runSeed } from './seed';
+import { runSeedArtifactBuckets } from './seed-artifact-buckets';
 import { runSeedDefaultTasks } from './seed-default-tasks';
 
 const logger = createChildLogger({}, { msgPrefix: '[dev] ' });
@@ -33,6 +35,10 @@ async function main(): Promise<void> {
   logger.info('Running full dev environment pipeline (setup + seed)...');
 
   await runSetup();
+
+  // Buckets are infrastructure like the FGA store: provisioned once, before any
+  // data references them. fake-gcs does not create them on demand.
+  await runSeedArtifactBuckets();
 
   // Re-load the dotenv file so the FGA store/model IDs written by setup are
   // available to the seed step (which needs them for tuple sync).
