@@ -24,3 +24,9 @@ export const READALOUD_DEVICE_CONFIG_URL = (
   deviceConfigFile: string,
   origin: string = READALOUD_DEVICE_CONFIG_ORIGIN,
 ): string => `${origin}/public/config/${deviceConfigFile}.json`;
+
+/**
+ * Suffix for this assessment's artifact bucket. See `artifact-buckets.ts` for how the backend composes
+ * the full name, and why the suffix is declared separately from the task IDs above.
+ */
+export const READALOUD_ARTIFACT_BUCKET_SUFFIX = 'readaloud' as const;

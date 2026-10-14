@@ -26,3 +26,9 @@ export type PaSubtaskKey = (typeof PA_SUBTASK_KEYS)[number];
 // Currently only used by the roar-pa assessment app (src/experiment/scores.js)
 export const PA_SCORE_TABLE_URL = (version: PaScoringVersion, origin: string = GCS_ORIGIN): string =>
   `${origin}/roar-pa/scores/pa_lookup_v${version}.csv`;
+
+/**
+ * Suffix for this assessment's artifact bucket. See `artifact-buckets.ts` for how the backend composes
+ * the full name, and why the suffix is declared separately from the task IDs above.
+ */
+export const PA_ARTIFACT_BUCKET_SUFFIX = 'phoneme' as const;

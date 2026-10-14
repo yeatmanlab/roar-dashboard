@@ -17,3 +17,9 @@ export const SYMBOL_SEARCH_TASK_ID = 'symbol-search' as const;
 export type SymbolSearchTaskId = typeof SYMBOL_SEARCH_TASK_ID;
 
 export type RoavRanTaskId = RanTaskId | SymbolSearchTaskId;
+
+/**
+ * Suffix for this assessment's artifact bucket. See `artifact-buckets.ts` for how the backend composes
+ * the full name, and why the suffix is declared separately from the task IDs above.
+ */
+export const ROAV_RAN_ARTIFACT_BUCKET_SUFFIX = 'naming' as const;

@@ -95,6 +95,12 @@ identifiers exist so the backend's Firebase Admin init and the assessments' clie
 the same _local_ emulator project. That is cross-party agreement, i.e. vocabulary, and the values
 are conventional emulator placeholders rather than real ROAR infrastructure.
 
+**Artifact bucket suffixes are vocabulary, not deployment config.** `artifact-buckets.ts` declares
+a bucket suffix per assessment — `readaloud`, `naming` — and composes `gs://<project-id>-<suffix>`.
+The suffix is a name fragment the whole platform must agree on; the deployment-varying half is the
+project ID, a required parameter with no default, so no ROAR project is named here. Same shape as
+the asset-URL builders: a shared fragment plus a caller-supplied origin.
+
 ## Layout
 
 ```
@@ -104,6 +110,7 @@ src/
   types/              ScoreEntry
   firebase-emulator.ts
   score-utils.ts
+  artifact-buckets.ts per-assessment bucket suffixes + URI composition
   <assessment>/
     config.ts         task IDs, scoring versions, score-table locators
     domains.ts        canonical run_scores.domain values
