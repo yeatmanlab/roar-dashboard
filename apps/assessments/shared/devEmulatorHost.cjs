@@ -1,8 +1,8 @@
-// Single source of truth for the emulator hosts that dev-mode bundler configs
-// default FIREBASE_AUTH_EMULATOR_HOST / FIREBASE_STORAGE_EMULATOR_HOST to.
+// Single source of truth for the emulator host that dev-mode bundler configs
+// default FIREBASE_AUTH_EMULATOR_HOST to.
 //
-// The assessment stack publishes the emulators on 9097/9197 — deliberately NOT
-// the canonical 9099/9199 the platform stack uses — so both dev environments
+// The assessment stack publishes the Auth emulator on 9097 — deliberately NOT
+// the canonical 9099 the platform stack uses — so both dev environments
 // run in parallel with no port overlap. The ports are shifted in the emulator
 // config itself (docker/firebase-emulator/firebase.assessment.json) and mapped
 // 1:1 in docker-compose.assessment.yml — the Emulator UI builds browser-side
@@ -19,6 +19,5 @@
 'use strict';
 
 const FIREBASE_EMULATOR_AUTH_HOST = '127.0.0.1:9097';
-const FIREBASE_EMULATOR_STORAGE_HOST = '127.0.0.1:9197';
 
-module.exports = { FIREBASE_EMULATOR_AUTH_HOST, FIREBASE_EMULATOR_STORAGE_HOST };
+module.exports = { FIREBASE_EMULATOR_AUTH_HOST };

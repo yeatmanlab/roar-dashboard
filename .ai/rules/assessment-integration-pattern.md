@@ -54,7 +54,7 @@ import { getFirebaseConfig } from "../../shared/firebaseConfig";
 import { mountVariantPicker } from "../../shared/variantPicker.js";
 ```
 
-It provides `getFirebaseConfig()` (emulator config when `FIREBASE_AUTH_EMULATOR_HOST` is set, otherwise Firebase Hosting's `/__/firebase/init.json`), `mountVariantPicker()`, and `initSentry()`. Anything genuinely common to every standalone harness belongs here rather than copied into each assessment. (The emulator's `firebase.json` / `storage.rules` live in `docker/firebase-emulator/` — the shared emulator image both dev stacks build from.)
+It provides `getFirebaseConfig()` (emulator config when `FIREBASE_AUTH_EMULATOR_HOST` is set, otherwise Firebase Hosting's `/__/firebase/init.json`), `mountVariantPicker()`, and `initSentry()`. Anything genuinely common to every standalone harness belongs here rather than copied into each assessment. (The emulator's `firebase.json` lives in `docker/firebase-emulator/` — the shared image both dev stacks build from. It runs Auth only; recording uploads go through the backend to `fake-gcs-server`, a separate service in each stack.)
 
 ### The serve.js contract
 
@@ -223,7 +223,7 @@ Hosting resolution avoids that shape deliberately. `apps/assessments/hosting-tar
 
 ### Local development
 
-`npm start` in the assessment directory runs the assessment CLI (`packages/assessment-dev-cli`), which brings up the shared Docker stack (Postgres, migrations + seed, Firebase Auth/Storage emulators, backend) and then the assessment's dev server on `:8000`. The stack is shared across all assessments; only the dev server differs. `ASSESSMENT_NAME` is derived from the calling directory and drives `dev:seed:tasks -- --task ${ASSESSMENT_NAME}`, so **an unregistered assessment fails the migration container, not the dev server** — the error surfaces as a compose failure before anything starts, naming the available tasks.
+`npm start` in the assessment directory runs the assessment CLI (`packages/assessment-dev-cli`), which brings up the shared Docker stack (Postgres, migrations + seed, the Firebase Auth emulator, `fake-gcs-server` for recording uploads, backend) and then the assessment's dev server on `:8000`. The stack is shared across all assessments; only the dev server differs. `ASSESSMENT_NAME` is derived from the calling directory and drives `dev:seed:tasks -- --task ${ASSESSMENT_NAME}`, so **an unregistered assessment fails the migration container, not the dev server** — the error surfaces as a compose failure before anything starts, naming the available tasks.
 
 Each assessment reads `taskVariantParameters.json` to seed its variants. That file is **gitignored**; `taskVariantParameters.example.json` is committed and documents every parameter with its valid values. See [ASSESSMENT_ENVIRONMENT.md](../../apps/assessments/ASSESSMENT_ENVIRONMENT.md) for the full environment guide.
 

@@ -365,25 +365,52 @@ For a complete reset (tasks and variants too), use `npm restart` — but that de
 
 ## Viewing recordings (audio/video assessments)
 
-Assessments that capture audio or video — e.g. Read Aloud (`roar-readaloud`) — upload recordings through the SDK to the local **Firebase Storage emulator**, so dev needs no cloud credentials and touches no real bucket. Browse them in the **Emulator UI** — nothing extra to install.
+Assessments that capture audio or video — e.g. Read Aloud (`roar-readaloud`) — upload recordings
+through the SDK, which asks the backend for a short-lived signed upload URL and then sends the bytes
+straight to storage. Locally that storage is **`fake-gcs-server`**, a stand-in for Google Cloud
+Storage, so dev needs no cloud credentials and touches no real bucket.
 
-**Open the Emulator UI:** http://localhost:9002 → **Storage** tab.
+Recordings live in a Docker volume rather than a folder on your machine, so two commands fetch them
+out. Run them from the assessment directory:
 
-The Storage tab lists the emulated **`demo-roar.appspot.com`** bucket — project `demo-roar`, so the full reference root is **`gs://demo-roar.appspot.com/`** — created on the first upload. It lets you browse and download blobs. Recordings are written under a deterministic path within it:
+```bash
+npm run recordings:latest                        # open the newest recording
+npm run recordings:ls                            # list them, newest first
+npm run recordings:latest -- --export            # save it to your Documents folder
+npm run recordings:latest -- --export <path>     # ...or somewhere else
+npm run recordings:latest -- --export --all      # save all of them
+```
+
+`recordings:latest` is the one you want in the loop: play a trial, run it, listen, adjust, repeat.
+Each `--export` writes to a timestamped folder (`roar-recordings/<timestamp>/`) so successive exports
+stay separate — which is what makes a before-and-after comparison possible after a parameter change.
+
+Both commands are scoped to the assessment directory you run them from, so they never show another
+assessment's uploads.
+
+**Where they actually sit.** Each assessment has its own bucket, named from a suffix declared in
+`@roar-platform/assessment-schema` — `roar-readaloud` writes to `demo-roar-readaloud`, `roav-ran` to
+`demo-roar-naming`. Within the bucket the path is:
 
 ```
 {taskId}/{participantId}/{assessmentPid}/{administrationId}/{runId}/{filename}
 ```
 
-The third segment is `assessmentPid`, which falls back to `participantId` when the run has no PID — so for an anonymous dev run those two segments often match:
+The third segment is `assessmentPid`, which falls back to `participantId` when the run has no PID —
+so for an anonymous dev run those two segments often match:
 
 ```
 roar-readaloud/<participantId>/<participantId>/test-administration/<runId>/<filename>
 ```
 
-Each recording's `gs://` reference is also written onto its trial. It isn't a standard trial column, so — like any assessment-specific field — it lands in **`run_trials.metadata`** (for Read Aloud, under the key `uploadUrl`; see [Extracting metadata](#extracting-metadata)). The reference's path portion matches the blob in the Storage tab: `gs://demo-roar.appspot.com/{taskId}/…/{filename}`.
+Each recording's storage reference is also written onto its trial. It isn't a standard trial column,
+so — like any assessment-specific field — it lands in **`run_trials.metadata`** (for Read Aloud,
+under the key `uploadUrl`; see [Extracting metadata](#extracting-metadata)).
 
-**Lifetime.** The Storage emulator keeps recordings in memory — there is no import/export configured. They survive **Ctrl+C** (which stops only the dev server; the emulator container keeps running), but are cleared when the emulator container restarts (`npm restart`) or when you tear the environment down (`npm stop`).
+**Lifetime.** Recordings persist in a Docker volume, so they survive **Ctrl+C** and `npm restart`.
+They are removed only when you explicitly choose to delete data at the `npm stop` prompt, which tears
+down the volumes along with the database. (This is a change: the old Storage emulator held recordings
+in memory and lost them on every restart.)
 
 ---
 

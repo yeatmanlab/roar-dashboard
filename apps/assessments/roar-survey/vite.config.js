@@ -2,11 +2,11 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
 import { existsSync, readFileSync } from 'fs';
-import { FIREBASE_EMULATOR_AUTH_HOST, FIREBASE_EMULATOR_STORAGE_HOST } from '../shared/devEmulatorHost.cjs';
+import { FIREBASE_EMULATOR_AUTH_HOST } from '../shared/devEmulatorHost.cjs';
 
 // A bare `FIREBASE_AUTH_EMULATOR_HOST=` line in a .env makes the variable ''
 // (defined) — treat empty as unset so the defaults below apply.
-for (const key of ['FIREBASE_AUTH_EMULATOR_HOST', 'FIREBASE_STORAGE_EMULATOR_HOST']) {
+for (const key of ['FIREBASE_AUTH_EMULATOR_HOST']) {
   if (process.env[key] === '') delete process.env[key];
 }
 
@@ -62,15 +62,6 @@ export default defineConfig(({ mode }) => ({
           // /__/firebase/init.json instead.
           'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(
             mode === 'development' ? process.env.FIREBASE_AUTH_EMULATOR_HOST || FIREBASE_EMULATOR_AUTH_HOST : '',
-          ),
-          // Storage defaults only when auth is un-overridden too — an
-          // auth-only override (platform context) must leave this empty so
-          // the SDK derives the storage emulator from the auth host.
-          'process.env.FIREBASE_STORAGE_EMULATOR_HOST': JSON.stringify(
-            mode === 'development'
-              ? process.env.FIREBASE_STORAGE_EMULATOR_HOST ||
-                  (process.env.FIREBASE_AUTH_EMULATOR_HOST ? '' : FIREBASE_EMULATOR_STORAGE_HOST)
-              : '',
           ),
         }
       : {},

@@ -5,7 +5,7 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FIREBASE_EMULATOR_AUTH_HOST, FIREBASE_EMULATOR_STORAGE_HOST } from './devEmulatorHost.cjs';
+import { FIREBASE_EMULATOR_AUTH_HOST } from './devEmulatorHost.cjs';
 
 /**
  * Static-shape checks on every assessment's bundler config: which plugins carry
@@ -55,10 +55,7 @@ function environmentPluginDefault(config, variable) {
   return plugin?.defaultValues[variable];
 }
 
-const EMULATOR_VARIABLES = [
-  ['FIREBASE_AUTH_EMULATOR_HOST', FIREBASE_EMULATOR_AUTH_HOST],
-  ['FIREBASE_STORAGE_EMULATOR_HOST', FIREBASE_EMULATOR_STORAGE_HOST],
-];
+const EMULATOR_VARIABLES = [['FIREBASE_AUTH_EMULATOR_HOST', FIREBASE_EMULATOR_AUTH_HOST]];
 
 // EnvironmentPlugin is not the only way to bake the value in: webpack's
 // DefinePlugin (and Vite's `define`) substitute it just as effectively. Assert
@@ -76,6 +73,9 @@ beforeEach(() => {
   // The dev-mode assertions read the config's literal defaults; ambient env
   // vars would mask them.
   vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '');
+  // Still stubbed though no config should define it: `definesEmulatorHost` below
+  // matches FIREBASE_*_EMULATOR_HOST generally, so a reintroduced storage
+  // substitution must fail there rather than be masked by an ambient value.
   vi.stubEnv('FIREBASE_STORAGE_EMULATOR_HOST', '');
 });
 

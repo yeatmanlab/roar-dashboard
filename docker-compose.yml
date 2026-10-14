@@ -63,43 +63,31 @@ services:
       retries: 12
 
   # Shared emulator image (docker/firebase-emulator) — same image and config as
-  # the assessment stack. Storage is included because recording assessments
-  # (roar-readaloud, roav-ran, roav-apps) derive the Storage emulator host from
-  # FIREBASE_AUTH_EMULATOR_HOST and upload to :9199 — without it, every recording
-  # upload in platform-context dev gets connection-refused.
+  # the assessment stack. Auth only: recording uploads go through the backend to
+  # fake-gcs-server below, so no Storage emulator is needed and the image carries
+  # no JRE.
   firebase-auth-emulator:
     container_name: roar-firebase-auth
     build: docker/firebase-emulator
-    # Rebuild on every `up` (layer-cached, seconds): a cached image from before
-    # the shared-image consolidation cannot run this command — it lacks Java 21
-    # and the pre-downloaded Storage JAR — and compose never rebuilds an
-    # existing image on its own.
+    # Rebuild on every `up` (layer-cached, seconds): compose never rebuilds an
+    # existing image on its own, so a cached image from an earlier revision of
+    # this Dockerfile would keep running.
     pull_policy: build
     command: >
       emulators:start
-        --only auth,storage
+        --only auth
         --project ${GCLOUD_PROJECT:-demo-roar}
         --config /firebase.json
         --import /emulator-data
         --export-on-exit /emulator-data
     ports:
       - "127.0.0.1:${ROAR_AUTH_PORT:-9099}:9099"
-      - "127.0.0.1:${ROAR_STORAGE_PORT:-9199}:9199"
       - "127.0.0.1:${ROAR_AUTH_UI_PORT:-9999}:9000"
     volumes:
       - ./docker/firebase-emulator/firebase.json:/firebase.json:ro
-      # firebase.json references storage.rules relative to its own location.
-      - ./docker/firebase-emulator/storage.rules:/storage.rules:ro
       - firebase-auth-data:/emulator-data
     healthcheck:
-      # Probe both emulators so a half-started container doesn't report healthy.
-      # Timing matches the assessment stack's copy of this service: the JVM-based
-      # Storage emulator makes cold starts much slower than auth alone.
-      test:
-        [
-          "CMD-SHELL",
-          "curl -sf http://localhost:9099/ && curl --silent http://localhost:9199/ --output /dev/null",
-        ]
+      test: ["CMD-SHELL", "curl -sf http://localhost:9099/"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -140,8 +128,8 @@ services:
       retries: 20
 
 volumes:
-  fake-gcs-data:
-    name: roar-fake-gcs-data
   postgres-data:
     name: roar-postgres-data
+  fake-gcs-data:
+    name: roar-fake-gcs-data
   firebase-auth-data:
