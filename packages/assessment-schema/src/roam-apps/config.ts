@@ -26,3 +26,9 @@ export const ROAM_ALPACA_TASK_IDS = {
 } as const;
 
 export type RoamAlpacaId = (typeof ROAM_ALPACA_TASK_IDS)[keyof typeof ROAM_ALPACA_TASK_IDS];
+
+/**
+ * Suffix for this assessment's artifact bucket. See `artifact-buckets.ts` for how the backend composes
+ * the full name, and why the suffix is declared separately from the task IDs above.
+ */
+export const ROAM_ARTIFACT_BUCKET_SUFFIX = 'math' as const;
