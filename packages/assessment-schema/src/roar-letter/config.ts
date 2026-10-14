@@ -61,3 +61,9 @@ export const LETTER_CAT_NAMES = {
 } as const;
 
 export type LetterCatName = (typeof LETTER_CAT_NAMES)[keyof typeof LETTER_CAT_NAMES];
+
+/**
+ * Suffix for this assessment's artifact bucket. See `artifact-buckets.ts` for how the backend composes
+ * the full name, and why the suffix is declared separately from the task IDs above.
+ */
+export const LETTER_ARTIFACT_BUCKET_SUFFIX = 'letter' as const;
