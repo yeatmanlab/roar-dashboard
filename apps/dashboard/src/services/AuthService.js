@@ -33,6 +33,21 @@ import {
 const FIREBASE_APP_NAME = 'roar-dashboard-auth';
 
 /**
+ * Outcome of the one-time auth readiness resolution.
+ *
+ * @typedef {object} AuthReadyState
+ * @property {import('firebase/auth').User | null} user - The signed-in user, or null if signed out.
+ * @property {string | null} accessToken - The signed-in user's ID token, resolved as part of
+ *   readiness so a caller can write it synchronously before the gate opens; null when signed out.
+ * @property {boolean} isFromRedirect - True when the session was just established by a pending
+ *   SSO redirect result, as opposed to restored from persistence on an ordinary load.
+ * @property {unknown} initError - Firebase initialization failure, if any.
+ * @property {unknown} redirectError - Pending-SSO-redirect failure, if any.
+ * @property {unknown} tokenError - ID-token resolution failure, if any (e.g. an offline reload
+ *   with an expired token). The session may still be present (`user` set) with a null token.
+ */
+
+/**
  * Provider ID mapping. Google uses its native provider; OIDC-based SSO
  * providers (Clever, ClassLink, NYCPS) use Firebase's generic OAuthProvider
  * with a provider ID of `oidc.<name>`.
@@ -54,6 +69,8 @@ class AuthService {
   #auth;
   /** @type {Promise<void> | null} */
   #initPromise = null;
+  /** @type {Promise<AuthReadyState> | null} */
+  #readyPromise = null;
   /** @type {{ projectId: string, apiKey: string, authDomain: string, emulatorAuthHost?: string }} */
   #config;
 
@@ -125,6 +142,118 @@ class AuthService {
     await setPersistence(this.#auth, browserSessionPersistence);
   }
 
+  /**
+   * Resolve once the session is known: Firebase initialized, any pending SSO
+   * redirect consumed, and the first `onIdTokenChanged` emission observed.
+   *
+   * This is the app's single ordering guarantee. Before it resolves, "no
+   * user" is ambiguous — it means either "signed out" or "Firebase has not
+   * reported yet". After it resolves, `getCurrentUser()` is a synchronous
+   * fact, so the router guard and the SSO landing page can branch on session
+   * presence without a timer guessing between those two cases.
+   *
+   * Memoized on the promise, so the first navigation pays the wait and later
+   * callers resolve instantly.
+   *
+   * Never rejects. A failed initialization or a rejected redirect result is
+   * carried back as state — callers decide what to do with a degraded
+   * session, and an auth failure must not reject a navigation guard.
+   *
+   * @returns {Promise<AuthReadyState>}
+   */
+  async authReady() {
+    if (!this.#readyPromise) {
+      this.#readyPromise = this.#doAuthReady();
+    }
+    return this.#readyPromise;
+  }
+
+  /**
+   * @returns {Promise<AuthReadyState>}
+   */
+  async #doAuthReady() {
+    /** @type {AuthReadyState} */
+    const state = {
+      user: null,
+      accessToken: null,
+      isFromRedirect: false,
+      initError: null,
+      redirectError: null,
+      tokenError: null,
+    };
+
+    try {
+      await this.initialize();
+    } catch (error) {
+      // Without a Firebase instance there is no session to observe and
+      // nothing to wait for. Report it and let the caller degrade.
+      state.initError = error;
+      return state;
+    }
+
+    // Consume the pending redirect before observing the token listener: a
+    // returning SSO user is signed in by `getRedirectResult()`, so resolving
+    // it first means the emission we observe below already reflects them.
+    // Record whether it produced a credential — a redirect return is
+    // mid-sign-in and needs the spinner held; a session restored from
+    // persistence on an ordinary load does not.
+    try {
+      const redirectResult = await fbGetRedirectResult(this.#auth);
+      state.isFromRedirect = redirectResult !== null;
+    } catch (error) {
+      // A failed redirect leaves the user signed out rather than broken —
+      // the listener below still reports the (absent) session correctly, so
+      // carry the error and keep going instead of returning early.
+      state.redirectError = error;
+    }
+
+    // `onIdTokenChanged` fires once with the restored session (or null)
+    // immediately after initialization, which is the signal that Firebase
+    // has finished resolving persisted state. Unsubscribe on the first
+    // emission — the auth store owns the long-lived listener.
+    state.user = await new Promise((resolve) => {
+      // Firebase can invoke the callback synchronously, before
+      // `onIdTokenChanged` returns the unsubscribe handle. Record that the
+      // first emission already arrived and tear down after the handle
+      // exists, rather than referencing it from inside the callback.
+      let settled = false;
+      /** @type {import('firebase/auth').Unsubscribe | null} */
+      let unsubscribe = null;
+
+      unsubscribe = onIdTokenChanged(this.#auth, (user) => {
+        settled = true;
+        // Null on a synchronous emission — torn down just below instead.
+        if (unsubscribe) unsubscribe();
+        resolve(user ?? null);
+      });
+
+      if (settled) unsubscribe();
+    });
+
+    // Resolve the ID token as part of readiness. The store's long-lived
+    // listener also derives the token, but it does so AFTER an extra
+    // `await getIdToken()` in its own callback — so a caller that writes
+    // `accessToken` from this state resolves the gate only once the token is
+    // known, closing the window where the gate opened but the store had not
+    // yet written the token (which bounced a successful SSO sign-in back to
+    // SignIn). `getIdToken` returns null when signed out.
+    //
+    // Wrapped in try/catch: `getIdToken` rejects with
+    // `auth/network-request-failed` when a restored session's token is expired
+    // and the refresh can't reach the network (an offline reload). This
+    // promise is memoized and awaited by the router guard, which must never
+    // reject — so a token failure degrades to a null token carried as
+    // `tokenError`, not a thrown navigation. The long-lived listener retries
+    // the token on the next emission.
+    try {
+      state.accessToken = await this.getIdToken();
+    } catch (error) {
+      state.tokenError = error;
+    }
+
+    return state;
+  }
+
   /** @returns {import('firebase/auth').Auth} The Firebase Auth instance (readonly). */
   get auth() {
     return this.#auth;
@@ -149,11 +278,12 @@ class AuthService {
    * @returns {Promise<import('firebase/auth').UserCredential>}
    */
   async signInWithPopup(providerName) {
-    // Any auth call can race the app bootstrap's initialize() — the OAuth
-    // landing pages replace to SignIn, whose onMounted re-triggers the SSO
-    // flow, and the sign-in form is interactive before App.vue's awaited
-    // initAuth() resolves. Awaiting the memoized initialize() in every
-    // async method that touches #auth makes readiness structural.
+    // The router gate (`authReady()`, awaited in `beforeEach`) is the app's
+    // ordering guarantee: no route renders before initialization finishes.
+    // These per-method awaits are belt-and-suspenders behind it — they cost
+    // nothing once the memo is warm, and they keep direct callers of the
+    // service (tests, the assessment auth callbacks) correct without
+    // depending on a navigation having happened first.
     await this.initialize();
     const provider = this.#resolveProvider(providerName);
     return fbSignInWithPopup(this.#auth, provider);
@@ -178,8 +308,10 @@ class AuthService {
    * @returns {Promise<import('firebase/auth').UserCredential | null>}
    */
   async getRedirectResult() {
-    // See signInWithPopup — resolving a redirect result must not race
-    // initialization either.
+    // Note: `authReady()` already consumes the pending redirect during
+    // bootstrap, so a caller here on a normal app load gets `null` — the
+    // result was claimed by the gate. Kept for callers that drive the
+    // service directly, outside the router's lifecycle.
     await this.initialize();
     return fbGetRedirectResult(this.#auth);
   }

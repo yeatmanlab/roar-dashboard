@@ -5,6 +5,7 @@ import { initSentry } from '@/sentry';
 import PvTooltip from 'primevue/tooltip';
 import App from '@/App.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
+import { createAuthService } from '@/services/AuthService';
 import plugins from './plugins';
 import './styles.css';
 
@@ -56,6 +57,23 @@ export const createAppInstance = () => {
  * @returns {void}
  */
 export const mountApp = () => {
+  // Create the AuthService singleton BEFORE mounting, so the router's
+  // `beforeEach` auth-readiness gate has a service to await on the very first
+  // navigation. Mounting installs the router plugin (via `createAppInstance`)
+  // and kicks off that first navigation; if the service were created later —
+  // as it was, in App.vue's `onBeforeMount` — the first guard run would find
+  // none, skip the gate, and resolve the route on unknown auth state (the
+  // "works only after a reload" bug). It's a synchronous constructor; the
+  // Firebase init it fronts still happens lazily in `initAuth`. Cypress
+  // component tests load `plugins.js` directly and never call `mountApp`, so
+  // the guard's defensive try/catch still covers that path.
+  createAuthService({
+    projectId: import.meta.env.VITE_FIREBASE_ADMIN_PROJECT_ID,
+    apiKey: import.meta.env.VITE_FIREBASE_ADMIN_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_ADMIN_AUTH_DOMAIN,
+    emulatorAuthHost: import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST || undefined,
+  });
+
   const app = createAppInstance();
   app.mount('#app');
 };
