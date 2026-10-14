@@ -18,7 +18,7 @@
 import { ref, onMounted } from 'vue';
 import { Model } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
-import { startRun, writeTrial, finishRun } from '@roar-platform/assessment-sdk/compat/firekit';
+import { startRun, writeTrial, finishRun, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { AssessmentStage } from '@roar-platform/assessment-schema';
 import ProgressSpinner from './ProgressSpinner.vue';
 import '../styles/survey-runner.css';
@@ -28,6 +28,16 @@ import { insertResponsiveClasses, hideRequiredIndicator, openFullscreen } from '
 
 const props = defineProps({
   surveyData: { type: Object, required: true },
+  /**
+   * Host-supplied SDK wiring, `{ ctx, taskInfo }`. When present this component initializes the
+   * SDK itself; when absent the host must have called `initFirekitCompat` already — the
+   * pre-#2016 contract, still used by the dashboard until it migrates.
+   *
+   * Unlike the class-based assessments, no variant parameters are resolved here: the survey's
+   * variant carries a GCS filename the host fetches content with, using a bucket URL that
+   * differs per host, so resolution stays with the host.
+   */
+  sdkContext: { type: Object, default: null },
 });
 
 const emit = defineEmits(['completeSurvey']);
@@ -67,6 +77,11 @@ const createModel = ({ survey, theme = themeJson, eventHandlers = {} }) => {
 };
 
 onMounted(async () => {
+  // Earliest lifecycle hook, so nothing here can have touched the SDK before this point.
+  if (props.sdkContext) {
+    initFirekitCompat(props.sdkContext.ctx, props.sdkContext.taskInfo);
+  }
+
   await startRun();
 
   if (props.surveyData) {

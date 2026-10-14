@@ -1,6 +1,12 @@
 import store from 'store2';
 import { initConfig } from './config/config';
-import { startRun, finishRun, flushUploads } from '@roar-platform/assessment-sdk/compat/firekit';
+import {
+  startRun,
+  finishRun,
+  flushUploads,
+  initFirekitCompat,
+  getVariantById,
+} from '@roar-platform/assessment-sdk/compat/firekit';
 import { READALOUD_TEST_CONFIG_URL } from '@roar-platform/assessment-schema/roar-readaloud';
 import './styles/task.scss';
 import { consentView } from './views/consentView';
@@ -26,13 +32,47 @@ import { initSentry } from '../sentry';
 // import { makeRoarTrial } from "./utils";
 
 class ReadAloudTask {
-  constructor(gameParams, userParams, session = {}) {
+  /**
+   * @param {object} gameParams - Variant parameters. Ignored in favour of the variant's own
+   *   parameters when `sdkContext` is supplied — pass `{}` in that case.
+   * @param {object} userParams - Participant/session parameters, forwarded as run metadata.
+   * @param {{ assessmentPid?: string, assessmentUid?: string, displayElement?: * }} [session]
+   * @param {{ ctx: object, taskInfo: object }} [sdkContext] - Host-supplied SDK wiring. When
+   *   present this class owns SDK initialization and variant resolution. When absent the host
+   *   must call `initFirekitCompat` itself and pass resolved variant parameters as `gameParams`
+   *   — the pre-#2016 contract, still used by the dashboard until it migrates.
+   */
+  constructor(gameParams, userParams, session = {}, sdkContext) {
     this.gameParams = gameParams;
     this.userParams = userParams;
     this.assessmentPid = session.assessmentPid ?? '';
     this.assessmentUid = session.assessmentUid ?? '';
     this.displayElement = session.displayElement ?? null;
+    this.sdkContext = sdkContext;
     this.jsPsych = null;
+
+    // `initFirekitCompat` is synchronous, so initializing here rather than in `run()` keeps the
+    // facade ready before any other method can touch it. Skipped when the host retains
+    // ownership of SDK setup.
+    if (sdkContext) {
+      initFirekitCompat(sdkContext.ctx, sdkContext.taskInfo);
+    }
+  }
+
+  /**
+   * Resolves the run's variant parameters through the SDK when the host handed over its context.
+   *
+   * No-op otherwise, so a host that has not migrated keeps supplying `gameParams` itself.
+   *
+   * @returns {Promise<void>}
+   */
+  async _resolveGameParams() {
+    if (!this.sdkContext) return;
+
+    const { variantParams } = await getVariantById(this.sdkContext.taskInfo.variantId);
+    // The variant is the authority on game parameters; anything the host passed is a fallback.
+    // See .ai/rules/assessment-integration-pattern.md.
+    this.gameParams = { ...this.gameParams, ...variantParams };
   }
 
   async init() {
@@ -40,6 +80,8 @@ class ReadAloudTask {
   }
 
   async run() {
+    await this._resolveGameParams();
+
     // Consent view
     if (this.gameParams.consent) {
       await consentView();
