@@ -44,3 +44,9 @@ export function roavAppsBucketUri(taskId: RoavAppsTaskId, baseUrl: string = ROAV
   const folder = ROAV_APPS_BUCKET_FOLDERS[taskId];
   return folder ? `${baseUrl}/${folder}` : baseUrl;
 }
+
+/**
+ * Suffix for this assessment's artifact bucket. See `artifact-buckets.ts` for how the backend composes
+ * the full name, and why the suffix is declared separately from the task IDs above.
+ */
+export const ROAV_APPS_ARTIFACT_BUCKET_SUFFIX = 'vision' as const;
