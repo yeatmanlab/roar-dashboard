@@ -34,6 +34,10 @@ certs
 # Generated from apps/assessments/hosting-targets.json by `npm run hosting:rc`; carries project IDs.
 .firebaserc
 
+# Vite/Vitest config temp files. Emitted next to the config whenever one is loaded, by any of
+# the workspaces' vite.config.{js,ts} / vitest.config.{js,ts} — hence the root-level pattern.
+vite*.config.*.timestamp-*.mjs
+
 # Test coverage
 coverage
 
