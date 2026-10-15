@@ -9,8 +9,9 @@ const TOM_url = 'http://localhost:8000/?task=theory-of-mind';
 // never renders the OK gate this spec waits for. Production content is unaffected, so there is no
 // participant impact to chase here.
 //
-// Re-enable once the item bank and the corpus agree again. That is a content fix needing no change
-// in this repo, so this skip reverts on its own once the data is corrected.
+// Remove this `.skip` once the item bank and the corpus agree again — the data fix is upstream, so
+// nothing else in this repo has to change for it, but the skip does have to be taken out by hand.
+// The un-skip is an acceptance criterion on the ticket.
 //
 // See yeatmanlab/roar-project-management#2410 for the affected item, the object versions, and the
 // remedy.

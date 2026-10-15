@@ -82,14 +82,10 @@ function taskLoop(correctFlag, buttonClass) {
 }
 
 export function testAfc(correctFlag, buttonClass) {
-  // Wait for the OK gate, which sits behind the task's shared-audio preload — hence the same 120s
-  // allowance the stimulus waits below use, rather than the 60s the click timeouts above use.
-  //
-  // It was 600s, which is not a timeout so much as a hang: with `retries: { runMode: 2 }` a task
-  // that fails to bootstrap burns 30 minutes before reporting, which is what pushed one of the two
-  // parallel roar-levante-tasks machines past its 60-minute job cap and failed runs that were
-  // otherwise green. For scale, the heaviest passing spec in this suite plays its entire task in
-  // under five minutes.
+  // 120s, matching the stimulus waits below. It was 600s, which is a hang rather than a timeout:
+  // with `retries: { runMode: 2 }` (cypress.config.js) a task that never bootstraps spends 30
+  // minutes of the e2e-assessments job's 60-minute cap (ci.yml) before reporting, which is how one
+  // stuck spec failed runs that were otherwise green.
   cy.contains('OK', { timeout: 120000 }).should('be.visible');
   cy.contains('OK').realClick(); // real click mimics user gesture so that fullscreen can start
   taskLoop(correctFlag, buttonClass);
