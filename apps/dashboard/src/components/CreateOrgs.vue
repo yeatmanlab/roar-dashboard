@@ -75,7 +75,13 @@
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <PvFloatLabel>
-              <PvInputText id="org-name" v-model="state.orgName" class="w-full" data-cy="input-org-name" />
+              <PvInputText
+                id="org-name"
+                v-model="state.orgName"
+                class="w-full"
+                data-cy="input-org-name"
+                @blur="generateAbbreviation"
+              />
               <label for="org-name">{{ orgTypeLabel }} Name<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgName.$invalid && hasAttemptedSubmit" class="p-error">Please supply a name</small>
             </PvFloatLabel>
@@ -83,7 +89,13 @@
 
           <div v-if="showAbbreviation" class="col-12 md:col-6 lg:col-4 mt-3">
             <PvFloatLabel>
-              <PvInputText id="org-initial" v-model="state.orgInitials" class="w-full" data-cy="input-org-initials" />
+              <PvInputText
+                id="org-initial"
+                v-model="state.orgInitials"
+                class="w-full"
+                data-cy="input-org-initials"
+                @input="hasEditedAbbreviation = true"
+              />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgInitials.$invalid && hasAttemptedSubmit" class="p-error">{{
                 v$.orgInitials.$errors[0]?.$message
@@ -382,7 +394,15 @@ const submit = async () => {
   }
 };
 
+// Flag to track if abbreviation has been edited by the user
+let hasEditedAbbreviation = false;
+const generateAbbreviation = () => {
+  if (!state.orgName || hasEditedAbbreviation) return;
+  state.orgInitials = state.orgName.replace(/[^A-Za-z0-9]/g, '').slice(0, 10);
+};
+
 const resetForm = () => {
+  hasEditedAbbreviation = false;
   state.orgName = '';
   state.orgInitials = '';
   state.ncesId = undefined;
