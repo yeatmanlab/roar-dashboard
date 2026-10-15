@@ -408,6 +408,7 @@ const onNameBlur = () => {
 
 const resetForm = () => {
   hasEditedAbbreviation = false;
+  v$.value.$reset();
   state.orgName = '';
   state.orgInitials = '';
   state.ncesId = undefined;
