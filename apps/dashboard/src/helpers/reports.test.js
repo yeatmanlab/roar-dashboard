@@ -1398,10 +1398,10 @@ describe('reports', () => {
 
   describe('classifyGradeEstimate', () => {
     const gradeEstimateTestCases = [
+      [-2, 'Pre-K'],
       [-1, 'Pre-K'],
-      [-0.1, 'Pre-K'],
-      [0, 'K'],
-      [0.5, 'K'],
+      [-0.9, 'K'],
+      [0.99, 'K'],
       [1, 1],
       [6.52, 6.52],
       [9, 'HS'],
