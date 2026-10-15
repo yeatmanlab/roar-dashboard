@@ -123,8 +123,9 @@ export async function saveRecordings({ filename, metadata = {} }) {
  * Uploads a recording via the assessment-sdk `uploadFile()` compat method and returns its
  * gs:// storage path, or null on failure.
  *
- * `uploadFile` resolves the storage bucket (the local Storage emulator in dev, the admin
- * recordings bucket in staging/prod), enqueues the resumable upload, and returns the storage
+ * `uploadFile` resolves the storage bucket itself (the admin recordings bucket in staging/prod;
+ * in dev it still targets a Storage emulator the dev stacks no longer run, pending the SDK's
+ * move to the backend's signed-URL flow), enqueues the resumable upload, and returns the storage
  * path immediately at enqueue — it sources runId/administrationId/participantId from the SDK
  * facade. We forward the session `id` as `assessmentPid` (the `<assessmentUid>_<participant>`
  * value configureDeviceView stores) so recordings keep the legacy storage-path convention

@@ -107,7 +107,6 @@ services:
   # Firebase Auth emulator.
   # Uses the shared emulator image (docker/firebase-emulator) with this stack's
   # own config, firebase.assessment.json. The ports are deliberately shifted
-
   # from the canonical ones (9097/9002 instead of 9099/9999) so this
   # stack runs in parallel with the platform dev stack.
   #
@@ -120,18 +119,14 @@ services:
   # values must match apps/assessments/shared/devEmulatorHost.cjs, which dev
   # bundles default to. emulatorPortConfig.test.js asserts all of this agrees.
   # Assessments connect via FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9097; the
-
   # Emulator UI is on :9002. Recording uploads go through the backend to
-
   # fake-gcs below, not through this emulator.
   # ────────────────────────────────────────────────────────────────────────────
   firebase-emulator:
     container_name: firebase-emulator
     build: docker/firebase-emulator
     # Rebuild on every `up` (layer-cached, seconds): compose never rebuilds an
-
     # existing image on its own, so a cached image from an earlier revision of
-
     # this Dockerfile would keep running.
     pull_policy: build
     volumes:
@@ -145,7 +140,7 @@ services:
       # Identity mappings — the container ports already carry the shifted values
       # from firebase.assessment.json (see the service comment above for why).
       - "127.0.0.1:9097:9097"
-        # Emulator UI.
+      # Emulator UI.
       - "127.0.0.1:9002:9000"
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9097/"]
@@ -244,7 +239,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres-data:
-    name: roar-assessment-postgres-data
   fake-gcs-data:
     name: roar-assessment-fake-gcs-data
+  postgres-data:
+    name: roar-assessment-postgres-data

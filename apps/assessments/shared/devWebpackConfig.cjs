@@ -7,12 +7,12 @@
 //
 // It carries two concerns every assessment shares:
 //
-// 1. The emulator-host defaults. Staging and production bundles must not carry
-//    these: serve.js calls connectAuthEmulator() on any non-empty value, so a
+// 1. The emulator-host default. Staging and production bundles must not carry
+//    it: serve.js calls connectAuthEmulator() on any non-empty value, so a
 //    deployed bundle carrying one would authenticate end users against an
-//    emulator that issues unverified tokens (and upload recordings to a dead
-//    Storage emulator). apps/assessments/shared/emulatorHostBuild.test.js
-//    asserts every bundler config keeps them out of non-development builds.
+//    emulator that issues unverified tokens.
+//    apps/assessments/shared/emulatorHostBuild.test.js asserts every bundler
+//    config keeps it out of non-development builds.
 //
 // 2. Quiet dev-server output. The researcher-facing `npm start` hands off to
 //    webpack-dev-server; without these settings every rebuild prints a full

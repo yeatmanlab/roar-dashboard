@@ -128,8 +128,8 @@ services:
       retries: 20
 
 volumes:
-  postgres-data:
-    name: roar-postgres-data
   fake-gcs-data:
     name: roar-fake-gcs-data
+  postgres-data:
+    name: roar-postgres-data
   firebase-auth-data:

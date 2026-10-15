@@ -91,7 +91,7 @@ export const EMULATOR_UI_PORT = '9002';
 
 /**
  * All host ports the assessment stack binds: Postgres, Firebase Auth emulator,
- * Storage emulator, Emulator UI, backend API. Looped by the port preflights in
+ * the GCS stand-in, Emulator UI, backend API. Looped by the port preflights in
  * `setup` (advisory) and `start` (hard gate).
  *
  * @param {string} pgPort - The resolved Postgres host port.

@@ -34,10 +34,11 @@ export const FIREBASE_EMULATOR_PROJECT_ID = 'demo-roar' as const;
 export const FIREBASE_EMULATOR_API_KEY = 'emulator-api-key' as const;
 
 /**
- * Default Firebase Storage bucket used when running against the local Storage emulator.
+ * Default Firebase Storage bucket name for the local emulator project.
  *
- * `getStorage(getApp())` needs a default bucket to resolve; the emulator creates it on the
- * first upload, so the exact name only needs to be stable. Uses the conventional
- * `<projectId>.appspot.com` default-bucket form for the `demo-roar` emulator project.
+ * `getStorage(getApp())` needs a default bucket to resolve before an upload is attempted, so
+ * this exists to satisfy that call rather than to name a bucket anything writes to — the dev
+ * stacks run no Storage emulator. Uses the conventional `<projectId>.appspot.com`
+ * default-bucket form for the `demo-roar` emulator project.
  */
 export const FIREBASE_EMULATOR_STORAGE_BUCKET = 'demo-roar.appspot.com' as const;
