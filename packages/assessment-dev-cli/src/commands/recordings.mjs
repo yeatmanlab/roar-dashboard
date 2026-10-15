@@ -166,7 +166,7 @@ export async function recordings(ui, args) {
   // package's own artifactBucketName, rather than re-spelling `<project>-<suffix>` here,
   // is what keeps dev pointed at the bucket the seeder created. The membership check is
   // what the composer cannot do: its parameter is typed, and this caller is JavaScript.
-  if (!(ASSESSMENT_NAME in ARTIFACT_BUCKET_SUFFIXES)) {
+  if (!Object.hasOwn(ARTIFACT_BUCKET_SUFFIXES, ASSESSMENT_NAME)) {
     ui.error(`No artifact bucket suffix declared for "${ASSESSMENT_NAME}" in @roar-platform/assessment-schema.`);
     process.exitCode = 1;
     return;
