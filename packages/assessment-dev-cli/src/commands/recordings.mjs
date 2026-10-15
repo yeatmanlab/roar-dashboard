@@ -24,11 +24,12 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { ARTIFACT_BUCKET_SUFFIXES, FIREBASE_EMULATOR_PROJECT_ID } from '@roar-platform/assessment-schema';
+import {
+  ARTIFACT_BUCKET_SUFFIXES,
+  FIREBASE_EMULATOR_PROJECT_ID,
+  artifactBucketName,
+} from '@roar-platform/assessment-schema';
 import { ASSESSMENT_GCS_PORT, ASSESSMENT_NAME } from '../context.mjs';
-
-/** fake-gcs stores the object's bucket metadata beside the objects; not a recording. */
-const METADATA_SUFFIX = '.bucketMetadata';
 
 /**
  * Media extensions this command is willing to write to disk and hand to a desktop
@@ -84,7 +85,7 @@ function encodeObjectName(name) {
  *
  * @returns {string} An existing directory to export into.
  */
-function documentsDir() {
+export function documentsDir() {
   try {
     const resolved = execFileSync('xdg-user-dir', ['DOCUMENTS'], { encoding: 'utf8' }).trim();
     if (resolved && existsSync(resolved)) return resolved;
@@ -112,7 +113,6 @@ async function listObjects(bucket) {
   }
   const { items = [] } = await response.json();
   return items
-    .filter((item) => !item.name.endsWith(METADATA_SUFFIX))
     .filter((item) => isSafeObjectName(item.name))
     .sort((a, b) => Date.parse(b.timeCreated) - Date.parse(a.timeCreated));
 }
@@ -131,7 +131,7 @@ async function listObjects(bucket) {
  * @param {string} root - Directory the target must resolve inside.
  * @returns {Promise<void>}
  */
-async function download(bucket, name, target, root) {
+export async function download(bucket, name, target, root) {
   const resolved = path.resolve(target);
   if (resolved !== path.resolve(root) && !resolved.startsWith(path.resolve(root) + path.sep)) {
     throw new Error(`Refusing to write outside ${root}: ${name}`);
@@ -162,15 +162,16 @@ export async function recordings(ui, args) {
 
   // The bucket is named from the assessment's SUFFIX, not its directory name — they
   // differ deliberately (roar-readaloud -> readaloud, roav-ran -> naming), which is
-  // the whole point of the suffix living in assessment-schema. Reading it from the
-  // same map the backend and Pulumi use is what keeps dev pointed at the right bucket.
-  const suffix = ARTIFACT_BUCKET_SUFFIXES[ASSESSMENT_NAME];
-  if (!suffix) {
+  // the whole point of the suffix living in assessment-schema. Composing it with the
+  // package's own artifactBucketName, rather than re-spelling `<project>-<suffix>` here,
+  // is what keeps dev pointed at the bucket the seeder created. The membership check is
+  // what the composer cannot do: its parameter is typed, and this caller is JavaScript.
+  if (!(ASSESSMENT_NAME in ARTIFACT_BUCKET_SUFFIXES)) {
     ui.error(`No artifact bucket suffix declared for "${ASSESSMENT_NAME}" in @roar-platform/assessment-schema.`);
     process.exitCode = 1;
     return;
   }
-  const bucket = `${FIREBASE_EMULATOR_PROJECT_ID}-${suffix}`;
+  const bucket = artifactBucketName(FIREBASE_EMULATOR_PROJECT_ID, ASSESSMENT_NAME);
 
   if (!['ls', 'latest'].includes(subcommand)) {
     ui.error(`Unknown subcommand "${subcommand}". Expected: ls, latest.`);

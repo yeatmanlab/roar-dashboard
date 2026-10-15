@@ -16,7 +16,12 @@
  *   address instead)
  * - GCLOUD_PROJECT: project the buckets belong to (default: the emulator project)
  */
-import { ARTIFACT_BUCKET_SUFFIXES, FIREBASE_EMULATOR_PROJECT_ID } from '@roar-platform/assessment-schema';
+import {
+  ARTIFACT_BUCKET_SUFFIXES,
+  FIREBASE_EMULATOR_PROJECT_ID,
+  artifactBucketName,
+} from '@roar-platform/assessment-schema';
+import type { AssessmentName } from '@roar-platform/assessment-schema';
 import { StatusCodes } from 'http-status-codes';
 
 /**
@@ -38,7 +43,8 @@ export async function runSeedArtifactBuckets(): Promise<void> {
   const endpoint = process.env.GCS_API_ENDPOINT ?? 'http://localhost:4443';
 
   const project = process.env.GCLOUD_PROJECT ?? FIREBASE_EMULATOR_PROJECT_ID;
-  const names = Object.values(ARTIFACT_BUCKET_SUFFIXES).map((suffix) => `${project}-${suffix}`);
+  const assessments = Object.keys(ARTIFACT_BUCKET_SUFFIXES) as AssessmentName[];
+  const names = assessments.map((assessment) => artifactBucketName(project, assessment));
 
   for (const name of names) {
     const response = await fetch(`${endpoint}/storage/v1/b?project=${encodeURIComponent(project)}`, {

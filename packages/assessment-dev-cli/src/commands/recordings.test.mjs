@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,14 +12,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * action and reports success.
  */
 vi.mock('../context.mjs', () => ({ ASSESSMENT_GCS_PORT: '4445', ASSESSMENT_NAME: 'roar-readaloud' }));
-vi.mock('@roar-platform/assessment-schema', () => ({
-  ARTIFACT_BUCKET_SUFFIXES: { 'roar-readaloud': 'readaloud' },
-  FIREBASE_EMULATOR_PROJECT_ID: 'demo-roar',
-}));
+// Stubbed rather than imported so these tests do not depend on the package being built. The
+// composer reads the same suffix map it is given here, so a name that disagrees with the map
+// cannot pass; the composition rule itself is covered in assessment-schema's own test.
+const schema = vi.hoisted(() => {
+  const ARTIFACT_BUCKET_SUFFIXES = { 'roar-readaloud': 'readaloud' };
+  return {
+    ARTIFACT_BUCKET_SUFFIXES,
+    FIREBASE_EMULATOR_PROJECT_ID: 'demo-roar',
+    artifactBucketName: (projectId, assessment) => `${projectId}-${ARTIFACT_BUCKET_SUFFIXES[assessment]}`,
+  };
+});
+vi.mock('@roar-platform/assessment-schema', () => schema);
 vi.mock('node:child_process', () => ({ execFileSync: vi.fn() }));
 
 const { execFileSync } = await import('node:child_process');
-const { recordings } = await import('./recordings.mjs');
+const { documentsDir, download, recordings } = await import('./recordings.mjs');
 
 const BUCKET_PREFIX = 'roar-readaloud/p/p/a/r';
 const newest = { name: `${BUCKET_PREFIX}/newest.webm`, timeCreated: '2026-02-01T00:00:00Z', size: '20' };
@@ -77,6 +85,7 @@ describe('listing filter', () => {
     ['html, which picks a browser handler', `${BUCKET_PREFIX}/notes.html`],
     ['desktop entry', `${BUCKET_PREFIX}/launch.desktop`],
     ['no extension', `${BUCKET_PREFIX}/take`],
+    ['bucket metadata entry', `${BUCKET_PREFIX}/take.webm.bucketMetadata`],
   ])('rejects %s', async (_label, name) => {
     const { out } = await run(['ls'], [{ ...newest, name }]);
     expect(out).not.toContain(name);
@@ -181,5 +190,60 @@ describe('export', () => {
     expect(objectUrl).toContain('take%2541%20one.webm');
     // Separators survive encoding, so the object path is still a path.
     expect(objectUrl).toContain(`/${BUCKET_PREFIX}/`);
+  });
+});
+
+describe('download', () => {
+  const BUCKET = 'demo-roar-readaloud';
+
+  it('refuses a target outside the destination root, before requesting anything', async () => {
+    // The listing filter rejects traversal first, so this assertion is only reachable by calling
+    // download directly — which is also how a future caller that skips the filter would reach it.
+    const root = mkdtempSync(path.join(os.tmpdir(), 'rec-root-'));
+    const escaping = '../escape.webm';
+    const urls = stubFetch([]);
+
+    await expect(download(BUCKET, escaping, path.join(root, escaping), root)).rejects.toThrow(
+      /Refusing to write outside/,
+    );
+    expect(urls).toHaveLength(0);
+    expect(existsSync(path.resolve(root, escaping))).toBe(false);
+  });
+
+  it('writes a target inside the root, creating its parent directories', async () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'rec-inside-'));
+    const name = `${BUCKET_PREFIX}/take.webm`;
+    stubFetch([]);
+
+    await download(BUCKET, name, path.join(root, name), root);
+
+    expect(readFileSync(path.join(root, name), 'utf8')).toBe('bytes');
+  });
+});
+
+describe('documentsDir', () => {
+  it('uses the localized directory xdg-user-dir reports', () => {
+    // ~/Documents is localized, so the name is asked for rather than assumed.
+    const localized = mkdtempSync(path.join(os.tmpdir(), 'rec-docs-'));
+    execFileSync.mockReturnValueOnce(`${localized}\n`);
+
+    expect(documentsDir()).toBe(localized);
+  });
+
+  it('falls back when xdg-user-dir names a directory that is not there', () => {
+    execFileSync.mockReturnValueOnce('/nonexistent/Documents\n');
+
+    const resolved = documentsDir();
+
+    expect(resolved).not.toBe('/nonexistent/Documents');
+    expect(existsSync(resolved)).toBe(true);
+  });
+
+  it('falls back when xdg-user-dir is absent, as it is on macOS', () => {
+    execFileSync.mockImplementationOnce(() => {
+      throw new Error('spawnSync xdg-user-dir ENOENT');
+    });
+
+    expect(existsSync(documentsDir())).toBe(true);
   });
 });
