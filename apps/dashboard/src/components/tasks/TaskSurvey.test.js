@@ -33,7 +33,8 @@ vi.mock('@roar-platform/roar-survey', () => ({
   default: {
     name: 'SurveyRunner',
     props: ['sdkContext', 'language'],
-    template: '<div />',
+    // Renders the loading slot so the translated copy handed over is observable.
+    template: '<div><slot name="loading" /></div>',
   },
 }));
 
@@ -54,12 +55,13 @@ function seedSelectedAdmin(taskSlug = 'roar-survey') {
   };
 }
 
-function mountTask(props) {
+function mountTask(props, globalOverrides = {}) {
   return mount(TaskSurvey, {
     props,
     global: {
       plugins: [pinia],
       components: { AppSpinner: { template: '<div />' } },
+      ...globalOverrides,
     },
   });
 }
@@ -134,6 +136,26 @@ describe('TaskSurvey', () => {
       // The dashboard identifies the variant; SurveyRunner resolves its parameters and
       // fetches the named content file.
       expect(surveyProps(wrapper).sdkContext.taskInfo).toEqual(expect.objectContaining({ variantId: VARIANT_ID }));
+
+      wrapper.unmount();
+    });
+
+    it('hands the survey its translated loading copy', async () => {
+      // Variant resolution and the content fetch moved into SurveyRunner, whose own copy is
+      // English. Without filling its loading slot, the translated prep screen this component
+      // renders first is replaced by English text for the rest of that wait.
+      seedSelectedAdmin();
+      const translate = vi.fn((key) => `translated:${key}`);
+
+      const wrapper = mountTask(
+        { taskId: 'roar-survey', language: 'es', launchId: CHILD_USER_ID },
+        { mocks: { $t: translate } },
+      );
+      await flushPromises();
+      await flushPromises();
+
+      expect(surveyProps(wrapper)).toBeDefined();
+      expect(wrapper.text()).toContain('translated:tasks.preparing');
 
       wrapper.unmount();
     });

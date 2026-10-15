@@ -105,6 +105,8 @@ Most of it serves the standalone harness: `getFirebaseConfig()` (emulator config
 
 The variant is still the source of truth for game parameters; only the resolution moved. URL params remain the fallback for standalone play, not the authority — `roar-multichoice/serve/serve.js` comments this explicitly.
 
+`roar-survey` inverts this deliberately, and is the only assessment that does: a host-supplied content file (`surveyFile`, which standalone fills from `?survey=`) outranks the variant's own `survey` key. Only standalone sets it, where it names the instrument the researcher means to play; the dashboard never does, so an assigned variant still decides every participant-facing session. `SurveyRunner.vue` carries the same note at the resolution site. An assessment that wants this inversion needs the same two properties — a host that sets the parameter only in standalone, and a participant-facing host that never sets it — or the assigned variant stops being authoritative where it matters.
+
 ### The package manifest
 
 Beyond the standard fields, an assessment's `package.json` carries two things the platform reads:
