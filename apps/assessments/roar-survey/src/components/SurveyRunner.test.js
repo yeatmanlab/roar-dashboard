@@ -5,6 +5,7 @@ import {
   startRun,
   writeTrial,
   finishRun,
+  abortRun,
   initFirekitCompat,
   getVariantById,
 } from '@roar-platform/assessment-sdk/compat/firekit';
@@ -16,6 +17,7 @@ vi.mock('@roar-platform/assessment-sdk/compat/firekit', () => ({
   startRun: vi.fn().mockResolvedValue(undefined),
   writeTrial: vi.fn().mockResolvedValue(undefined),
   finishRun: vi.fn().mockResolvedValue(undefined),
+  abortRun: vi.fn(),
   initFirekitCompat: vi.fn(),
   getVariantById: vi.fn(),
 }));
@@ -58,9 +60,10 @@ function deferred() {
   return { promise, resolve: resolveIt };
 }
 
-function mountRunner(props = {}) {
+function mountRunner(props = {}, slots = {}) {
   return mount(SurveyRunner, {
     props: { sdkContext: SDK_CONTEXT, ...props },
+    slots,
     global: { components: { ProgressSpinner: { template: '<div />' } } },
   });
 }
@@ -158,6 +161,31 @@ describe('SurveyRunner', () => {
 
       wrapper.unmount();
     });
+
+    it('refuses a traversal attempt in the content file name and falls back to the default', async () => {
+      // One segment further along the same URL as the locale, and reachable from standalone's
+      // `?survey=` parameter, so it escapes the bucket the same way.
+      const wrapper = mountRunner({ surveyFile: '../../other-bucket/evil', language: 'en' });
+      await flushPromises();
+
+      expect(fetchedUrl()).toBe('https://example.test/en/survey.json');
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('Ignoring unrecognised survey file'));
+
+      wrapper.unmount();
+    });
+
+    it("refuses a traversal attempt in the variant's own survey key", async () => {
+      // The variant comes from the backend rather than a URL, but this component is published
+      // and nothing downstream of it re-checks the name.
+      vi.mocked(getVariantById).mockResolvedValue({ variantParams: { survey: '../evil' } });
+
+      const wrapper = mountRunner({ language: 'en' });
+      await flushPromises();
+
+      expect(fetchedUrl()).toBe('https://example.test/en/survey.json');
+
+      wrapper.unmount();
+    });
   });
 
   describe('locale handling', () => {
@@ -232,6 +260,81 @@ describe('SurveyRunner', () => {
       await flushPromises();
 
       expect(startRun).not.toHaveBeenCalled();
+      // Nothing was ever opened, so nothing may be closed — an unconditional abort here would
+      // reach whatever run the facade singleton is holding for the next task.
+      expect(abortRun).not.toHaveBeenCalled();
+    });
+
+    it('closes the run when the participant navigates away after it starts', async () => {
+      const wrapper = mountRunner();
+      await flushPromises();
+      expect(startRun).toHaveBeenCalledOnce();
+
+      wrapper.unmount();
+
+      expect(abortRun).toHaveBeenCalledOnce();
+    });
+
+    it('closes a run that opens while the participant is navigating away', async () => {
+      // The unmount lands before `startRun()` resolves, so the unmount handler finds no run id
+      // to act on and the mounted path has to close it instead. Without that, the run stays
+      // open forever.
+      const held = deferred();
+      vi.mocked(startRun).mockReturnValueOnce(held.promise);
+
+      const wrapper = mountRunner();
+      await flushPromises();
+
+      wrapper.unmount();
+      expect(abortRun).not.toHaveBeenCalled();
+
+      held.resolve(undefined);
+      await flushPromises();
+
+      expect(abortRun).toHaveBeenCalledOnce();
+    });
+
+    it('does not close a run the participant completed', async () => {
+      const wrapper = mountRunner();
+      await flushPromises();
+
+      wrapper.findComponent({ name: 'SurveyComponent' }).vm.$emit('complete', { data: { q1: 'yes' } });
+      await flushPromises();
+
+      wrapper.unmount();
+
+      expect(finishRun).toHaveBeenCalledOnce();
+      expect(abortRun).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('status copy', () => {
+    it('lets the host replace the loading copy', async () => {
+      // The dashboard renders inside a translated session; this component's own copy is English.
+      const held = deferred();
+      globalThis.fetch = vi.fn().mockReturnValue(held.promise);
+
+      const wrapper = mountRunner({}, { loading: '<p>Preparando tu encuesta</p>' });
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('Preparando tu encuesta');
+      expect(wrapper.text()).not.toContain('Preparing your survey');
+
+      wrapper.unmount();
+      held.resolve({ ok: true, json: vi.fn().mockResolvedValue(SURVEY_JSON) });
+      await flushPromises();
+    });
+
+    it('lets the host replace the error copy', async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, statusText: 'Not Found' });
+
+      const wrapper = mountRunner({}, { error: '<p>No pudimos cargar tu encuesta</p>' });
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('No pudimos cargar tu encuesta');
+      expect(wrapper.text()).not.toContain("We couldn't load your survey");
+
+      wrapper.unmount();
     });
   });
 

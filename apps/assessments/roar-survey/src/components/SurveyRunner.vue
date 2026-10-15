@@ -1,11 +1,20 @@
 <template>
+  <!--
+    Status copy is slotted, like `uploading` below, because only the host knows the
+    participant's language: the dashboard renders these inside a translated session, standalone
+    play does not. The defaults keep standalone working without any slot wiring.
+  -->
   <template v-if="progressStatus === 'loading'">
-    <p class="status-message">Preparing your survey...</p>
-    <ProgressSpinner />
+    <slot name="loading">
+      <p class="status-message">Preparing your survey...</p>
+      <ProgressSpinner />
+    </slot>
   </template>
   <template v-else-if="progressStatus === 'error'">
-    <p class="status-message">We couldn't load your survey</p>
-    <p class="status-submessage">Please refresh the page to try again.</p>
+    <slot name="error">
+      <p class="status-message">We couldn't load your survey</p>
+      <p class="status-submessage">Please refresh the page to try again.</p>
+    </slot>
   </template>
   <div v-show="progressStatus === 'survey'" class="survey-wrapper">
     <SurveyComponent v-if="surveyModel" :model="surveyModel" @complete="onComplete" />
@@ -30,6 +39,7 @@ import {
   startRun,
   writeTrial,
   finishRun,
+  abortRun,
   initFirekitCompat,
   getVariantById,
 } from '@roar-platform/assessment-sdk/compat/firekit';
@@ -50,6 +60,9 @@ const DEFAULT_LANGUAGE = 'en';
 /** `en`, or `pt-BR` — anything else, notably `../`, must not reach the content path. */
 const LOCALE_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/;
 
+/** `survey`, or `survey_grade3` — a bare file name, with no path separators of any kind. */
+const SURVEY_FILE_PATTERN = /^[\w-]+$/;
+
 /**
  * Returns `language` if it is a plausible locale, otherwise the default.
  *
@@ -67,6 +80,23 @@ function safeLanguage(language) {
   return DEFAULT_LANGUAGE;
 }
 
+/**
+ * Returns `file` if it is a bare content file name, otherwise the default.
+ *
+ * The same hazard as {@link safeLanguage}, one segment further along the same URL:
+ * `?survey=../../other-bucket/evil` escapes the bucket exactly as an unchecked locale would.
+ * Applied to the resolved name so the variant's own key is covered too — it arrives from the
+ * backend, but this component is published and nothing downstream of here re-checks it.
+ *
+ * @param {string} file - Content file name resolved from the host or the variant
+ * @returns {string} A safe content file name
+ */
+function safeSurveyFile(file) {
+  if (SURVEY_FILE_PATTERN.test(file)) return file;
+  console.warn(`[roar-survey] Ignoring unrecognised survey file "${file}"; falling back to ${DEFAULT_SURVEY_FILE}.`);
+  return DEFAULT_SURVEY_FILE;
+}
+
 const props = defineProps({
   /**
    * Host-supplied SDK wiring, `{ ctx, taskInfo }`. The component owns SDK initialization,
@@ -81,8 +111,9 @@ const props = defineProps({
   /** Locale directory the survey content is read from. */
   language: { type: String, default: 'en' },
   /**
-   * Content file to run when the variant does not name one. Standalone play passes the
-   * `?survey=` URL parameter here; the variant's own `survey` key takes precedence.
+   * Content file to run, overriding whatever the variant names. Standalone play passes the
+   * `?survey=` URL parameter here; the dashboard never sets it, so there the assigned variant
+   * always decides.
    */
   surveyFile: { type: String, default: null },
 });
@@ -110,6 +141,7 @@ const onComplete = async (sender) => {
   );
 
   await finishRun();
+  runOpen = false;
   emit('completeSurvey');
   progressStatus.value = 'completed';
 };
@@ -126,9 +158,12 @@ const createModel = ({ survey, theme = themeJson, eventHandlers = {} }) => {
 /**
  * Resolves which survey to run and fetches its content.
  *
- * The variant is the authority on the content file; `surveyFile` is the standalone fallback
- * for variants that predate the key. Both hosts previously did this themselves, which left
- * the bucket URL duplicated in the dashboard and the file name sourced differently per host.
+ * Precedence here is the inverse of the platform convention that the variant is authoritative
+ * and URL params are its fallback (`assessment-integration-pattern.md`): a host-supplied
+ * `surveyFile` wins. Only standalone play sets it, where it is the researcher's explicit choice
+ * of instrument, and the dashboard never does — so the assigned variant still decides every
+ * participant-facing session. Both hosts previously resolved this themselves, which left the
+ * bucket URL duplicated in the dashboard and the file name sourced differently per host.
  *
  * @returns {Promise<object|null>} The survey definition, or null when no context was supplied.
  * @throws {Error} If the content cannot be fetched.
@@ -142,7 +177,7 @@ const loadSurvey = async () => {
   // so there the assigned variant always decides.
   // `||`, not `??`: `?survey=` with no value yields an empty string, which `??` would keep
   // and turn into a request for `<lang>/.json`.
-  const file = props.surveyFile || variantParams.survey || DEFAULT_SURVEY_FILE;
+  const file = safeSurveyFile(props.surveyFile || variantParams.survey || DEFAULT_SURVEY_FILE);
 
   const response = await fetch(`${getBucketUrl(safeLanguage(props.language))}${file}.json`);
   if (!response.ok) throw new Error(`Survey fetch failed: ${response.statusText}`);
@@ -154,8 +189,27 @@ const loadSurvey = async () => {
 // it, creating an orphaned run — or, if the next task has already started, a second run that
 // repoints `runId` and sends the real assessment's trials to the wrong place.
 let cancelled = false;
+
+/** True between this component's own `startRun()` and whatever closes that run. */
+let runOpen = false;
+
+/**
+ * Closes a run this component opened and nobody finished.
+ *
+ * Gated on `runOpen` rather than calling `abortRun()` unconditionally, because the compat facade
+ * is a module-level singleton: an unconditional abort on unmount could close a run belonging to
+ * whatever mounted next. `finishRun()` clears the facade's run id, so a completed survey leaves
+ * nothing here to close.
+ */
+function abortOpenRun() {
+  if (!runOpen) return;
+  runOpen = false;
+  abortRun();
+}
+
 onUnmounted(() => {
   cancelled = true;
+  abortOpenRun();
 });
 
 onMounted(async () => {
@@ -172,7 +226,13 @@ onMounted(async () => {
     // Content is resolved before the run starts so a fetch failure cannot leave an orphaned
     // run behind — the ordering both hosts had while they fetched the content themselves.
     await startRun();
-    if (cancelled) return;
+    runOpen = true;
+    // Unmount can land either side of this await. After it, the handler above has already run
+    // and found no run to close, so closing it is this branch's job.
+    if (cancelled) {
+      abortOpenRun();
+      return;
+    }
 
     surveyModel.value = createModel({
       survey,

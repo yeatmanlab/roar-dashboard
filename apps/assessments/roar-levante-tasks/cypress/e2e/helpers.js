@@ -82,7 +82,11 @@ function taskLoop(correctFlag, buttonClass) {
 }
 
 export function testAfc(correctFlag, buttonClass) {
-  // wait for OK button to be visible
+  // 600s looks absurd for a button and is nonetheless load-bearing: matrix-reasoning does not reach
+  // this gate within 120s, so lowering it uniformly fails that spec. The cost is that with
+  // `retries: { runMode: 2 }` a task that never bootstraps burns 30 minutes of this job's cap, so
+  // lower it only per task and only against a measured gate time.
+  // Measurements and the budget trade-off: yeatmanlab/roar-project-management#2410.
   cy.contains('OK', { timeout: 600000 }).should('be.visible');
   cy.contains('OK').realClick(); // real click mimics user gesture so that fullscreen can start
   taskLoop(correctFlag, buttonClass);
