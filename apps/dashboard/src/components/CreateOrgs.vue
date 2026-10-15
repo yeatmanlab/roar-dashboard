@@ -80,10 +80,7 @@
                 v-model="state.orgName"
                 class="w-full"
                 data-cy="input-org-name"
-                @blur="
-                  generateAbbreviation();
-                  v$.orgName.$touch();
-                "
+                @blur="onNameBlur"
               />
               <label for="org-name">{{ orgTypeLabel }} Name<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgName.$error" class="p-error">Please supply a name</small>
@@ -401,6 +398,12 @@ let hasEditedAbbreviation = false;
 const generateAbbreviation = () => {
   if (!state.orgName || hasEditedAbbreviation) return;
   state.orgInitials = state.orgName.replace(/[^A-Za-z0-9]/g, '').slice(0, 10);
+};
+
+const onNameBlur = () => {
+  state.orgName = state.orgName.trim();
+  v$.value.orgName.$touch();
+  generateAbbreviation();
 };
 
 const resetForm = () => {
