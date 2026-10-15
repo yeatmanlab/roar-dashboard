@@ -3,7 +3,19 @@
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
-  <SurveyRunner v-else :sdk-context="sdkContext" :language="language" @complete-survey="handleCompleteSurvey" />
+  <SurveyRunner v-else :sdk-context="sdkContext" :language="language" @complete-survey="handleCompleteSurvey">
+    <!--
+      SurveyRunner's own copy is English. Variant resolution and the content fetch now happen
+      inside it, so without this the translated prep screen above would be replaced by English
+      text for the rest of that wait.
+    -->
+    <template #loading>
+      <div class="text-center col-full">
+        <h1>{{ $t('tasks.preparing') }}</h1>
+        <AppSpinner />
+      </div>
+    </template>
+  </SurveyRunner>
 </template>
 
 <script setup>
