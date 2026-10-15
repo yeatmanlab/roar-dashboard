@@ -17,7 +17,7 @@ function visitTaskWithLocaleAndEnterFullscreen(task, lng) {
   cy.visit(`http://localhost:8000/?task=${task}&lng=${lng}`);
   // A full boot in CI (Firebase anonymous sign-in + GCS corpus/translation/asset fetches) routinely
   // takes much longer than Cypress's ~4s default. The dedicated per-task specs use generous timeouts
-  // for the same reason (e.g. testAfc in helpers.js allows 120s for the OK gate); mirror that here.
+  // for the same reason (e.g. intro.cy.js waits 600000ms); mirror that here.
   cy.get('button.primary', { timeout: 60000 }).should('be.visible').first().realClick();
 }
 
