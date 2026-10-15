@@ -128,7 +128,9 @@
   },
   "tasks": {
     "preparing": "Preparing your game!",
-    "loading": "loading"
+    "loading": "loading",
+    "surveyErrorTitle": "We couldn't load your survey",
+    "surveyErrorMessage": "Please refresh the page to try again."
   },
   "sentryForm": {
     "formTitle": "ROAR Bug Report",
