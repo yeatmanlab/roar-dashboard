@@ -80,10 +80,13 @@
                 v-model="state.orgName"
                 class="w-full"
                 data-cy="input-org-name"
-                @blur="generateAbbreviation"
+                @blur="
+                  generateAbbreviation();
+                  v$.orgName.$touch();
+                "
               />
               <label for="org-name">{{ orgTypeLabel }} Name<span id="required-asterisk">*</span></label>
-              <small v-if="v$.orgName.$invalid && hasAttemptedSubmit" class="p-error">Please supply a name</small>
+              <small v-if="v$.orgName.$error" class="p-error">Please supply a name</small>
             </PvFloatLabel>
           </div>
 
@@ -95,11 +98,10 @@
                 class="w-full"
                 data-cy="input-org-initials"
                 @input="hasEditedAbbreviation = true"
+                @blur="v$.orgInitials.$touch()"
               />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation<span id="required-asterisk">*</span></label>
-              <small v-if="v$.orgInitials.$invalid && hasAttemptedSubmit" class="p-error">{{
-                v$.orgInitials.$errors[0]?.$message
-              }}</small>
+              <small v-if="v$.orgInitials.$error" class="p-error">{{ v$.orgInitials.$errors[0]?.$message }}</small>
             </PvFloatLabel>
           </div>
 
