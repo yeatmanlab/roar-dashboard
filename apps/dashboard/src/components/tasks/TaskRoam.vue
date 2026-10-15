@@ -10,7 +10,6 @@ import { onMounted, watch, ref, computed, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
-import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { useAuthStore } from '@/store/auth';
 import useAssessmentAuthCallbacks from '@/composables/useAssessmentAuthCallbacks';
 import { useGameStore } from '@/store/game';
@@ -128,25 +127,24 @@ async function startTask(selectedAdmin) {
       throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
     }
 
-    initFirekitCompat(
-      {
+    // Handed to the assessment, which owns SDK initialization and variant resolution.
+    const sdkContext = {
+      ctx: {
         baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
         auth: useAssessmentAuthCallbacks(),
         participant: { participantId: participantId.value },
       },
-      {
+      taskInfo: {
         variantId: roamTaskVariant.variantId,
         taskVersion: version,
         administrationId: administration.id,
         isAnonymous: false,
       },
-    );
-
-    const { variantParams } = await getVariantById(roamTaskVariant.variantId);
+    };
 
     const TaskLauncher = await taskLauncherPromise;
 
-    const roarApp = new TaskLauncher(variantParams, userParams, false);
+    const roarApp = new TaskLauncher({}, userParams, false, undefined, sdkContext);
 
     await roarApp.run().then(() => {
       gameStore.requireHomeRefresh();

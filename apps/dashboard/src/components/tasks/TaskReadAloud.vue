@@ -10,7 +10,6 @@ import { onMounted, watch, ref, computed, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
-import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { READALOUD_TASK_ID } from '@roar-platform/assessment-schema/roar-readaloud';
 import { useAuthStore } from '@/store/auth';
 import useAssessmentAuthCallbacks from '@/composables/useAssessmentAuthCallbacks';
@@ -122,16 +121,6 @@ async function startTask(selectedAdmin) {
       language: props.language,
     };
 
-    // Initialize the new assessment SDK for the dashboard execution path (mirrors TaskMultichoice).
-    //
-    // The participant's administrations — each with its tasks' `variantId` embedded —
-    // are already fetched by HomeParticipant via
-    // `GET /users/:userId/administrations?embed=tasks,progress`, and the chosen one is
-    // held in the game store. The administration and variant are therefore read from
-    // `selectedAdmin` rather than re-fetched here.
-    //
-    // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
-    // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
     const administration = selectedAdmin.value;
     const taskVariant = (administration?.tasks ?? []).find((task) => task.taskSlug === props.taskId);
 
@@ -139,33 +128,32 @@ async function startTask(selectedAdmin) {
       throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
     }
 
-    initFirekitCompat(
-      {
+    // Handed to the assessment, which owns SDK initialization and variant resolution.
+    const sdkContext = {
+      ctx: {
         baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
         auth: useAssessmentAuthCallbacks(),
         participant: { participantId: participantId.value },
       },
-      {
+      taskInfo: {
         variantId: taskVariant.variantId,
         taskVersion: version,
         administrationId: administration.id,
         isAnonymous: false,
       },
-    );
-
-    // Source the variant parameters from the assessment SDK now that initFirekitCompat has run.
-    const { variantParams } = await getVariantById(taskVariant.variantId);
-    const gameParams = { ...variantParams };
+    };
 
     // Read Aloud drives its own DOM (no jsPsych target div) and takes a session object as the
     // third constructor arg. assessmentUid seeds the recording storage-path segment; there is no
     // operator-entered participant ID on the dashboard path, so assessmentPid stays empty.
     const TaskLauncher = await taskLauncherPromise;
 
-    const roarApp = new TaskLauncher(gameParams, userParams, {
-      assessmentPid: '',
-      assessmentUid: participantId,
-    });
+    const roarApp = new TaskLauncher(
+      {},
+      userParams,
+      { assessmentPid: '', assessmentUid: participantId.value },
+      sdkContext,
+    );
 
     await roarApp.run().then(() => {
       // Navigate to home, but first set the refresh flag to true.
