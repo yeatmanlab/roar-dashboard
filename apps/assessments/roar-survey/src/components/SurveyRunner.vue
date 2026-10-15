@@ -111,8 +111,9 @@ const props = defineProps({
   /** Locale directory the survey content is read from. */
   language: { type: String, default: 'en' },
   /**
-   * Content file to run when the variant does not name one. Standalone play passes the
-   * `?survey=` URL parameter here; the variant's own `survey` key takes precedence.
+   * Content file to run, overriding whatever the variant names. Standalone play passes the
+   * `?survey=` URL parameter here; the dashboard never sets it, so there the assigned variant
+   * always decides.
    */
   surveyFile: { type: String, default: null },
 });
@@ -157,9 +158,12 @@ const createModel = ({ survey, theme = themeJson, eventHandlers = {} }) => {
 /**
  * Resolves which survey to run and fetches its content.
  *
- * The variant is the authority on the content file; `surveyFile` is the standalone fallback
- * for variants that predate the key. Both hosts previously did this themselves, which left
- * the bucket URL duplicated in the dashboard and the file name sourced differently per host.
+ * Precedence here is the inverse of the platform convention that the variant is authoritative
+ * and URL params are its fallback (`assessment-integration-pattern.md`): a host-supplied
+ * `surveyFile` wins. Only standalone play sets it, where it is the researcher's explicit choice
+ * of instrument, and the dashboard never does — so the assigned variant still decides every
+ * participant-facing session. Both hosts previously resolved this themselves, which left the
+ * bucket URL duplicated in the dashboard and the file name sourced differently per host.
  *
  * @returns {Promise<object|null>} The survey definition, or null when no context was supplied.
  * @throws {Error} If the content cannot be fetched.
