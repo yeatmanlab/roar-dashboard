@@ -105,7 +105,43 @@ services:
       retries: 20
       start_period: 45s
 
+  # Local stand-in for Google Cloud Storage. The backend mints V4 signed upload
+  # URLs and the browser PUTs to them directly, so dev needs something that speaks
+  # the GCS API — not Firebase Storage, which the client no longer touches.
+  #
+  # ROAR_GCS_PORT overrides the published port, but the backend's GCS_API_ENDPOINT
+  # (apps/backend/.env.example, and the seeder's default) is a separate value — change
+  # one and seeding and URL signing stop reaching the container. Override both or neither.
+  #
+  # It validates nothing: signatures, Content-Type, Content-Length and expiry are
+  # all accepted regardless. So this exercises the shape of the upload flow, never
+  # its enforcement — that is the backend's boundary validation plus real GCS.
+  fake-gcs:
+    container_name: roar-fake-gcs
+    image: fsouza/fake-gcs-server:1.56.1
+    command: >
+      -scheme http
+      -host 0.0.0.0
+      -port 4443
+      -public-host 127.0.0.1:${ROAR_GCS_PORT:-4443}
+      -backend filesystem
+      -filesystem-root /data
+    ports:
+      - "127.0.0.1:${ROAR_GCS_PORT:-4443}:4443"
+    volumes:
+      - fake-gcs-data:/data
+    healthcheck:
+      # busybox wget, not curl: the fake-gcs-server image is Alpine-based and ships
+      # neither. A curl probe exits 127, so the container would never report healthy
+      # and anything waiting on service_healthy would never start.
+      test: ["CMD-SHELL", "wget -qO- 'http://localhost:4443/storage/v1/b?project=demo-roar' > /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
 volumes:
+  fake-gcs-data:
+    name: roar-fake-gcs-data
   postgres-data:
     name: roar-postgres-data
   firebase-auth-data:

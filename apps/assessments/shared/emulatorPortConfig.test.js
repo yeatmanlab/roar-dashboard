@@ -48,6 +48,14 @@ describe('assessment emulator port agreement', () => {
     expect(compose).not.toMatch(/"(?:127\.0\.0\.1:)?\d+:9199"/);
   });
 
+  it('fake-gcs publishes a shifted port, and advertises it as its public host', () => {
+    // `-public-host` is baked into the signed URL the browser follows, so it must
+    // carry the PUBLISHED port, not the container port — otherwise every upload
+    // in this stack is sent to the platform stack's fake-gcs on 4443.
+    expect(compose).toMatch(/"(?:127\.0\.0\.1:)?4445:4443"/);
+    expect(compose).toContain('-public-host 127.0.0.1:4445');
+  });
+
   it('the backend targets the auth emulator on the config port', () => {
     expect(compose).toContain(`FIREBASE_AUTH_EMULATOR_HOST: firebase-emulator:${AUTH_PORT}`);
   });

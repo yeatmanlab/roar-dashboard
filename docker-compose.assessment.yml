@@ -83,17 +83,23 @@ services:
     command: >
       sh -c "
         npm run db:migrate &&
-        npm run dev:seed:tasks -- --task ${ASSESSMENT_NAME:-}
+        npm run dev:seed:tasks -- --task ${ASSESSMENT_NAME:-} &&
+        npm run dev:seed:buckets
       "
     environment:
       ASSESSMENT_NAME: ${ASSESSMENT_NAME:-}
       CORE_DATABASE_URL: postgres://postgres:postgres@assessment-db:5432/roar_core
       ASSESSMENT_DATABASE_URL: postgres://postgres:postgres@assessment-db:5432/roar_assessment
       TASK_VARIANT_PARAMETERS_FILE: /app/assessment-config/taskVariantParameters.json
+      # Bucket seeding reaches fake-gcs over the container network, not the
+      # published host port.
+      GCS_API_ENDPOINT: http://fake-gcs:4443
     volumes:
       - ./apps/assessments/${ASSESSMENT_NAME:-}:/app/assessment-config:ro
     depends_on:
       assessment-db:
+        condition: service_healthy
+      fake-gcs:
         condition: service_healthy
     # One-shot service — no restart policy.
 
@@ -206,6 +212,45 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # ────────────────────────────────────────────────────────────────────────────
+  # Local stand-in for Google Cloud Storage.
+  # The backend mints V4 signed upload URLs and the browser PUTs to them, so dev
+  # needs something speaking the GCS API — not Firebase Storage, which the client
+  # no longer touches. Published on 4445 rather than the canonical 4443 so this
+  # stack runs in parallel with the platform dev stack, matching the port-shifting
+  # convention above. `-public-host` must carry the published port, since it is
+  # what the backend bakes into the signed URL the browser follows.
+  #
+  # It validates nothing: signatures, Content-Type, Content-Length and expiry are
+  # all accepted regardless. This exercises the shape of the upload flow, never
+  # its enforcement — that is the backend's boundary validation plus real GCS.
+  # ────────────────────────────────────────────────────────────────────────────
+  fake-gcs:
+    container_name: assessment-fake-gcs
+    image: fsouza/fake-gcs-server:1.56.1
+    command: >
+      -scheme http
+      -host 0.0.0.0
+      -port 4443
+      -public-host 127.0.0.1:4445
+      -backend filesystem
+      -filesystem-root /data
+    ports:
+      - "127.0.0.1:4445:4443"
+    volumes:
+      - fake-gcs-data:/data
+    healthcheck:
+      # busybox wget, not curl: the fake-gcs-server image is Alpine-based and ships
+      # neither. A curl probe exits 127, so the container would never report healthy
+      # and anything waiting on service_healthy would never start.
+      test: ["CMD-SHELL", "wget -qO- 'http://localhost:4443/storage/v1/b?project=demo-roar' > /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
 volumes:
+  fake-gcs-data:
+    name: roar-assessment-fake-gcs-data
   postgres-data:
     name: roar-assessment-postgres-data

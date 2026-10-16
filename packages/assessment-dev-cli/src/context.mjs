@@ -71,6 +71,26 @@ export function resolvePgPort(captureFn = capture) {
 }
 
 /**
+ * Host port the assessment stack publishes fake-gcs on. 4445 — deliberately not the
+ * canonical 4443 the platform stack uses, so both stacks run in parallel. Must match
+ * `-public-host` and the port mapping in docker-compose.assessment.yml, which
+ * emulatorPortConfig.test.js asserts: the value is baked into the signed upload URL
+ * the browser follows, so a mismatch sends uploads to the other stack.
+ */
+export const ASSESSMENT_GCS_PORT = '4445';
+/**
+ * Host port of the containerized assessment backend. 4002 — deliberately not
+ * 4000, which the platform dev backend owns, so both stacks run in parallel.
+ * Must match the port mapping in docker-compose.assessment.yml.
+ */
+export const ASSESSMENT_BACKEND_PORT = '4002';
+/**
+ * Host port of the Firebase Emulator UI. Must match the port mapping in
+ * docker-compose.assessment.yml.
+ */
+export const EMULATOR_UI_PORT = '9002';
+
+/**
  * All host ports the assessment stack binds: Postgres, Firebase Auth emulator,
  * Storage emulator, Emulator UI, backend API. Looped by the port preflights in
  * `setup` (advisory) and `start` (hard gate).
@@ -85,23 +105,11 @@ export function stackPorts(pgPort) {
     pgPort,
     ASSESSMENT_AUTH_EMULATOR_HOST.split(':')[1],
     ASSESSMENT_STORAGE_EMULATOR_HOST.split(':')[1],
+    ASSESSMENT_GCS_PORT,
     EMULATOR_UI_PORT,
     ASSESSMENT_BACKEND_PORT,
   ];
 }
-
-/**
- * Host port of the containerized assessment backend. 4002 — deliberately not
- * 4000, which the platform dev backend owns, so both stacks run in parallel.
- * Must match the port mapping in docker-compose.assessment.yml.
- */
-export const ASSESSMENT_BACKEND_PORT = '4002';
-
-/**
- * Host port of the Firebase Emulator UI. Must match the port mapping in
- * docker-compose.assessment.yml.
- */
-export const EMULATOR_UI_PORT = '9002';
 
 /** Port every assessment's dev server binds (webpack or vite, see each config). */
 export const DEV_SERVER_PORT = '8000';
