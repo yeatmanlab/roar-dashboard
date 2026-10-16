@@ -11,7 +11,6 @@ import _isNull from 'lodash/isNull'; //checks if value of object is null
 import _isUndefined from 'lodash/isUndefined'; //check if value of object is undefined
 import { getAgeData } from '@bdelab/roar-utils'; //restructures age information
 import i18next from 'i18next'; //for language info
-import { updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 import { getStoryOption } from '../../shared/helpers';
 
 //gets the variables required for the task
@@ -65,17 +64,6 @@ export const initConfigMagpi = async (gameParams, userParams, displayElement) =>
     keyboardPractice: keyboardPractice ?? true,
     audio: audio ?? true,
   };
-
-  // updateTaskParams is not supported in the SDK; log a deprecation warning and continue
-  console.warn('[roam-apps] updateTaskParams is deprecated and has no effect.');
-
-  if (config.pid !== null) {
-    try {
-      await updateUser({ assessmentPid: config.pid, ...userMetadata });
-    } catch (err) {
-      console.error('[roam-apps] updateUser failed (non-fatal):', err);
-    }
-  }
 
   return config;
 };

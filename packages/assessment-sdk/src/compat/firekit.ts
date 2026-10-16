@@ -12,8 +12,6 @@ import type {
   FinishRunInput,
   AddInteractionInput,
   AddInteractionOutput,
-  UpdateUserInput,
-  UpdateUserOutput,
   TrialData,
   RawScores,
   ComputedScores,
@@ -702,33 +700,6 @@ export function addInteraction(interaction: AddInteractionInput): AddInteraction
     throw new SDKError('appkit.addInteraction requires an active run. Call appkit.startRun() first.');
   }
   facade._pushInteraction(interaction);
-}
-
-/**
- * Firekit compatibility stub for updating user data.
- *
- * From @bdelab/roar-firekit:
- * async updateUser({ tasks, variants, assessmentPid, ...userMetadata }: UserUpdateInput): Promise<void> { […] }
- *
- * @deprecated This method is related to standalone apps and may be deprecated in the future.
- * @param userUpdateData - User update data including tasks, variants, assessmentPid, and other metadata.
- * @returns Promise<void>
- * @throws {SDKError} Always, until implemented.
- */
-export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOutput {
-  // `typeof process` guard, not a bare `process.env` read: since #2016 this module is inlined
-  // into each assessment's published bundle, so a consumer loading that `dist/index.js` without
-  // a bundler to substitute `process.env.NODE_ENV` would otherwise hit a ReferenceError. Losing
-  // the warning in that environment is the right trade against crashing. `process.env?.` because
-  // some polyfills and SSR shims define a bare `process` object with no `env` on it.
-  if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
-    console.warn(
-      '[DEPRECATION] updateUser() exists only for Firekit compatibility and will be removed in a future version.',
-    );
-  }
-
-  void userUpdateData;
-  throw new SDKError('appkit.updateUser not yet implemented');
 }
 
 /**

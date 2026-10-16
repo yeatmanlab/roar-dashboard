@@ -9,7 +9,7 @@ import { getUserDataTimeline } from '../trials/getUserData';
 import { enterFullscreen } from '../trials/fullScreen';
 import { corpusLetterAll, corpusTypePhonics } from './corpus';
 
-import { finishRun, writeTrial, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
+import { finishRun, writeTrial, addInteraction } from '@roar-platform/assessment-sdk/compat/firekit';
 import { jsPsych } from '../jsPsych';
 import { initializeClowder } from '../experimentSetup';
 
@@ -219,17 +219,6 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     taskId: taskId ?? resolveTaskId(task ?? LETTER_TASK_IDS.EN, language ?? 'en'),
   };
 
-  if (config.pid) {
-    try {
-      await updateUser({
-        assessmentPid: config.pid,
-        ...userMetadata,
-      });
-    } catch (err) {
-      console.warn('[roar-letter] updateUser skipped (not yet implemented in SDK):', err.message);
-    }
-  }
-
   return config;
 };
 
@@ -277,15 +266,6 @@ export const initRoarTimeline = (config) => {
     timeline: initialTimeline,
     on_timeline_finish: async () => {
       config.pid = config.pid || makePid();
-      try {
-        await updateUser({
-          assessmentPid: config.pid,
-          labId: config.labId,
-          ...config.userMetadata,
-        });
-      } catch (err) {
-        console.warn('[roar-letter] updateUser skipped (not yet implemented in SDK):', err.message);
-      }
     },
   };
   return beginningTimeline;

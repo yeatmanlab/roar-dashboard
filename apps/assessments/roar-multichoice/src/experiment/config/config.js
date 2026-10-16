@@ -4,7 +4,7 @@ import _isNull from 'lodash/isNull';
 import _isUndefined from 'lodash/isUndefined';
 import i18next from 'i18next';
 import { getAgeData } from '@bdelab/roar-utils';
-import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
+import { writeTrial, finishRun, addInteraction } from '@roar-platform/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { enterFullscreen } from '../trials/fullScreen';
 import { corpora } from './corpus';
@@ -326,17 +326,6 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     runStarted: true,
   };
 
-  // updateTaskParams is not supported in the SDK; log a deprecation warning and continue
-  console.warn('[roar-multichoice] updateTaskParams is deprecated and has no effect.');
-
-  if (config.pid !== null) {
-    try {
-      await updateUser({ assessmentPid: config.pid, ...userMetadata });
-    } catch (err) {
-      console.error('[roar-multichoice] updateUser failed (non-fatal):', err);
-    }
-  }
-
   return config;
 };
 
@@ -382,11 +371,6 @@ export const initRoarTimeline = (config) => {
     timeline: initialTimeline,
     on_timeline_finish: async () => {
       config.pid = config.pid || makePid();
-      try {
-        await updateUser({ assessmentPid: config.pid, labId: config.labId, ...config.userMetadata });
-      } catch (err) {
-        console.error('[roar-multichoice] updateUser failed (non-fatal):', err);
-      }
     },
   };
 

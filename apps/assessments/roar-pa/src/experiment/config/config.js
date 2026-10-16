@@ -5,7 +5,7 @@ import i18next from 'i18next';
 import _isUndefined from 'lodash/isUndefined';
 import { getAgeData, getGrade } from '@bdelab/roar-utils';
 import { pa } from '@roar-platform/assessment-schema';
-import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
+import { writeTrial, finishRun, addInteraction } from '@roar-platform/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { jsPsych } from '../jsPsych';
 import { wireScoreAdapter } from '../../sdk/pa-firekit-facade';
@@ -133,28 +133,6 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     scoringVersion: scoringVersion ?? null,
   };
 
-  const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
-  );
-
-  // Temporarily reset story to whatever the input value was. This is a
-  // temporary solution while the ``story`` parameter is being deprecated.
-  updatedGameParams.story = story;
-
-  // updateTaskParams is deprecated and will be removed in a future version.
-  console.warn('[roar-pa] updateTaskParams is deprecated and has no effect.');
-
-  if (config.pid) {
-    try {
-      await updateUser({
-        assessmentPid: config.pid,
-        ...config.userMetadata,
-      });
-    } catch (err) {
-      console.error('[roar-pa] updateUser failed (non-fatal):', err);
-    }
-  }
-
   return config;
 };
 
@@ -194,15 +172,6 @@ export const initRoarTimeline = (config) => {
     timeline: getUserDataTimeline,
     on_timeline_finish: async () => {
       config.pid = config.pid || makePid();
-      try {
-        await updateUser({
-          assessmentPid: config.pid,
-          labId: config.labId,
-          ...config.userMetadata,
-        });
-      } catch (err) {
-        console.error('[roar-pa] updateUser failed (non-fatal):', err);
-      }
     },
   };
 
