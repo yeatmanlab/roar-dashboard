@@ -1191,4 +1191,187 @@ describe('AdministrationRepository', () => {
       });
     });
   });
+
+  describe('updateWithAssignments', () => {
+    /**
+     * Seeds an administration with three published variants at orderIndex 0, 1, 2.
+     *
+     * @param label - Suffix making the administration and variant names unique per test
+     * @returns The administration id and the three variant ids in order
+     */
+    async function seedOrderedAdministration(label: string) {
+      const task = await TaskFactory.create();
+      const variants = [];
+      for (const name of ['A', 'B', 'C']) {
+        variants.push(
+          await TaskVariantFactory.create({
+            taskId: task.id,
+            name: `${label} Variant ${name}`,
+            status: TaskVariantStatus.PUBLISHED,
+          }),
+        );
+      }
+
+      const administration = await AdministrationFactory.create({
+        name: `${label} Admin`,
+        createdBy: baseFixture.districtAdmin.id,
+      });
+
+      for (const [index, variant] of variants.entries()) {
+        await AdministrationTaskVariantFactory.create({
+          administrationId: administration.id,
+          taskVariantId: variant.id,
+          orderIndex: index,
+        });
+      }
+
+      return { administrationId: administration.id, variantIds: variants.map((v) => v.id) };
+    }
+
+    /**
+     * Reads back the assigned variant ids ordered by orderIndex, with the indices themselves.
+     *
+     * @param administrationId - The administration to read
+     * @returns Variant ids in order, and the orderIndex values they hold
+     */
+    async function readOrder(administrationId: string) {
+      const result = await repository.getTaskVariantsByAdministrationId(administrationId, false, {
+        page: 1,
+        perPage: 100,
+      });
+      return {
+        ids: result.items.map((item) => item.variant.id),
+        indices: result.items.map((item) => item.assignment.orderIndex),
+      };
+    }
+
+    it('deletes the last variant and leaves the rest in place', async () => {
+      const { administrationId, variantIds } = await seedOrderedAdministration('DeleteLast');
+      const [a, b] = variantIds;
+
+      await repository.updateWithAssignments(administrationId, {
+        taskVariants: [
+          { taskVariantId: a!, orderIndex: 0 },
+          { taskVariantId: b!, orderIndex: 1 },
+        ],
+      });
+
+      expect(await readOrder(administrationId)).toEqual({ ids: [a, b], indices: [0, 1] });
+    });
+
+    it('deletes a non-last variant and compacts the remaining indices', async () => {
+      const { administrationId, variantIds } = await seedOrderedAdministration('DeleteMiddle');
+      const [a, b, c] = variantIds;
+
+      // Drop A — the dashboard renumbers from array position, so B and C shift down into
+      // indices that are still occupied at the time of the write.
+      await repository.updateWithAssignments(administrationId, {
+        taskVariants: [
+          { taskVariantId: b!, orderIndex: 0 },
+          { taskVariantId: c!, orderIndex: 1 },
+        ],
+      });
+
+      const after = await readOrder(administrationId);
+      expect(after).toEqual({ ids: [b, c], indices: [0, 1] });
+      expect(after.ids).not.toContain(a);
+    });
+
+    it('swaps two variants without deleting any', async () => {
+      const { administrationId, variantIds } = await seedOrderedAdministration('Swap');
+      const [a, b, c] = variantIds;
+
+      await repository.updateWithAssignments(administrationId, {
+        taskVariants: [
+          { taskVariantId: b!, orderIndex: 0 },
+          { taskVariantId: a!, orderIndex: 1 },
+          { taskVariantId: c!, orderIndex: 2 },
+        ],
+      });
+
+      expect(await readOrder(administrationId)).toEqual({ ids: [b, a, c], indices: [0, 1, 2] });
+    });
+
+    it('reverses the full order', async () => {
+      const { administrationId, variantIds } = await seedOrderedAdministration('Reverse');
+      const [a, b, c] = variantIds;
+
+      await repository.updateWithAssignments(administrationId, {
+        taskVariants: [
+          { taskVariantId: c!, orderIndex: 0 },
+          { taskVariantId: b!, orderIndex: 1 },
+          { taskVariantId: a!, orderIndex: 2 },
+        ],
+      });
+
+      expect(await readOrder(administrationId)).toEqual({ ids: [c, b, a], indices: [0, 1, 2] });
+    });
+
+    it('appends a new variant without moving existing ones', async () => {
+      const { administrationId, variantIds } = await seedOrderedAdministration('Append');
+      const [a, b, c] = variantIds;
+      const extraTask = await TaskFactory.create();
+      const extra = await TaskVariantFactory.create({
+        taskId: extraTask.id,
+        name: 'Append Variant D',
+        status: TaskVariantStatus.PUBLISHED,
+      });
+
+      await repository.updateWithAssignments(administrationId, {
+        taskVariants: [
+          { taskVariantId: a!, orderIndex: 0 },
+          { taskVariantId: b!, orderIndex: 1 },
+          { taskVariantId: c!, orderIndex: 2 },
+          { taskVariantId: extra.id, orderIndex: 3 },
+        ],
+      });
+
+      expect(await readOrder(administrationId)).toEqual({ ids: [a, b, c, extra.id], indices: [0, 1, 2, 3] });
+    });
+
+    it('adds and removes variants in a single update', async () => {
+      const { administrationId, variantIds } = await seedOrderedAdministration('AddAndRemove');
+      const [a, b, c] = variantIds;
+      const extraTask = await TaskFactory.create();
+      const extra = await TaskVariantFactory.create({
+        taskId: extraTask.id,
+        name: 'AddAndRemove Variant D',
+        status: TaskVariantStatus.PUBLISHED,
+      });
+
+      // Drop A, keep C ahead of B, and append a new variant — removal, reorder and
+      // insertion all competing for the same index range in one statement.
+      await repository.updateWithAssignments(administrationId, {
+        taskVariants: [
+          { taskVariantId: c!, orderIndex: 0 },
+          { taskVariantId: b!, orderIndex: 1 },
+          { taskVariantId: extra.id, orderIndex: 2 },
+        ],
+      });
+
+      const after = await readOrder(administrationId);
+      expect(after).toEqual({ ids: [c, b, extra.id], indices: [0, 1, 2] });
+      expect(after.ids).not.toContain(a);
+    });
+
+    it('preserves conditions through a reorder', async () => {
+      const { administrationId, variantIds } = await seedOrderedAdministration('Conditions');
+      const [a, b, c] = variantIds;
+
+      await repository.updateWithAssignments(administrationId, {
+        taskVariants: [
+          { taskVariantId: b!, orderIndex: 0, conditionsAssignment: { grade: 3 } },
+          { taskVariantId: a!, orderIndex: 1 },
+          { taskVariantId: c!, orderIndex: 2 },
+        ],
+      });
+
+      const result = await repository.getTaskVariantsByAdministrationId(administrationId, false, {
+        page: 1,
+        perPage: 100,
+      });
+      expect(result.items[0]!.variant.id).toBe(b);
+      expect(result.items[0]!.assignment.conditionsAssignment).toEqual({ grade: 3 });
+    });
+  });
 });
