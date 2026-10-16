@@ -5,7 +5,7 @@
  *   node ../../../packages/assessment-dev-cli/src/index.mjs <command> [args]
  *
  * Commands map 1:1 to the npm scripts: setup, start, stop, restart,
- * seed-tasks, rebuild, predev. Extra args are forwarded to the command
+ * seed-tasks, rebuild, predev, recordings. Extra args are forwarded to the command
  * (e.g. `npm run seed:tasks -- --refresh-params`).
  */
 import { createRequire } from 'node:module';
@@ -22,6 +22,7 @@ const COMMANDS = {
   'seed-tasks': async () => (await import('./commands/seed-tasks.mjs')).seedTasks,
   rebuild: async () => (await import('./commands/rebuild.mjs')).rebuild,
   predev: async () => (await import('./commands/predev.mjs')).predev,
+  recordings: async () => (await import('./commands/recordings.mjs')).recordings,
 };
 
 const [command, ...args] = process.argv.slice(2);

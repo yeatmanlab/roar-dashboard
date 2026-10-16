@@ -3,7 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { AssessmentName } from './artifact-buckets.js';
-import { ARTIFACT_BUCKET_SUFFIXES, artifactBucketUri } from './artifact-buckets.js';
+import { ARTIFACT_BUCKET_SUFFIXES, artifactBucketName, artifactBucketUri } from './artifact-buckets.js';
 
 /**
  * Invariant guard for the artifact bucket suffixes.
@@ -76,12 +76,22 @@ describe('artifact bucket suffixes', () => {
       // what GCS rejects. The worst case is a project ID at GCP's own 30-character ceiling, so
       // passing here means passing for any real project.
       const worstCaseProject = 'p'.repeat(GCP_MAX_PROJECT_ID_LENGTH);
-      const uri = artifactBucketUri(worstCaseProject, assessment);
-      const bucketName = uri.replace('gs://', '');
 
-      expect(bucketName.length).toBeLessThanOrEqual(GCS_MAX_BUCKET_NAME_LENGTH);
+      expect(artifactBucketName(worstCaseProject, assessment).length).toBeLessThanOrEqual(GCS_MAX_BUCKET_NAME_LENGTH);
     },
   );
+});
+
+describe('artifactBucketName', () => {
+  it('composes a bucket name from the project and the assessment', () => {
+    expect(artifactBucketName('example-admin', 'roar-readaloud')).toBe('example-admin-readaloud');
+  });
+
+  it('composes the same assessment against a different project', () => {
+    // The project is a parameter precisely so one declaration serves every environment; this pins
+    // that nothing about the environment leaks into the package.
+    expect(artifactBucketName('example-admin-staging', 'roav-ran')).toBe('example-admin-staging-naming');
+  });
 });
 
 describe('artifactBucketUri', () => {
@@ -89,9 +99,15 @@ describe('artifactBucketUri', () => {
     expect(artifactBucketUri('example-admin', 'roar-readaloud')).toBe('gs://example-admin-readaloud');
   });
 
-  it('composes the same assessment against a different project', () => {
-    // The project is a parameter precisely so one declaration serves every environment; this pins
-    // that nothing about the environment leaks into the package.
-    expect(artifactBucketUri('example-admin-staging', 'roav-ran')).toBe('gs://example-admin-staging-naming');
-  });
+  it.each(Object.keys(ARTIFACT_BUCKET_SUFFIXES) as AssessmentName[])(
+    '%s: is the gs:// form of the same name',
+    (assessment) => {
+      // The two must not drift: callers pick a form by what they are addressing — the JSON/media
+      // API takes the bare name, Pulumi and logs take the URI — and would otherwise reach two
+      // different buckets.
+      expect(artifactBucketUri('example-admin', assessment)).toBe(
+        `gs://${artifactBucketName('example-admin', assessment)}`,
+      );
+    },
+  );
 });

@@ -62,7 +62,7 @@ export const ARTIFACT_BUCKET_SUFFIXES = {
 export type AssessmentName = keyof typeof ARTIFACT_BUCKET_SUFFIXES;
 
 /**
- * Composes an assessment's artifact bucket URI.
+ * Composes an assessment's artifact bucket name.
  *
  * Takes the assessment rather than a bare suffix: a suffix parameter would let any assessment's
  * suffix be passed on any assessment's upload path and still type-check, routing one assessment's
@@ -73,10 +73,28 @@ export type AssessmentName = keyof typeof ARTIFACT_BUCKET_SUFFIXES;
  * matching bucket, so emulator resolution is the host's concern rather than this function's — see
  * the dashboard and harness wiring work for how that is handled.
  *
+ * The bare name is the form the GCS APIs take — `POST /storage/v1/b` to create one, `/b/<name>/o`
+ * to list it — so it is exported alongside the `gs://` form rather than left to callers to derive
+ * by stripping a scheme.
+ *
+ * @param projectId - The admin GCP project ID the host is running against
+ * @param assessment - Assessment directory name, e.g. `roar-readaloud`
+ * @returns The bucket name, e.g. `<projectId>-readaloud`
+ */
+export function artifactBucketName(projectId: string, assessment: AssessmentName): string {
+  return `${projectId}-${ARTIFACT_BUCKET_SUFFIXES[assessment]}`;
+}
+
+/**
+ * Composes an assessment's artifact bucket URI.
+ *
+ * The `gs://` form of {@link artifactBucketName} — for display, logs, and the Pulumi/`gsutil`
+ * vocabulary. Anything addressing the bucket over the JSON or media API wants the bare name.
+ *
  * @param projectId - The admin GCP project ID the host is running against
  * @param assessment - Assessment directory name, e.g. `roar-readaloud`
  * @returns A `gs://` URI naming that assessment's bucket in that project
  */
 export function artifactBucketUri(projectId: string, assessment: AssessmentName): string {
-  return `gs://${projectId}-${ARTIFACT_BUCKET_SUFFIXES[assessment]}`;
+  return `gs://${artifactBucketName(projectId, assessment)}`;
 }

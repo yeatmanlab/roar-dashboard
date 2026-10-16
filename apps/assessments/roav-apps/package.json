@@ -36,6 +36,8 @@
     "setup": "node ../../../packages/assessment-dev-cli/src/index.mjs setup",
     "start": "node ../../../packages/assessment-dev-cli/src/index.mjs start",
     "seed:tasks": "node ../../../packages/assessment-dev-cli/src/index.mjs seed-tasks",
+    "recordings:ls": "node ../../../packages/assessment-dev-cli/src/index.mjs recordings ls",
+    "recordings:latest": "node ../../../packages/assessment-dev-cli/src/index.mjs recordings latest",
     "update": "npm --prefix ../../../ run build -- --filter=@roar-platform/api-contract --filter=@roar-platform/assessment-schema --filter=@roar-platform/scoring-tables --filter=@roar-platform/assessment-sdk",
     "stop": "node ../../../packages/assessment-dev-cli/src/index.mjs stop",
     "restart": "node ../../../packages/assessment-dev-cli/src/index.mjs restart",
