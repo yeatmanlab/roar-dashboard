@@ -14,7 +14,7 @@
  * - Authorization (super admin only; all other tiers → 403)
  * - Partial update semantics (only provided fields written, null clears a field)
  * - Validation (empty body, invalid UUID, invalid enum value)
- * - Unique constraint violations (email, username → 409)
+ * - Unique constraint violations (email → 409)
  * - Error cases (401, 404)
  *
  * POST /v1/users/:userId/agreements
@@ -725,18 +725,6 @@ describe('PATCH /v1/users/:id', () => {
 
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
-
-    it('returns 409 when the username conflicts with an existing user', async () => {
-      const existingUser = await UserFactory.create({ username: 'taken-username' });
-      const targetUser = await UserFactory.create({ username: 'other-username' });
-
-      const res = await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
-        .as(tiers.superAdmin)
-        .withBody({ username: existingUser.username })
-        .toReturn(StatusCodes.CONFLICT);
-
-      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
-    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -744,6 +732,21 @@ describe('PATCH /v1/users/:id', () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   describe('schema strictness', () => {
+    it('rejects username, which is set at creation and not updatable', async () => {
+      const targetUser = await UserFactory.create({ username: 'original-username' });
+
+      await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ username: 'new-username' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      const verifyRes = await expectRoute('GET', `/v1/users/${targetUser.id}`)
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(verifyRes.body.data.username).toBe('original-username');
+    });
+
     it('rejects unknown fields like isSuperAdmin from superAdmin', async () => {
       // Get the original data before attempting the patch
       const originalRes = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
