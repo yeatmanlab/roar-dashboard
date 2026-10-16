@@ -12,11 +12,18 @@ import type { RecordingUploader, UploadFileInput, UploadFileOutput } from '../ty
  * uploads on a bad URI — something the SDK can't do, since any consumer may implement
  * `RecordingUploader` itself. These are not two copies of one helper.
  *
+ * Scans from the end rather than using `/\/+$/`: this package publishes to npm, so the SDK
+ * cannot assume anything about a consumer's `bucketUri`, and an anchored `+` is quadratic on a
+ * long run of slashes (CodeQL `js/polynomial-redos`). The harness copy is not affected because
+ * `BUCKET_URI_PATTERN` rejects the input before it reaches the strip.
+ *
  * @param bucketUri - Bucket URI as supplied by the host
  * @returns The URI without trailing slashes
  */
 function stripTrailingSlashes(bucketUri: string): string {
-  return bucketUri.replace(/\/+$/, '');
+  let end = bucketUri.length;
+  while (end > 0 && bucketUri[end - 1] === '/') end--;
+  return bucketUri.slice(0, end);
 }
 
 /**
