@@ -165,7 +165,12 @@ const CreateUserIdentifiersSchema = z.object({
  */
 export const CreateUserRequestBodySchema = z
   .object({
-    username: z.string().optional(),
+    username: z
+      .string()
+      .min(1)
+      .max(64)
+      .regex(/^[a-zA-Z0-9]+(['_.-][a-zA-Z0-9]+)*$/)
+      .optional(),
     email: z.string().email(),
     password: z.string().min(8),
     name: CreateUserNameSchema,
@@ -312,7 +317,6 @@ export const UpdateUserRequestBodySchema = z
     nameFirst: z.string().nullable().optional(),
     nameMiddle: z.string().nullable().optional(),
     nameLast: z.string().nullable().optional(),
-    username: z.string().nullable().optional(),
     email: z.string().email().nullable().optional(),
     password: z.string().min(8).optional(),
     userType: UserTypeSchema.optional(),

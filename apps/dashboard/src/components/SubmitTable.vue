@@ -264,6 +264,8 @@ async function validityCheck(row) {
   } else {
     if (!_get(row, 'username')) {
       errors.push('Username is required');
+    } else if (!_get(row, 'username').length > 64) {
+      errors.push('Username must be at most 64 characters long');
     } else if (!isUsernameValid(row['username'])) {
       errors.push('Username is improperly formatted');
     }
