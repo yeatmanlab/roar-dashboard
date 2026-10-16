@@ -14,24 +14,13 @@ If they pass, commit the changes, push the branch, and create a pull request.
 
 Staging discipline: stage explicit file paths only, built from the files actually edited. Never `git add -A`, `git add .`, or a directory sweep — untracked local files must not enter a commit.
 
-Commit messages: imperative verb phrase, sentence-cased, no trailing period (see `.ai/rules/quality-pr-creation.md`).
+Commit messages: conventional commit format `type(scope): description`, imperative, lowercase, no trailing period (see `.ai/rules/quality-pr-creation.md`).
 
-Use this PR format:
-
-```
-## Summary
-
-This PR [what changed and why, written in complete sentences — no first person, no investigation narrative].
-
-- Additional detail bullet points if needed
-- Keep bullets concise and specific
-
-Resolves https://github.com/yeatmanlab/roar-project-management/issues/{ticket-no}
-```
+PR body: fill in the repo template (`.github/PULL_REQUEST_TEMPLATE.md`) — Summary (first sentence "This PR …", complete sentences, no first person, no investigation narrative), How to Test, Checklist, Screenshots. Delete How to Test and Screenshots when they don't apply; tick only checklist items that actually happened. On a `fix/` branch, use the bug shape from `.ai/rules/quality-pr-creation.md` instead (Root Cause / Fix, How to Reproduce / How to Verify, Regression Risk, bug checklist).
 
 Guidelines:
 
-- PR title: conventional commit format `<type>: <description>` — the type matches the branch prefix (`enh`, `fix`, `refactor`, `maint`, `dep`, `infra`), short, imperative, meaningful in `git log` (PRs are squash-merged, so the title becomes the main-branch commit message).
+- PR title: conventional commit format `<type>(<scope>): <description>` — the type matches the branch prefix (`enh`, `fix`, `refactor`, `maint`, `dep`, `infra`), short, imperative, meaningful in `git log` (PRs are squash-merged, so the title becomes the main-branch commit message).
 - Base branch: `project/backend-refactor` (the integration branch — `main` is legacy).
 - Always include `Resolves` with the full ticket URL — extract the ticket number from the branch name (e.g., `fix/2204/...` → `2204`). Tickets live in `yeatmanlab/roar-project-management`, so the short `#NNNN` form does not auto-close them from this repo.
 - Create PRs in draft mode by default.
