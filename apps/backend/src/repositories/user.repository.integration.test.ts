@@ -684,6 +684,31 @@ describe('UserRepository', () => {
 
       expect(result).toBe(false);
     });
+
+    it('returns true when the username matches an existing user', async () => {
+      const user = await UserFactory.create({ username: `exists-${Date.now()}` });
+
+      const result = await repository.existsByUniqueFields({ username: user.username! });
+
+      expect(result).toBe(true);
+    });
+
+    it('returns true when the email matches but the username does not', async () => {
+      const user = await UserFactory.create({ username: null });
+
+      const result = await repository.existsByUniqueFields({
+        email: user.email!,
+        username: `absent-${Date.now()}`,
+      });
+
+      expect(result).toBe(true);
+    });
+
+    it('returns false when the username matches no user', async () => {
+      const result = await repository.existsByUniqueFields({ username: `absent-${Date.now()}` });
+
+      expect(result).toBe(false);
+    });
   });
 
   describe('createWithMemberships', () => {

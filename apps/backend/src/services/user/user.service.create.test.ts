@@ -329,6 +329,16 @@ describe('UserService.create', () => {
       expect(mockAuth.createUser).not.toHaveBeenCalled();
     });
 
+    it('username already in DB → 409 without calling Firebase', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      mockUserRepo.existsByUniqueFields.mockImplementation(async ({ username }) => username === 'ada');
+
+      await expect(service.create(authContext, { ...validBody, username: 'ada' })).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+      });
+      expect(mockAuth.createUser).not.toHaveBeenCalled();
+    });
+
     it('Firebase getUserByEmail finds existing account → 409 without DB write', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       mockAuth.getUserByEmail.mockResolvedValue({ uid: 'existing-uid' });

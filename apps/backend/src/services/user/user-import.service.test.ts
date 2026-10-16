@@ -153,33 +153,17 @@ describe('UserImportService.bulkImport', () => {
       expect(options.hash.memoryCost).toBe(14);
     });
 
-    it('fails every copy of a within-batch duplicate email, importing none of them', async () => {
-      const rows = [makeRow({ email: 'dup@example.org' }), makeRow({ email: 'DUP@example.org' })];
+    it('fails a create row whose username already exists in Postgres', async () => {
+      mockUserRepository.existsByUniqueFields.mockImplementation(async ({ username }) => username === 'ada');
 
-      const results = await buildService().bulkImport(superAdmin, rows);
+      const results = await buildService().bulkImport(superAdmin, [makeRow({ username: 'ada' })]);
 
-      expect(results).toMatchObject([
-        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
-        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
-      ]);
+      expect(results[0]!).toMatchObject({
+        status: 'failed',
+        classification: 'created',
+        error: { code: ApiErrorCode.RESOURCE_CONFLICT },
+      });
       expect(importUsers).not.toHaveBeenCalled();
-    });
-
-    it('imports the unique rows in a batch that also contains a duplicated email', async () => {
-      const rows = [
-        makeRow({ email: 'dup@example.org' }),
-        makeRow({ email: 'unique@example.org' }),
-        makeRow({ email: 'DUP@example.org' }),
-      ];
-
-      const results = await buildService().bulkImport(superAdmin, rows);
-
-      expect(results[0]!.status).toBe('failed');
-      expect(results[1]!.status).toBe('ok');
-      expect(results[2]!.status).toBe('failed');
-      // Only the unique row reaches Firebase.
-      expect(importUsers.mock.calls[0]![0]).toHaveLength(1);
-      expect(importUsers.mock.calls[0]![0][0]).toMatchObject({ email: 'unique@example.org' });
     });
 
     it('fails a create row that is missing a password and excludes it from importUsers', async () => {
@@ -273,6 +257,74 @@ describe('UserImportService.bulkImport', () => {
   });
 
   describe('classification', () => {
+    it('fails every copy of a within-batch duplicate email, importing none of them', async () => {
+      const rows = [makeRow({ email: 'dup@example.org' }), makeRow({ email: 'DUP@example.org' })];
+
+      const results = await buildService().bulkImport(superAdmin, rows);
+
+      expect(results).toMatchObject([
+        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+      ]);
+      expect(importUsers).not.toHaveBeenCalled();
+    });
+
+    it('imports the unique rows in a batch that also contains a duplicated email', async () => {
+      const rows = [
+        makeRow({ email: 'dup@example.org' }),
+        makeRow({ email: 'unique@example.org' }),
+        makeRow({ email: 'DUP@example.org' }),
+      ];
+
+      const results = await buildService().bulkImport(superAdmin, rows);
+
+      expect(results[0]!.status).toBe('failed');
+      expect(results[1]!.status).toBe('ok');
+      expect(results[2]!.status).toBe('failed');
+      // Only the unique row reaches Firebase.
+      expect(importUsers.mock.calls[0]![0]).toHaveLength(1);
+      expect(importUsers.mock.calls[0]![0][0]).toMatchObject({ email: 'unique@example.org' });
+    });
+
+    it('fails every copy of a within-batch duplicate username and imports the rest', async () => {
+      const rows = [
+        makeRow({ username: 'ada', email: 'ada@school.org' }),
+        makeRow({ username: 'grace', email: 'grace@school.org' }),
+        makeRow({ username: 'ada', email: 'ada@roar-auth.com' }),
+      ];
+
+      const results = await buildService().bulkImport(superAdmin, rows);
+
+      expect(results).toMatchObject([
+        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+        { status: 'ok' },
+        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+      ]);
+      expect(importUsers.mock.calls[0]![0]).toHaveLength(1);
+      expect(importUsers.mock.calls[0]![0][0]).toMatchObject({ email: 'grace@school.org' });
+    });
+
+    it('treats usernames differing only in case as duplicates', async () => {
+      const rows = [
+        makeRow({ username: 'ada', email: 'ada@school.org' }),
+        makeRow({ username: 'ADA', email: 'other@school.org' }),
+      ];
+
+      const results = await buildService().bulkImport(superAdmin, rows);
+
+      expect(results[0]!.status).toBe('failed');
+      expect(results[1]!.status).toBe('failed');
+    });
+
+    it('does not treat rows without a username as duplicates of each other', async () => {
+      const rows = [makeRow({ email: 'one@school.org' }), makeRow({ email: 'two@school.org' })];
+
+      const results = await buildService().bulkImport(superAdmin, rows);
+
+      expect(results[0]!.status).toBe('ok');
+      expect(results[1]!.status).toBe('ok');
+    });
+
     it('routes an existing user with no unenroll flag to the update bin', async () => {
       mockUserRepository.findByEmails.mockResolvedValue([UserFactory.build({ email: 'exists@example.org' })]);
 
