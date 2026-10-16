@@ -4,17 +4,20 @@ import { ref } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import enTranslations from '@/translations/en/en-componentTranslations.json';
+import esTranslations from '@/translations/es/es-componentTranslations.json';
 import TaskSurvey from './TaskSurvey.vue';
-import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 
 // TaskSurvey is spelled out rather than using `describeTaskProxyLaunch`: it has no
-// student-data query (surveys take no grade/DOB), no task launcher, and it fetches
-// its questions from GCS — so it shares the participant contract but not the shape
-// the shared suite asserts.
+// student-data query (surveys take no grade/DOB) and no class-based launcher — it
+// renders SurveyRunner and hands it the SDK context as props.
+//
+// Since #2016 the component neither initializes the SDK nor fetches survey content:
+// SurveyRunner owns both. What is asserted here is the participant contract — right
+// participant, right variant, right administration, right language — observed on the
+// props handed over rather than on SDK calls.
 const mocks = vi.hoisted(() => ({
   useParticipantId: vi.fn(),
-  getVariantById: vi.fn(),
-  initFirekitCompat: vi.fn(),
   routerGo: vi.fn(),
   routerPush: vi.fn(),
 }));
@@ -27,13 +30,16 @@ vi.mock('@/composables/useParticipantId', () => ({
   default: mocks.useParticipantId,
 }));
 
-vi.mock('@roar-platform/assessment-sdk/compat/firekit', () => ({
-  getVariantById: mocks.getVariantById,
-  initFirekitCompat: mocks.initFirekitCompat,
-}));
-
+// Declares its props so the handed-over context is readable via `.props()`.
 vi.mock('@roar-platform/roar-survey', () => ({
-  default: { template: '<div />' },
+  default: {
+    name: 'SurveyRunner',
+    props: ['sdkContext', 'language'],
+    // Renders the status slots so the translated copy handed over is observable. The real
+    // component shows one at a time; rendering both here keeps each assertion independent
+    // of which status it would have been in.
+    template: '<div><slot name="loading" /><slot name="error" /></div>',
+  },
 }));
 
 const PARENT_USER_ID = 'parent-user-uuid';
@@ -53,14 +59,21 @@ function seedSelectedAdmin(taskSlug = 'roar-survey') {
   };
 }
 
-function mountTask(props) {
+function mountTask(props, globalOverrides = {}) {
   return mount(TaskSurvey, {
     props,
     global: {
       plugins: [pinia],
       components: { AppSpinner: { template: '<div />' } },
+      ...globalOverrides,
     },
   });
+}
+
+/** The props TaskSurvey handed to SurveyRunner, or undefined if it never rendered. */
+function surveyProps(wrapper) {
+  const runner = wrapper.findComponent({ name: 'SurveyRunner' });
+  return runner.exists() ? runner.props() : undefined;
 }
 
 describe('TaskSurvey', () => {
@@ -71,10 +84,6 @@ describe('TaskSurvey', () => {
     globalThis.alert = vi.fn();
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    // Survey has no student-data query; it pulls its questions from GCS instead,
-    // using the `survey` key the seeded variant carries.
-    mocks.getVariantById.mockResolvedValue({ variantParams: { survey: 'survey-file' } });
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue({ pages: [] }) });
     // Mirrors `useParticipantId`: the proxy id wins, otherwise the launching
     // user's own `/me` id. The resolution itself is covered by that composable's
     // own unit tests, so here it only has to supply the id the component consumes.
@@ -96,7 +105,7 @@ describe('TaskSurvey', () => {
       // Survey used to throw before doing any work at all — its guard sat at the
       // very top of startTask, so the proxy path never reached the SDK.
       expect(globalThis.alert).not.toHaveBeenCalled();
-      expect(initFirekitCompat).toHaveBeenCalled();
+      expect(surveyProps(wrapper)).toBeDefined();
 
       wrapper.unmount();
     });
@@ -108,13 +117,10 @@ describe('TaskSurvey', () => {
       await flushPromises();
       await flushPromises();
 
-      expect(initFirekitCompat).toHaveBeenCalledWith(
-        expect.objectContaining({ participant: { participantId: CHILD_USER_ID } }),
+      const { sdkContext } = surveyProps(wrapper);
+      expect(sdkContext.ctx).toEqual(expect.objectContaining({ participant: { participantId: CHILD_USER_ID } }));
+      expect(sdkContext.taskInfo).toEqual(
         expect.objectContaining({ administrationId: ADMINISTRATION_ID, isAnonymous: false, variantId: VARIANT_ID }),
-      );
-      expect(initFirekitCompat).not.toHaveBeenCalledWith(
-        expect.objectContaining({ participant: { participantId: PARENT_USER_ID } }),
-        expect.anything(),
       );
 
       // The component's side of the contract: hand the launch prop to the
@@ -124,30 +130,77 @@ describe('TaskSurvey', () => {
       wrapper.unmount();
     });
 
-    it('resolves the variant from the selected administration', async () => {
+    it("hands the administration's variant to the survey", async () => {
       seedSelectedAdmin();
 
       const wrapper = mountTask({ taskId: 'roar-survey', language: 'en', launchId: CHILD_USER_ID });
       await flushPromises();
       await flushPromises();
 
-      expect(getVariantById).toHaveBeenCalledWith(VARIANT_ID);
+      // The dashboard identifies the variant; SurveyRunner resolves its parameters and
+      // fetches the named content file.
+      expect(surveyProps(wrapper).sdkContext.taskInfo).toEqual(expect.objectContaining({ variantId: VARIANT_ID }));
 
       wrapper.unmount();
     });
 
-    it('fetches the survey for the requested language', async () => {
+    it('hands the survey its translated loading copy', async () => {
+      // Variant resolution and the content fetch moved into SurveyRunner, whose own copy is
+      // English. Without filling its loading slot, the translated prep screen this component
+      // renders first is replaced by English text for the rest of that wait.
+      seedSelectedAdmin();
+      const translate = vi.fn((key) => `translated:${key}`);
+
+      const wrapper = mountTask(
+        { taskId: 'roar-survey', language: 'es', launchId: CHILD_USER_ID },
+        { mocks: { $t: translate } },
+      );
+      await flushPromises();
+      await flushPromises();
+
+      expect(surveyProps(wrapper)).toBeDefined();
+      expect(wrapper.text()).toContain('translated:tasks.preparing');
+
+      wrapper.unmount();
+    });
+
+    it('hands the survey its translated error copy', async () => {
+      // SurveyRunner owns the content fetch, so it owns the failure too — all this component
+      // can get wrong is leaving the slot unfilled, which shows the student English. A mocked
+      // `$t` proves only that the slot is filled from i18n, so the bundles are read directly to
+      // prove the keys it names resolve; an unresolved key renders as the key itself.
+      seedSelectedAdmin();
+      const translate = vi.fn((key) => `translated:${key}`);
+
+      const wrapper = mountTask(
+        { taskId: 'roar-survey', language: 'es', launchId: CHILD_USER_ID },
+        { mocks: { $t: translate } },
+      );
+      await flushPromises();
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('translated:tasks.surveyErrorTitle');
+      expect(wrapper.text()).toContain('translated:tasks.surveyErrorMessage');
+
+      // Spanish is the case the review raised: existing in `en` is not enough, the key has to
+      // carry a different string in a locale a student is actually served.
+      expect(enTranslations.tasks.surveyErrorTitle).toBeTruthy();
+      expect(esTranslations.tasks.surveyErrorTitle).toBeTruthy();
+      expect(esTranslations.tasks.surveyErrorTitle).not.toBe(enTranslations.tasks.surveyErrorTitle);
+
+      wrapper.unmount();
+    });
+
+    it('passes the route language through to the survey', async () => {
       seedSelectedAdmin();
 
       const wrapper = mountTask({ taskId: 'roar-survey', language: 'es', launchId: CHILD_USER_ID });
       await flushPromises();
       await flushPromises();
 
-      // The filename comes from the variant, the language from the route prop —
-      // both have to reach the bucket URL or the child gets the wrong survey.
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        'https://storage.googleapis.com/roar-survey-app/es/survey-file.json',
-      );
+      // The language decides which locale directory the content is read from, so it has
+      // to reach SurveyRunner or the child gets the wrong survey.
+      expect(surveyProps(wrapper).language).toBe('es');
 
       wrapper.unmount();
     });
@@ -161,9 +214,8 @@ describe('TaskSurvey', () => {
       await flushPromises();
       await flushPromises();
 
-      expect(initFirekitCompat).toHaveBeenCalledWith(
+      expect(surveyProps(wrapper).sdkContext.ctx).toEqual(
         expect.objectContaining({ participant: { participantId: PARENT_USER_ID } }),
-        expect.anything(),
       );
 
       wrapper.unmount();
@@ -171,16 +223,17 @@ describe('TaskSurvey', () => {
   });
 
   describe('when the survey is not in the selected administration', () => {
-    it('does not initialize the SDK', async () => {
+    it('does not hand a context to the survey', async () => {
       seedSelectedAdmin('some-other-task');
 
       const wrapper = mountTask({ taskId: 'roar-survey', language: 'en', launchId: CHILD_USER_ID });
       await flushPromises();
       await flushPromises();
 
-      expect(initFirekitCompat).not.toHaveBeenCalled();
-      expect(globalThis.fetch).not.toHaveBeenCalled();
+      // A missing variant must not start a run against the wrong assessment.
+      expect(surveyProps(wrapper)).toBeUndefined();
       expect(globalThis.alert).toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalled();
 
       wrapper.unmount();
     });

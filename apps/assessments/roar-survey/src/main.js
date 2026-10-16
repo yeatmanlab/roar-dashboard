@@ -5,26 +5,19 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
-import { getBucketUrl } from './constants/bucketBaseUrl';
 import 'regenerator-runtime/runtime';
 
 async function initAndMountApp() {
   const urlParams = new URLSearchParams(window.location.search);
-  const surveyFile = urlParams.get('survey') ?? 'survey';
+  // Passed through to SurveyRunner as a fallback only — the variant names the content file,
+  // and this URL param covers variants that predate the key.
+  const surveyFile = urlParams.get('survey');
+  const language = urlParams.get('lng') ?? 'en';
   const taskIdParam = urlParams.get('taskId');
   const taskVersion = urlParams.get('taskVersion') ?? '1.0';
   const taskId = taskIdParam ? `roar-survey-${taskIdParam}` : 'roar-survey';
 
   if (surveyFile) document.title = `ROAR - Survey ${surveyFile}`;
-
-  let surveyJson = null;
-  try {
-    const response = await fetch(`${getBucketUrl()}${surveyFile}.json`);
-    if (!response.ok) throw new Error(`Survey fetch failed: ${response.statusText}`);
-    surveyJson = await response.json();
-  } catch (err) {
-    console.error('Error fetching survey:', err);
-  }
 
   const firebaseConfig = await getFirebaseConfig();
   const firebaseApp = initializeApp(firebaseConfig);
@@ -51,10 +44,12 @@ async function initAndMountApp() {
           taskInfo: { variantId, taskVersion, isAnonymous: true },
         };
 
-        createApp(App, { surveyData: surveyJson, sdkContext }).mount('#app');
+        createApp(App, { sdkContext, language, surveyFile }).mount('#app');
       } catch (err) {
         console.error('Error initializing survey app:', err);
-        createApp(App, { surveyData: surveyJson }).mount('#app');
+        // Mounted without a context so SurveyRunner shows its error state rather than a
+        // blank page — it cannot resolve or fetch anything without a session.
+        createApp(App, { language, surveyFile }).mount('#app');
       }
     }
   });
@@ -63,9 +58,8 @@ async function initAndMountApp() {
     await signInAnonymously(auth);
   } catch (err) {
     console.error('Failed to sign in anonymously:', err);
-    // Mount the app without survey data so the user sees an error state
-    // rather than a blank page.
-    createApp(App, { surveyData: null }).mount('#app');
+    // No session, so no context: SurveyRunner renders its error state rather than a blank page.
+    createApp(App, { language, surveyFile }).mount('#app');
   }
 }
 
