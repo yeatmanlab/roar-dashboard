@@ -64,7 +64,6 @@
     "@jspsych/plugin-survey-html-form": "^1.0.0",
     "@jspsych/plugin-survey-multi-select": "^1.1.0",
     "@jspsych/plugin-survey-text": "^1.1.0",
-    "@roar-platform/assessment-sdk": "^1.0.0",
     "detect-it": "^4.0.1",
     "fscreen": "^1.2.0",
     "i18next": "^22.4.15",
@@ -78,16 +77,17 @@
   },
   "peerDependencies": {
     "@sentry/browser": ">=7",
-    "@sentry/integrations": ">=7",
-    "@sentry/wasm": ">=7"
+    "@sentry/integrations": ">=7"
   },
   "devDependencies": {
-    "@roar-platform/assessment-schema": "^1.0.0",
-    "@roar-platform/scoring-tables": "^0.1.0",
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",
+    "@roar-platform/assessment-schema": "^1.0.0",
+    "@roar-platform/assessment-sdk": "^1.0.0",
+    "@roar-platform/assessment-shared": "*",
     "@roar-platform/eslint-config": "*",
     "@roar-platform/prettier-config": "*",
+    "@roar-platform/scoring-tables": "^0.1.0",
     "@rollup/plugin-commonjs": "^25.0.3",
     "@rollup/plugin-dsv": "^3.0.2",
     "@rollup/plugin-json": "^6.0.0",

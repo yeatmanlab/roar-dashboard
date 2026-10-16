@@ -53,13 +53,14 @@
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
-    "@roar-platform/assessment-sdk": "^1.0.0",
     "regenerator-runtime": "^0.14.1",
     "survey-core": "^2.0.8",
     "survey-vue3-ui": "^2.0.8"
   },
   "devDependencies": {
     "@roar-platform/assessment-schema": "^1.0.0",
+    "@roar-platform/assessment-sdk": "^1.0.0",
+    "@roar-platform/assessment-shared": "*",
     "@roar-platform/eslint-config": "*",
     "@roar-platform/prettier-config": "*",
     "@vitejs/plugin-vue": "^5.2.3",

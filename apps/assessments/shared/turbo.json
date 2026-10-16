@@ -1,0 +1,18 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      // rollupLoggingWiring.test.js reads every assessment's rollup config and build script, which
+      // are not inputs to this package by default — the workspace edges run assessments → shared,
+      // not the reverse — so a deleted guard would serve a cached pass. Scoped here rather than in
+      // the root `globalDependencies`, which would invalidate every task in the monorepo on any
+      // assessment version bump.
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/assessments/*/rollup.lib.config.mjs",
+        "$TURBO_ROOT$/apps/assessments/*/package.json"
+      ]
+    }
+  }
+}
