@@ -2,12 +2,22 @@ import { describe, it, expect } from 'vitest';
 import { csvRowToImportRow, toBoolean } from './csvRowToImportRow';
 
 describe('csvRowToImportRow', () => {
-  it('maps a username to a synthetic email', () => {
-    expect(csvRowToImportRow({ username: 'ada' }).email).toBe('ada@roar-auth.com');
+  it('maps a username to a synthetic email and keeps the username', () => {
+    expect(csvRowToImportRow({ username: 'ada' })).toMatchObject({
+      username: 'ada',
+      email: 'ada@roar-auth.com',
+    });
   });
 
-  it('prefers an explicit email over the synthetic username email', () => {
-    expect(csvRowToImportRow({ username: 'ada', email: 'ada@school.org' }).email).toBe('ada@school.org');
+  it('prefers an explicit email over the synthetic username email, keeping the username', () => {
+    expect(csvRowToImportRow({ username: 'ada', email: 'ada@school.org' })).toMatchObject({
+      username: 'ada',
+      email: 'ada@school.org',
+    });
+  });
+
+  it('omits username when the row has an empty one', () => {
+    expect(csvRowToImportRow({ username: '', email: 'ada@school.org' })).not.toHaveProperty('username');
   });
 
   it('builds the nested name and core fields with userType student', () => {

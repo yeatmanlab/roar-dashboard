@@ -419,7 +419,7 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     assessmentPid,
   }: {
     email?: string;
-    username?: string;
+    username?: string | undefined;
     assessmentPid?: string;
   }): Promise<boolean> {
     const conditions = [

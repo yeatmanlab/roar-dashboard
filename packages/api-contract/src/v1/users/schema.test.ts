@@ -137,3 +137,62 @@ describe('ImportUserRowSchema.memberships', () => {
     expect(result.success).toBe(false);
   });
 });
+
+/**
+ * The username becomes the login address (`<username>@roar-auth.com`) and is immutable once set, so
+ * a malformed one is permanent. The rule must stay a subset of an email local part; the dashboard
+ * mirrors it in `isUsernameValid` (apps/dashboard/src/helpers/userFieldValidators.js).
+ */
+describe('CreateUserRequestBodySchema.username', () => {
+  function bodyWithUsername(username: unknown) {
+    return {
+      ...bodyWithMemberships([{ entityType: 'school', entityId: VALID_UUID, role: 'student' }]),
+      username,
+    };
+  }
+
+  it('is optional', () => {
+    const result = CreateUserRequestBodySchema.safeParse(
+      bodyWithMemberships([{ entityType: 'school', entityId: VALID_UUID, role: 'student' }]),
+    );
+
+    expect(result.success).toBe(true);
+  });
+
+  it.each(['ada', 'ada1', 'Ada', "o'brien", 'ada.lovelace', 'ada_lovelace', 'ada-lovelace', 'a.b-c_d', 'a'.repeat(64)])(
+    'accepts %s',
+    (username) => {
+      expect(CreateUserRequestBodySchema.safeParse(bodyWithUsername(username)).success).toBe(true);
+    },
+  );
+
+  it.each([
+    ['', 'empty'],
+    ['ada lovelace', 'a space'],
+    ['ada@school.org', 'an at sign'],
+    ['_ada', 'a leading separator'],
+    ['ada_', 'a trailing separator'],
+    ['.ada', 'a leading dot'],
+    ['ada__lovelace', 'consecutive separators'],
+    ['ada!', 'punctuation outside the allowed set'],
+    ['a'.repeat(65), 'more than 64 characters'],
+  ])('rejects %s (%s)', (username) => {
+    expect(CreateUserRequestBodySchema.safeParse(bodyWithUsername(username)).success).toBe(false);
+  });
+
+  it('rejects a non-string username', () => {
+    expect(CreateUserRequestBodySchema.safeParse(bodyWithUsername(42)).success).toBe(false);
+  });
+
+  it('applies the same rule to import rows', () => {
+    const row = {
+      email: 'student@example.com',
+      name: { first: 'Test', last: 'Student' },
+      memberships: [{ entityType: 'school', entityId: VALID_UUID, role: 'student' }],
+    };
+
+    expect(ImportUserRowSchema.safeParse({ ...row, username: 'ada' }).success).toBe(true);
+    expect(ImportUserRowSchema.safeParse({ ...row, username: 'ada lovelace' }).success).toBe(false);
+    expect(ImportUserRowSchema.safeParse({ ...row, username: 'a'.repeat(65) }).success).toBe(false);
+  });
+});

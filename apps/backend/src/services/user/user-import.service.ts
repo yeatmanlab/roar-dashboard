@@ -88,6 +88,7 @@ type MembershipForAuthCheck = { entityType: EntityType; entityId: string; role: 
 
 /** A single import row. Mirrors the single-create payload plus `unenroll` and an optional password. */
 export interface ImportUserRowInput {
+  username?: string | undefined;
   email: string;
   password?: string | undefined;
   name: { first: string; middle?: string | null | undefined; last: string };
@@ -405,6 +406,7 @@ export function UserImportService({
   /** Build the {@link UserService.createWithImportedAuth} payload for a create row. */
   function toCreateUserData(row: ImportUserRowInput, assessmentPid: string) {
     return {
+      username: row.username,
       email: row.email,
       // Unused by createWithImportedAuth (the account is already created); kept for type shape.
       password: row.password ?? '',
@@ -528,7 +530,7 @@ export function UserImportService({
       }
 
       try {
-        if (await userRepository.existsByUniqueFields({ email: row.email, assessmentPid })) {
+        if (await userRepository.existsByUniqueFields({ email: row.email, username: row.username, assessmentPid })) {
           outcomes[index] = failed(
             index,
             CLASSIFICATION.CREATED,
@@ -1120,14 +1122,21 @@ export function UserImportService({
     const updateRows: { index: number; row: ImportUserRowInput; user: User }[] = [];
     const unenrollRows: { index: number; row: ImportUserRowInput; user: User }[] = [];
 
-    // A repeated email is an ambiguous instruction — two rows can name opposite intents (unenroll
-    // and update), and picking one by row order decides a user's fate on spreadsheet ordering. So
-    // every copy is rejected and the user is left untouched for the operator to resolve. Counted in
-    // a pre-pass because the first copy isn't identifiable as one until a later row repeats it.
+    // A repeated email or username is an ambiguous instruction — two rows can name opposite intents (unenroll
+    // and update), so every copy is rejected.
+    // The dashboard maps either email or username, never both, and derives the email from the username,
+    // so today a duplicate username already surfaces as a duplicate email. The contract permits both
+    // fields, so this clause keeps the check correct if that ever changes.
     const emailCounts = new Map<string, number>();
+    const usernameCounts = new Map<string, number>();
     for (const { row } of authorized) {
       const emailKey = row.email.toLowerCase();
       emailCounts.set(emailKey, (emailCounts.get(emailKey) ?? 0) + 1);
+      // Generated username email used by Firebase auth is case insensitive
+      const usernameKey = row.username?.toLowerCase();
+      if (usernameKey) {
+        usernameCounts.set(usernameKey, (usernameCounts.get(usernameKey) ?? 0) + 1);
+      }
     }
 
     for (const entry of authorized) {
@@ -1135,11 +1144,14 @@ export function UserImportService({
       const user = existingByEmail.get(emailKey);
       const unenroll = Boolean(entry.row.unenroll);
 
-      // Rejected here because this is the first point that knows whether the email exists.
+      // Rejected here because this is the first point that knows whether the email and/or username exists.
       // Tradeoff: a duplicate that also fails Phase 1 reports that 422/403 instead of this conflict.
-      if ((emailCounts.get(emailKey) ?? 0) > 1) {
-        // Unprocessable rather than conflict: the repetition is in the request, and the email may
-        // name no stored user at all.
+      if (
+        (emailCounts.get(emailKey) ?? 0) > 1 ||
+        (entry.row.username && (usernameCounts.get(entry.row.username.toLowerCase()) ?? 0) > 1)
+      ) {
+        // Unprocessable rather than conflict: the repetition is in the request, and there may not be
+        // a stored user with that email/username.
         outcomes[entry.index] = failed(
           entry.index,
           unenroll ? CLASSIFICATION.UNENROLLED : user ? CLASSIFICATION.UPDATED : CLASSIFICATION.CREATED,
