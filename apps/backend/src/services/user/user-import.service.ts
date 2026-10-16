@@ -406,6 +406,7 @@ export function UserImportService({
   /** Build the {@link UserService.createWithImportedAuth} payload for a create row. */
   function toCreateUserData(row: ImportUserRowInput, assessmentPid: string) {
     return {
+      username: row.username,
       email: row.email,
       // Unused by createWithImportedAuth (the account is already created); kept for type shape.
       password: row.password ?? '',

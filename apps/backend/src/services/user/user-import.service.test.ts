@@ -144,6 +144,16 @@ describe('UserImportService.bulkImport', () => {
       expect(results.every((r) => r.status === 'ok' && r.classification === 'created')).toBe(true);
     });
 
+    it('passes the username through to createWithImportedAuth', async () => {
+      await buildService().bulkImport(superAdmin, [makeRow({ username: 'ada' })]);
+
+      expect(mockUserService.createWithImportedAuth).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ username: 'ada' }),
+        expect.anything(),
+      );
+    });
+
     it('passes the SCRYPT hash options to importUsers', async () => {
       await buildService().bulkImport(superAdmin, [makeRow()]);
 
