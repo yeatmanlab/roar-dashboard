@@ -131,7 +131,9 @@
   },
   "tasks": {
     "preparing": "Preparando o jogo!",
-    "loading": "carregando"
+    "loading": "carregando",
+    "surveyErrorTitle": "Não foi possível carregar o seu questionário",
+    "surveyErrorMessage": "Por favor, atualize a página para tentar novamente."
   },
   "sentryForm": {
     "formTitle": "Relatório de erro do ROAR",

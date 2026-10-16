@@ -4,6 +4,8 @@ import { ref } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import enTranslations from '@/translations/en/en-componentTranslations.json';
+import esTranslations from '@/translations/es/es-componentTranslations.json';
 import TaskSurvey from './TaskSurvey.vue';
 
 // TaskSurvey is spelled out rather than using `describeTaskProxyLaunch`: it has no
@@ -33,8 +35,10 @@ vi.mock('@roar-platform/roar-survey', () => ({
   default: {
     name: 'SurveyRunner',
     props: ['sdkContext', 'language'],
-    // Renders the loading slot so the translated copy handed over is observable.
-    template: '<div><slot name="loading" /></div>',
+    // Renders the status slots so the translated copy handed over is observable. The real
+    // component shows one at a time; rendering both here keeps each assertion independent
+    // of which status it would have been in.
+    template: '<div><slot name="loading" /><slot name="error" /></div>',
   },
 }));
 
@@ -156,6 +160,33 @@ describe('TaskSurvey', () => {
 
       expect(surveyProps(wrapper)).toBeDefined();
       expect(wrapper.text()).toContain('translated:tasks.preparing');
+
+      wrapper.unmount();
+    });
+
+    it('hands the survey its translated error copy', async () => {
+      // SurveyRunner owns the content fetch, so it owns the failure too — all this component
+      // can get wrong is leaving the slot unfilled, which shows the student English. A mocked
+      // `$t` proves only that the slot is filled from i18n, so the bundles are read directly to
+      // prove the keys it names resolve; an unresolved key renders as the key itself.
+      seedSelectedAdmin();
+      const translate = vi.fn((key) => `translated:${key}`);
+
+      const wrapper = mountTask(
+        { taskId: 'roar-survey', language: 'es', launchId: CHILD_USER_ID },
+        { mocks: { $t: translate } },
+      );
+      await flushPromises();
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('translated:tasks.surveyErrorTitle');
+      expect(wrapper.text()).toContain('translated:tasks.surveyErrorMessage');
+
+      // Spanish is the case the review raised: existing in `en` is not enough, the key has to
+      // carry a different string in a locale a student is actually served.
+      expect(enTranslations.tasks.surveyErrorTitle).toBeTruthy();
+      expect(esTranslations.tasks.surveyErrorTitle).toBeTruthy();
+      expect(esTranslations.tasks.surveyErrorTitle).not.toBe(enTranslations.tasks.surveyErrorTitle);
 
       wrapper.unmount();
     });

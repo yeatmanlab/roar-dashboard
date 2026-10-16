@@ -5,14 +5,21 @@
   </div>
   <SurveyRunner v-else :sdk-context="sdkContext" :language="language" @complete-survey="handleCompleteSurvey">
     <!--
-      SurveyRunner's own copy is English. Variant resolution and the content fetch now happen
-      inside it, so without this the translated prep screen above would be replaced by English
-      text for the rest of that wait.
+      SurveyRunner's own copy is English, because only the host knows the participant's
+      language. Variant resolution and the content fetch now happen inside it, so without these
+      slots the translated prep screen above would be replaced by English text for the rest of
+      that wait, and a content failure would report itself in English too.
     -->
     <template #loading>
       <div class="text-center col-full">
         <h1>{{ $t('tasks.preparing') }}</h1>
         <AppSpinner />
+      </div>
+    </template>
+    <template #error>
+      <div class="text-center col-full">
+        <h1>{{ $t('tasks.surveyErrorTitle') }}</h1>
+        <p>{{ $t('tasks.surveyErrorMessage') }}</p>
       </div>
     </template>
   </SurveyRunner>
