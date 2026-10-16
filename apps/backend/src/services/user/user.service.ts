@@ -120,6 +120,7 @@ interface CreateUserMemberships {
  * from the create payload.
  */
 interface CreateUserData {
+  username?: string | undefined;
   email: string;
   password: string;
   name: CreateUserName;
@@ -386,7 +387,7 @@ export function UserService({
    * @throws {ApiError} INTERNAL_SERVER_ERROR (500) on unexpected failures or unrecoverable compensation
    */
   async function create(authContext: AuthContext, body: CreateUserData): Promise<{ id: string }> {
-    const { demographics, dob, grade, email, identifiers, memberships, name, password, userType } = body;
+    const { username, demographics, dob, grade, email, identifiers, memberships, name, password, userType } = body;
     const { userId, isSuperAdmin } = authContext;
 
     // ── Step 1: Authorization + entity existence pre-flight ───────────────────
@@ -512,6 +513,7 @@ export function UserService({
 
     const alreadyExists = await userRepository.existsByUniqueFields({
       email,
+      username,
       assessmentPid,
     });
 
@@ -633,6 +635,7 @@ export function UserService({
             {
               authId: firebaseUid,
               authProvider: [AuthProvider.PASSWORD],
+              username: username ?? null,
               email: email,
               nameFirst: name.first,
               nameMiddle: name.middle ?? null,
@@ -788,7 +791,7 @@ export function UserService({
     body: CreateUserData,
     firebaseUid: string,
   ): Promise<{ id: string }> {
-    const { demographics, dob, grade, email, identifiers, memberships, name, userType } = body;
+    const { username, demographics, dob, grade, email, identifiers, memberships, name, userType } = body;
     const { userId } = authContext;
 
     const assessmentPid = identifiers?.pid ?? generateAssessmentPid({ userId: email });
@@ -832,6 +835,7 @@ export function UserService({
             {
               authId: firebaseUid,
               authProvider: [AuthProvider.PASSWORD],
+              username: username ?? null,
               email: email,
               nameFirst: name.first,
               nameMiddle: name.middle ?? null,

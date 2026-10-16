@@ -165,6 +165,7 @@ const CreateUserIdentifiersSchema = z.object({
  */
 export const CreateUserRequestBodySchema = z
   .object({
+    username: z.string().optional(),
     email: z.string().email(),
     password: z.string().min(8),
     name: CreateUserNameSchema,

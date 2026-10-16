@@ -32,8 +32,13 @@ function isPresent(value) {
 export function csvRowToImportRow(row) {
   const importRow = { userType: 'student', name: {}, memberships: [] };
 
-  // A username maps to a synthetic email; an explicit email (if mapped) wins.
-  if (isPresent(row.username)) importRow.email = `${row.username}@roar-auth.com`;
+  if (isPresent(row.username)) {
+    importRow.username = row.username;
+    importRow.email = `${row.username}@roar-auth.com`;
+  }
+
+  // Overwrites the username email if email is present
+  // Currently the dashboard only allows username or email, not both
   if (isPresent(row.email)) importRow.email = row.email;
 
   if (isPresent(row.password)) importRow.password = row.password;

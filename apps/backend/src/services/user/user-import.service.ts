@@ -88,6 +88,7 @@ type MembershipForAuthCheck = { entityType: EntityType; entityId: string; role: 
 
 /** A single import row. Mirrors the single-create payload plus `unenroll` and an optional password. */
 export interface ImportUserRowInput {
+  username?: string | undefined;
   email: string;
   password?: string | undefined;
   name: { first: string; middle?: string | null | undefined; last: string };
@@ -528,7 +529,7 @@ export function UserImportService({
       }
 
       try {
-        if (await userRepository.existsByUniqueFields({ email: row.email, assessmentPid })) {
+        if (await userRepository.existsByUniqueFields({ email: row.email, username: row.username, assessmentPid })) {
           outcomes[index] = failed(
             index,
             CLASSIFICATION.CREATED,
