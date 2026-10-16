@@ -1242,8 +1242,32 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
         if (input.taskVariants !== undefined) {
           const taskVariantIds = input.taskVariants.map((tv) => tv.taskVariantId);
 
+          // Prune task variants no longer in the list
+          if (taskVariantIds.length > 0) {
+            await tx
+              .delete(administrationTaskVariants)
+              .where(
+                and(
+                  eq(administrationTaskVariants.administrationId, administrationId),
+                  notInArray(administrationTaskVariants.taskVariantId, taskVariantIds),
+                ),
+              );
+          } else {
+            // If no task variants provided, delete all
+            await tx
+              .delete(administrationTaskVariants)
+              .where(eq(administrationTaskVariants.administrationId, administrationId));
+          }
+
           // Upsert task variants with their additional fields
           if (input.taskVariants.length > 0) {
+            // Set the orderIndex to a negative value to avoid collision with positive orderIndex values
+            // Allows the upsert to work without violating the unique index
+            await tx
+              .update(administrationTaskVariants)
+              .set({ orderIndex: sql`-${administrationTaskVariants.orderIndex} - 1` })
+              .where(eq(administrationTaskVariants.administrationId, administrationId));
+
             await tx
               .insert(administrationTaskVariants)
               .values(
@@ -1263,23 +1287,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
                   conditionsRequirements: sql`excluded.conditions_requirements`,
                 },
               });
-          }
-
-          // Prune task variants no longer in the list
-          if (taskVariantIds.length > 0) {
-            await tx
-              .delete(administrationTaskVariants)
-              .where(
-                and(
-                  eq(administrationTaskVariants.administrationId, administrationId),
-                  notInArray(administrationTaskVariants.taskVariantId, taskVariantIds),
-                ),
-              );
-          } else {
-            // If no task variants provided, delete all
-            await tx
-              .delete(administrationTaskVariants)
-              .where(eq(administrationTaskVariants.administrationId, administrationId));
           }
         }
 
