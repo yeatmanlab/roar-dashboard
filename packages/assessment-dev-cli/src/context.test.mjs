@@ -43,7 +43,7 @@ describe('resolvePgPort', () => {
 
 describe('stackPorts', () => {
   it('lists every host port the stack binds, Postgres first', () => {
-    expect(stackPorts('5544')).toEqual(['5544', '9097', '9197', '4445', '9002', '4002']);
+    expect(stackPorts('5544')).toEqual(['5544', '9097', '4445', '9002', '4002']);
   });
 });
 

@@ -7,12 +7,12 @@
 //
 // It carries two concerns every assessment shares:
 //
-// 1. The emulator-host defaults. Staging and production bundles must not carry
-//    these: serve.js calls connectAuthEmulator() on any non-empty value, so a
+// 1. The emulator-host default. Staging and production bundles must not carry
+//    it: serve.js calls connectAuthEmulator() on any non-empty value, so a
 //    deployed bundle carrying one would authenticate end users against an
-//    emulator that issues unverified tokens (and upload recordings to a dead
-//    Storage emulator). apps/assessments/shared/emulatorHostBuild.test.js
-//    asserts every bundler config keeps them out of non-development builds.
+//    emulator that issues unverified tokens.
+//    apps/assessments/shared/emulatorHostBuild.test.js asserts every bundler
+//    config keeps it out of non-development builds.
 //
 // 2. Quiet dev-server output. The researcher-facing `npm start` hands off to
 //    webpack-dev-server; without these settings every rebuild prints a full
@@ -21,13 +21,13 @@
 'use strict';
 
 const webpack = require('webpack');
-const { FIREBASE_EMULATOR_AUTH_HOST, FIREBASE_EMULATOR_STORAGE_HOST } = require('./devEmulatorHost.cjs');
+const { FIREBASE_EMULATOR_AUTH_HOST } = require('./devEmulatorHost.cjs');
 
 // An assessment .env with a bare `FIREBASE_AUTH_EMULATOR_HOST=` line makes
 // dotenv define the variable as '' — which EnvironmentPlugin treats as a real
 // value, silently baking a broken empty host past the default below. Treat
 // empty as unset.
-for (const key of ['FIREBASE_AUTH_EMULATOR_HOST', 'FIREBASE_STORAGE_EMULATOR_HOST']) {
+for (const key of ['FIREBASE_AUTH_EMULATOR_HOST']) {
   if (process.env[key] === '') delete process.env[key];
 }
 
@@ -45,12 +45,6 @@ const devConfig = {
       // FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 to target the platform
       // stack's canonical ports).
       FIREBASE_AUTH_EMULATOR_HOST: FIREBASE_EMULATOR_AUTH_HOST,
-      // The storage default applies only when the auth host is un-overridden
-      // too: an auth-only override (platform-context dev) must NOT carry the
-      // assessment stack's storage port — an empty value here makes the SDK
-      // derive the storage emulator from the auth host and the canonical
-      // port instead.
-      FIREBASE_STORAGE_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST ? '' : FIREBASE_EMULATOR_STORAGE_HOST,
     }),
   ],
 };

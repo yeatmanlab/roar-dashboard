@@ -19,9 +19,10 @@ export async function getFirebaseConfig() {
   if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
     // The client SDK requires apiKey to be non-empty before calling getAuth(), but the
     // emulator never validates it. A placeholder satisfies the check without real credentials.
-    // storageBucket is required for getStorage(getApp()) to resolve a default bucket: recording
-    // uploads (e.g. Read Aloud) route to the local Storage emulator, which creates the bucket on
-    // first write. Assessments that never upload simply don't call getStorage, so it's harmless.
+    // storageBucket is only here so getStorage(getApp()) can resolve a default bucket at all —
+    // the SDK's compat layer still asks for one. The dev stacks no longer run a Storage emulator,
+    // so a dev upload through that path fails until the SDK moves to the backend's signed-URL
+    // flow; assessments that never upload don't call getStorage at all.
     return {
       projectId: FIREBASE_EMULATOR_PROJECT_ID,
       apiKey: FIREBASE_EMULATOR_API_KEY,

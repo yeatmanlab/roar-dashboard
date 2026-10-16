@@ -13,7 +13,6 @@ import {
   ASSESSMENT_BACKEND_PORT,
   ASSESSMENT_BACKEND_URL,
   ASSESSMENT_NAME,
-  ASSESSMENT_STORAGE_EMULATOR_HOST,
   DEV_SERVER_PORT,
   EMULATOR_UI_PORT,
   PARAMS_FILE,
@@ -211,7 +210,6 @@ export async function start(ui) {
       // bundle to the wrong stack while the summary above claims otherwise.
       BACKEND_URL: ASSESSMENT_BACKEND_URL,
       FIREBASE_AUTH_EMULATOR_HOST: ASSESSMENT_AUTH_EMULATOR_HOST,
-      FIREBASE_STORAGE_EMULATOR_HOST: ASSESSMENT_STORAGE_EMULATOR_HOST,
       FORCE_COLOR: process.env.FORCE_COLOR ?? '1',
       NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --no-deprecation`.trim(),
     },

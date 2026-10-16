@@ -5,9 +5,9 @@
  * Auth emulator are already running. Two contexts satisfy that, and since the
  * two stacks bind disjoint host ports they can both be up at once:
  *   - the assessment environment (`npm start` brings its Docker stack up on
- *     9097/9197/4002, then runs `npm run dev`, which triggers this preflight), or
+ *     9097/4002, then runs `npm run dev`, which triggers this preflight), or
  *   - platform-context dev: the platform Docker stack on the canonical
- *     9099/9199 plus a host-run backend on 4000, opted into explicitly with
+ *     9099 plus a host-run backend on 4000, opted into explicitly with
  *     FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npm run dev.
  *
  * Dev bundles default the emulator hosts to the assessment stack
