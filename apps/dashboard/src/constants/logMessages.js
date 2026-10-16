@@ -12,6 +12,7 @@ export const AUTH_LOG_MESSAGES = Object.freeze({
 
 export const NAV_LOG_MESSAGES = Object.freeze({
   FORBIDDEN_ROUTE: 'User does not have permission to access route',
+  ME_PREFETCH_TIMED_OUT: '/me prefetch timed out in the router guard, proceeding without it',
 });
 
 export const MEDIA_LOG_MESSAGES = Object.freeze({

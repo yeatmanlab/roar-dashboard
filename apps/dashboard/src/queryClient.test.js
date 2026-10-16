@@ -37,6 +37,7 @@ vi.mock('@/utils/api-errors', () => {
     AUTH_REQUIRED: 'auth/required',
     AUTH_ROSTERING_ENDED: 'auth/rostering-ended',
     CONFIG_BASE_URL_MISSING: 'config/base-url-missing',
+    CONFIG_BASE_URL_INVALID: 'config/base-url-invalid',
   });
 
   function getApiErrorCode(response) {
@@ -65,14 +66,15 @@ vi.mock('@/utils/api-errors', () => {
     );
   }
 
-  function isMissingBaseUrlError(error) {
-    return getApiErrorCode(error) === API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
+  function isBaseUrlConfigError(error) {
+    const code = getApiErrorCode(error);
+    return code === API_ERROR_CODES.CONFIG_BASE_URL_MISSING || code === API_ERROR_CODES.CONFIG_BASE_URL_INVALID;
   }
 
   return {
     API_ERROR_CODES,
     getApiErrorCode,
-    isMissingBaseUrlError,
+    isBaseUrlConfigError,
     isRosteringEndedError,
     isTerminalAuthError,
   };

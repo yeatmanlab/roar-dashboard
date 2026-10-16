@@ -66,6 +66,14 @@ export const API_ERROR_CODES = Object.freeze({
    * no request ever leaves the browser, so it can never succeed on retry.
    */
   CONFIG_BASE_URL_MISSING: 'config/base-url-missing',
+  /**
+   * `getRoarApiClient()` refused to build the client because
+   * `VITE_ROAR_API_BASE_URL` is not a bare origin — it is unparseable or
+   * carries a path component. A path (typically a trailing `/v1`) doubles
+   * the contract's own `/v1` prefix into `/v1/v1/...` requests. Client-side
+   * only, like CONFIG_BASE_URL_MISSING.
+   */
+  CONFIG_BASE_URL_INVALID: 'config/base-url-invalid',
 });
 
 /**
@@ -112,17 +120,19 @@ export function isUserNotProvisionedError(error) {
 }
 
 /**
- * Checks if the error is the missing-base-URL configuration failure raised by
- * `getRoarApiClient()`.
+ * Checks if the error is a base-URL configuration failure raised by
+ * `getRoarApiClient()` — the variable is missing from the build, or it is
+ * not a bare origin.
  *
  * Terminal for the whole page load: the base URL comes from the build, so it
- * cannot appear between attempts. Retrying only delays the error UI, which is
+ * cannot change between attempts. Retrying only delays the error UI, which is
  * why both the queryClient's default retry policy and `meRetryPolicy`
  * short-circuit on it.
  *
  * @param {Object} error - Error thrown by the API client
  * @returns {boolean}
  */
-export function isMissingBaseUrlError(error) {
-  return getApiErrorCode(error) === API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
+export function isBaseUrlConfigError(error) {
+  const code = getApiErrorCode(error);
+  return code === API_ERROR_CODES.CONFIG_BASE_URL_MISSING || code === API_ERROR_CODES.CONFIG_BASE_URL_INVALID;
 }
