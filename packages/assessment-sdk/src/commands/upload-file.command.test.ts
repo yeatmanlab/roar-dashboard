@@ -85,6 +85,16 @@ describe('UploadFileCommand', () => {
     expect(result.storagePath).toBe(`gs://my-bucket/${generatedPath}`);
   });
 
+  // Pins the *repeated* case separately: a single-slash strip passes the test above but would
+  // leave `gs://my-bucket//task/...` here, and `storagePath` is parsed by downstream tooling.
+  it('strips repeated trailing slashes from the bucket URI', async () => {
+    command = new UploadFileCommand(participantId, { bucketUri: 'gs://my-bucket///', upload: mockUpload });
+
+    const result = await command.execute(baseInput);
+
+    expect(result.storagePath).toBe(`gs://my-bucket/${generatedPath}`);
+  });
+
   it('returns an upload function that delegates to the host uploader', async () => {
     const result = await command.execute(baseInput);
 
