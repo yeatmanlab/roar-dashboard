@@ -297,7 +297,7 @@ Nothing here changes how the assessment behaves; it changes whether the platform
 
 ## Caveats
 
-**Pin `firebase` to `^10.13.2`.** The SDK's peer range expects it. Version 11.x produces a second Firebase instance, and `getApp()` inside the SDK then resolves the wrong one — uploads fail at runtime with nothing useful in the stack trace.
+**`firebase` majors no longer have to match the SDK.** This used to be a hard pin to `^10.13.2`, because the SDK resolved the Storage bucket itself: an assessment on 11.x produced a second Firebase instance and `getApp()` inside the SDK picked the wrong one, so uploads failed at runtime with nothing useful in the stack trace. The SDK no longer imports `firebase` at all — the host builds a `RecordingUploader` and passes it as `ctx.recordings` (see `apps/assessments/shared/recordingUploader.js`), so the storage handle is created by the same module instance that bundles it. `@roar-platform/assessment-shared` declares `firebase: >=10` and new assessments are free to pick a major. Within one assessment, still keep a single `firebase` copy — the harness and its `serve.js` must resolve the same one.
 
 **Keep vitest on one major across the workspace.** A single package on a different major breaks _other_ packages' tests with an unrelated-looking `tinyrainbow disableDefaultColors` error.
 

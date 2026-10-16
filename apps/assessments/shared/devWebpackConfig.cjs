@@ -47,9 +47,9 @@ const devConfig = {
       FIREBASE_AUTH_EMULATOR_HOST: FIREBASE_EMULATOR_AUTH_HOST,
       // The storage default applies only when the auth host is un-overridden
       // too: an auth-only override (platform-context dev) must NOT carry the
-      // assessment stack's storage port — an empty value here makes the SDK
-      // derive the storage emulator from the auth host and the canonical
-      // port instead.
+      // assessment stack's storage port — an empty value here makes
+      // recordingUploader.js derive the storage emulator from the auth host
+      // and the canonical port instead.
       FIREBASE_STORAGE_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST ? '' : FIREBASE_EMULATOR_STORAGE_HOST,
     }),
   ],

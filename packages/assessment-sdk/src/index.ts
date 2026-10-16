@@ -6,6 +6,9 @@ import type { CommandContext } from './command/command';
 // Public API exports
 export { Invoker } from './command/invoker';
 export type { Command, CommandContext, Logger } from './command/command';
+// `ctx.recordings` is part of the host-facing contract, so the types a host needs to
+// implement one have to be nameable from the package root.
+export type { RecordingUploadArgs, RecordingUploader } from './types/upload-file';
 export { RoarApi } from './receiver/roar-api';
 export { SDKError } from './errors/sdk-error';
 

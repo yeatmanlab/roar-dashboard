@@ -4,6 +4,7 @@ import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { READALOUD_TASK_ID } from '@roar-platform/assessment-schema/roar-readaloud';
 import ReadAloudTask from '../src/experiment/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
+import { createRecordingUploader } from '../../shared/recordingUploader.js';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
 import { ROAR_DB_MODE, unresolvedDefaultVariantPolicy } from '../../shared/roarDbMode.js';
 // Import necessary for async in the top level of the experiment script
@@ -38,6 +39,9 @@ const ageMonths = urlParams.get('agemonths') ? parseFloat(urlParams.get('agemont
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+// Resolves to the Storage emulator in dev and to nothing in staging/production until the
+// bucket is provisioned — see createRecordingUploader, and issue #2167 for the wiring.
+const recordings = createRecordingUploader(app);
 const baseUrl = ROAR_API_BASE_URL;
 
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
@@ -66,6 +70,7 @@ onAuthStateChanged(auth, async (user) => {
         baseUrl,
         auth: authCallbacks,
         participant: { participantId },
+        ...(recordings ? { recordings } : {}),
       };
 
       const taskInfo = {

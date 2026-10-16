@@ -19,13 +19,15 @@
   },
   "peerDependencies": {
     "@sentry/browser": ">=7",
-    "@sentry/integrations": ">=7"
+    "@sentry/integrations": ">=7",
+    "firebase": ">=10"
   },
   "devDependencies": {
     "@roar-platform/assessment-schema": "^1.0.0",
     "@roar-platform/eslint-config": "*",
     "@roar-platform/prettier-config": "*",
     "eslint": "^9.0.0",
+    "firebase": "^10.13.2",
     "globals": "^16.0.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.6.0",

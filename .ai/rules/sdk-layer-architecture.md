@@ -12,7 +12,7 @@ tags:
 
 ## Assessment SDK layer architecture
 
-The assessment SDK (`packages/assessment-sdk/`) follows the Gang of Four (GoF) Command pattern with three core layers — Receiver, Command, and Compat — plus an Invoker that provides cross-cutting execution infrastructure (logging, retry for idempotent commands). Each layer has a strict responsibility boundary. The SDK is auth-provider-agnostic — it receives authentication callbacks, never loads Firebase or any auth library itself.
+The assessment SDK (`packages/assessment-sdk/`) follows the Gang of Four (GoF) Command pattern with three core layers — Receiver, Command, and Compat — plus an Invoker that provides cross-cutting execution infrastructure (logging, retry for idempotent commands). Each layer has a strict responsibility boundary. The SDK is provider-agnostic — it receives authentication callbacks and, for recording uploads, a storage callback; it never loads Firebase or any auth library itself.
 
 ### The 3 layers + Invoker
 
@@ -194,12 +194,24 @@ export interface CommandContext {
   participant: {
     participantId: string;
   };
+  recordings?: RecordingUploader;
   requestId?: () => string;
   /** @deprecated Never honored — the ts-rest fetcher always uses the global fetch. */
   fetchImpl?: typeof fetch;
   logger?: Logger;
 }
 ```
+
+Storage works the same way. `uploadFile` needs somewhere to put the bytes, but a Firebase Storage handle is bound to the `firebase/storage` module instance that created it — so the SDK cannot open one that its host will recognise. The host instead supplies `recordings`, a plain callback pair:
+
+```typescript
+export interface RecordingUploader {
+  bucketUri: string;
+  upload(args: RecordingUploadArgs): Promise<void>;
+}
+```
+
+The SDK owns the object path, the upload queue, the concurrency cap, and flush semantics; the host owns only the transport and the destination bucket. It is optional: an assessment that never records omits it, and `uploadFile` then throws rather than failing once bytes are in flight. Standalone harnesses build one in `apps/assessments/shared/recordingUploader.js`.
 
 The Receiver implements the 401 refresh-and-retry: a 401 carrying `auth/token-expired` or `auth/token-invalid` (mirroring the backend's `ApiErrorCode`) triggers one `refreshToken()` call — deduplicated per client for concurrent 401s — and one retry with the fresh token. Other 401s surface unchanged, and without a `refreshToken` callback no retry happens, so `getToken` must then always return a fresh token. Hosts that create several clients over the same callbacks must dedupe inside `refreshToken` itself (the dashboard's `forceIdTokenRefresh` does).
 
