@@ -54,6 +54,8 @@ export const instructions = instructionData.map((data) => {
       setupReplayAudio(pageStateHandler);
     },
     on_finish: () => {
+      PageAudioHandler.stopAndDisconnectNode();
+
       jsPsych.data.addDataToLastTrial({
         audioButtonPresses: PageAudioHandler.replayPresses,
         assessment_stage: 'instructions',

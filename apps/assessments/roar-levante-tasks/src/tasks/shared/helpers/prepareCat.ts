@@ -5,13 +5,12 @@ import { cat, jsPsych } from '../../taskSetup';
 // separates trials from corpus into blocks depending on for heavy/light instructions and CAT
 export function prepareCorpus(
   corpus: StimulusType[],
-  randomStartBlock = true,
+  numberOfStartItems = 5,
   downexCorpus?: StimulusType[],
   fillInSdsDifficulty: boolean = false,
+  maxTrialDifficulty: number = 0, // constrains difficulty of starting items
 ) {
   const excludedTrialTypes = ['3D', 'polygon'];
-  // limit random starting items so that their difficulty is less than 0
-  const maxTrialDifficulty = 0;
   const cat: boolean = taskStore().runCat;
 
   let heavyInstructionPracticeTrials: StimulusType[] = [];
@@ -61,12 +60,10 @@ export function prepareCorpus(
       ((taskStore().task == 'egma-math' && trial.block_index === 0) || taskStore().task !== 'egma-math') &&
       Number(trial.difficulty) <= maxTrialDifficulty,
   );
-  const startItems: StimulusType[] = selectNItems(possibleStartItems, 5);
+  const startItems: StimulusType[] = selectNItems(possibleStartItems, numberOfStartItems);
 
   // put cat portion of corpus into taskStore
-  const catCorpus: StimulusType[] = randomStartBlock
-    ? normedTrials.filter((trial) => !startItems.includes(trial))
-    : normedTrials;
+  const catCorpus: StimulusType[] = normedTrials.filter((trial) => !startItems.includes(trial));
 
   const downexUnnormedTrials: StimulusType[] = downexTestTrials.filter(
     (trial) => trial.difficulty == null || isNaN(Number(trial.difficulty)),
@@ -77,7 +74,7 @@ export function prepareCorpus(
   const corpora = {
     ipHeavy: corpusParts.ipHeavy, // downex instruction/practice trials
     ipLight: corpusParts.ipLight, // older kid instruction/practice
-    start: startItems, // 5 random items to be used in starting block (all under a certain max difficulty)
+    start: startItems, // 5 (or 3 if running math task) random items to be used in starting block, all under max difficulty
     unnormed: unnormedTrials, // all items without IRT parameters
     downexUnnormed: downexUnnormedTrials,
     cat: catCorpus, // all normed items for CAT

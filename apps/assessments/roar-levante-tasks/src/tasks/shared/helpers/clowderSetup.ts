@@ -114,7 +114,7 @@ export const CLOWDER_IRT_HYPERPARAMS: ClowderIrtHyperparamsMap = {
 export const CLOWDER_CORPUS_PARAMS: ClowderCorpusParamsMap = {
   trog: {
     1: {
-      corpus: 'roar-syntax-item-2026-05-14-v3.csv',
+      corpus: 'roar-syntax-item-2026-05-14-v4.csv',
       catNames: ['practice', 'composite', 'new', 'composite_comprehension'],
       delimiter: '.',
     },

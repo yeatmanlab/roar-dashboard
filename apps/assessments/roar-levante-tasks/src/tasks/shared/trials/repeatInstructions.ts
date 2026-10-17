@@ -7,6 +7,7 @@ import {
   setupReplayAudio,
   PageAudioHandler,
   setupFullscreenButton,
+  enableOkButton,
 } from '../helpers';
 import { taskStore } from '../../../taskStore';
 
@@ -32,11 +33,19 @@ export const repeatInstructionsMessage = {
   button_choices: ['Continue'],
   button_html: () => {
     const t = taskStore().translations;
-    return `<button class="primary">${t.continueButtonText}</button>`;
+    return `<button class="primary" disabled>${t.continueButtonText}</button>`;
   },
   keyboard_choices: 'NO_KEYS',
   on_load: () => {
-    PageAudioHandler.playAudio(mediaAssets.audio.generalRepeatInstructions);
+    const audioConfig: AudioConfigType = {
+      restrictRepetition: {
+        enabled: true,
+        maxRepetitions: 2,
+      },
+      onEnded: enableOkButton,
+    };
+
+    PageAudioHandler.playAudio(mediaAssets.audio.generalRepeatInstructions, audioConfig);
 
     const pageStateHandler = new PageStateHandler('generalRepeatInstructions', true);
     setupReplayAudio(pageStateHandler);

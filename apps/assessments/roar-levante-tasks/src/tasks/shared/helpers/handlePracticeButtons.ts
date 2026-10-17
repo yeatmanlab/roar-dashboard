@@ -3,17 +3,36 @@ import { jsPsych } from '../../taskSetup';
 import { PageAudioHandler } from './audioHandler';
 import { taskStore } from '../../../taskStore';
 
+type PracticeFeedbackCallback = (onFeedbackEnded: () => void) => void;
+
+let isFeedbackPlaying = false;
+
 function enableBtns(btnElements: NodeListOf<HTMLButtonElement>) {
   btnElements.forEach((btn) => (btn.disabled = false));
+}
+
+function disableBtns(btnElements: NodeListOf<HTMLButtonElement>) {
+  btnElements.forEach((btn) => {
+    btn.disabled = true;
+  });
+}
+
+function clearAudioOnEndedBeforeStop() {
+  // Clear onended before stop so an interrupted clip cannot unlock early
+  if (PageAudioHandler.audioSource) {
+    PageAudioHandler.audioSource.onended = null;
+  }
+  PageAudioHandler.stopAndDisconnectNode();
 }
 
 export function addPracticeButtonListeners(
   answer: string,
   isTouchScreen: boolean,
   choices: string[],
-  onCorrect?: () => void,
-  onIncorrect?: () => void,
+  onCorrect?: PracticeFeedbackCallback,
+  onIncorrect?: PracticeFeedbackCallback,
 ) {
+  isFeedbackPlaying = false;
   const practiceBtns: NodeListOf<HTMLButtonElement> = document.querySelectorAll('.practice-btn');
 
   practiceBtns.forEach((btn, i) => {
@@ -31,19 +50,19 @@ function handlePracticeButtonPress(
   practiceBtns: NodeListOf<HTMLButtonElement>,
   responsevalue: string | number,
   choices: string[],
-  onCorrect?: () => void,
-  onIncorrect?: () => void,
+  onCorrect?: PracticeFeedbackCallback,
+  onIncorrect?: PracticeFeedbackCallback,
 ) {
+  if (isFeedbackPlaying) {
+    return;
+  }
+
+  isFeedbackPlaying = true;
+  disableBtns(practiceBtns);
+
   const index = Array.prototype.indexOf.call(practiceBtns, btn);
   const choice = choices[index];
   const isCorrectChoice = choice?.toString() === answer;
-
-  const audioConfig: AudioConfigType = {
-    restrictRepetition: {
-      enabled: false,
-      maxRepetitions: 2,
-    },
-  };
 
   // custom incorrect prompts by task
   const incorrectPromptKey =
@@ -55,30 +74,59 @@ function handlePracticeButtonPress(
 
   if (isCorrectChoice) {
     btn.classList.add('success-shadow');
+
+    function finishTrial() {
+      isFeedbackPlaying = false;
+      jsPsych.finishTrial({
+        response: choice,
+        incorrectPracticeResponses: taskStore().incorrectPracticeResponses,
+        button_response: responsevalue,
+      });
+    }
+
     setTimeout(
-      () =>
-        jsPsych.finishTrial({
-          response: choice,
-          incorrectPracticeResponses: taskStore().incorrectPracticeResponses,
-          button_response: responsevalue,
-        }),
+      finishTrial,
       onCorrect ? 3000 : 1000, // if callback is provided, give more time for callback to finish before ending trial
     );
 
     // if there is audio playing, stop it first before playing feedback audio to prevent overlap between trials
-    PageAudioHandler.stopAndDisconnectNode();
-    onCorrect ? onCorrect() : PageAudioHandler.playAudio(mediaAssets.audio.feedbackGoodJob, audioConfig);
+    clearAudioOnEndedBeforeStop();
+    if (onCorrect) {
+      onCorrect(() => {
+        // Trial finish is still driven by the existing timeout so correct timing is preserved.
+      });
+    } else {
+      PageAudioHandler.playAudio(mediaAssets.audio.feedbackGoodJob, {
+        restrictRepetition: {
+          enabled: false,
+          maxRepetitions: 2,
+        },
+      });
+    }
   } else {
     btn.classList.add('error-shadow');
-    // jspysch disables the buttons for some reason, so re-enable them
-    setTimeout(() => enableBtns(practiceBtns), 500);
 
     const incorrectPracticeResponses = taskStore().incorrectPracticeResponses;
     incorrectPracticeResponses.push(choice);
     taskStore('incorrectPracticeResponses', incorrectPracticeResponses);
 
-    PageAudioHandler.stopAndDisconnectNode();
+    function unlockPracticeButtons() {
+      isFeedbackPlaying = false;
+      enableBtns(practiceBtns);
+    }
 
-    onIncorrect ? onIncorrect() : PageAudioHandler.playAudio(mediaAssets.audio[incorrectPromptKey], audioConfig);
+    clearAudioOnEndedBeforeStop();
+
+    if (onIncorrect) {
+      onIncorrect(unlockPracticeButtons);
+    } else {
+      PageAudioHandler.playAudio(mediaAssets.audio[incorrectPromptKey], {
+        restrictRepetition: {
+          enabled: false,
+          maxRepetitions: 2,
+        },
+        onEnded: unlockPracticeButtons,
+      });
+    }
   }
 }
